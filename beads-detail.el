@@ -4,6 +4,8 @@
 
 (require 'beads-rpc)
 
+(declare-function beads-menu "beads-transient")
+
 (defgroup beads-detail nil
   "Issue detail display for Beads."
   :group 'beads)
@@ -36,6 +38,8 @@
     (define-key map (kbd "g") #'beads-detail-refresh)
     (define-key map (kbd "q") #'quit-window)
     (define-key map (kbd "e") #'beads-detail-edit-issue)
+    (define-key map (kbd "?") #'beads-menu)
+    (define-key map (kbd "C-c m") #'beads-menu)
     map)
   "Keymap for beads-detail-mode.")
 

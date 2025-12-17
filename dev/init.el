@@ -8,6 +8,7 @@
 (require 'beads-rpc)
 (require 'beads-list)
 (require 'beads-detail)
+(require 'beads-transient)
 
 (message "beads.el loaded from %s" (locate-library "beads-rpc"))
 (message "Run M-x beads-list to open the issue list")

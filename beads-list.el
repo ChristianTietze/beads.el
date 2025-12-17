@@ -6,6 +6,8 @@
 (require 'beads-detail)
 (require 'tabulated-list)
 
+(declare-function beads-menu "beads-transient")
+
 (defgroup beads-list nil
   "Issue list display for Beads."
   :group 'beads)
@@ -39,6 +41,8 @@
     (define-key map (kbd "g") #'beads-list-refresh)
     (define-key map (kbd "RET") #'beads-list-goto-issue)
     (define-key map (kbd "q") #'quit-window)
+    (define-key map (kbd "?") #'beads-menu)
+    (define-key map (kbd "C-c m") #'beads-menu)
     map)
   "Keymap for beads-list-mode.")
 
