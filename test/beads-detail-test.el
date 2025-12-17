@@ -330,6 +330,112 @@
     (should (eq (lookup-key beads-detail-mode-map (kbd "e d"))
                 #'beads-detail-edit-description))))
 
+(ert-deftest beads-detail-test-mode-keybinding-label-prefix ()
+  "Test that 'e l' is a prefix map for label commands."
+  (with-temp-buffer
+    (beads-detail-mode)
+    (should (keymapp (lookup-key beads-detail-mode-map (kbd "e l"))))
+    (should (eq (lookup-key beads-detail-mode-map (kbd "e l a"))
+                #'beads-detail-edit-label-add))
+    (should (eq (lookup-key beads-detail-mode-map (kbd "e l r"))
+                #'beads-detail-edit-label-remove))))
+
+(ert-deftest beads-detail-test-label-add-defined ()
+  "Test that beads-detail-edit-label-add is defined as a command."
+  (should (fboundp 'beads-detail-edit-label-add))
+  (should (commandp 'beads-detail-edit-label-add)))
+
+(ert-deftest beads-detail-test-label-remove-defined ()
+  "Test that beads-detail-edit-label-remove is defined as a command."
+  (should (fboundp 'beads-detail-edit-label-remove))
+  (should (commandp 'beads-detail-edit-label-remove)))
+
+(ert-deftest beads-detail-test-label-add-calls-rpc ()
+  "Test that beads-detail-edit-label-add calls beads-rpc-label-add."
+  (let ((rpc-called nil)
+        (rpc-args nil))
+    (with-temp-buffer
+      (beads-detail-mode)
+      (setq beads-detail--current-issue '((id . "test-123")
+                                          (title . "Test")
+                                          (status . "open")
+                                          (priority . 2)
+                                          (issue_type . "task")
+                                          (labels . ["existing"])))
+      (cl-letf (((symbol-function 'read-string)
+                 (lambda (_prompt)
+                   "new-label"))
+                ((symbol-function 'beads-rpc-label-add)
+                 (lambda (id label)
+                   (setq rpc-called t)
+                   (setq rpc-args (list id label))))
+                ((symbol-function 'beads-detail-refresh)
+                 (lambda () nil)))
+        (beads-detail-edit-label-add)
+        (should rpc-called)
+        (should (equal rpc-args '("test-123" "new-label")))))))
+
+(ert-deftest beads-detail-test-label-add-empty-input ()
+  "Test that beads-detail-edit-label-add ignores empty input."
+  (let ((rpc-called nil))
+    (with-temp-buffer
+      (beads-detail-mode)
+      (setq beads-detail--current-issue '((id . "test-123")
+                                          (title . "Test")
+                                          (status . "open")
+                                          (priority . 2)
+                                          (issue_type . "task")))
+      (cl-letf (((symbol-function 'read-string)
+                 (lambda (_prompt) ""))
+                ((symbol-function 'beads-rpc-label-add)
+                 (lambda (_id _label)
+                   (setq rpc-called t))))
+        (beads-detail-edit-label-add)
+        (should-not rpc-called)))))
+
+(ert-deftest beads-detail-test-label-remove-no-labels ()
+  "Test that beads-detail-edit-label-remove handles issues with no labels."
+  (let ((completing-read-called nil))
+    (with-temp-buffer
+      (beads-detail-mode)
+      (setq beads-detail--current-issue '((id . "test-123")
+                                          (title . "Test")
+                                          (status . "open")
+                                          (priority . 2)
+                                          (issue_type . "task")
+                                          (labels . [])))
+      (cl-letf (((symbol-function 'completing-read)
+                 (lambda (&rest _)
+                   (setq completing-read-called t)
+                   "")))
+        (beads-detail-edit-label-remove)
+        (should-not completing-read-called)))))
+
+(ert-deftest beads-detail-test-label-remove-calls-rpc ()
+  "Test that beads-detail-edit-label-remove calls beads-rpc-label-remove."
+  (let ((rpc-called nil)
+        (rpc-args nil))
+    (with-temp-buffer
+      (beads-detail-mode)
+      (setq beads-detail--current-issue '((id . "test-456")
+                                          (title . "Test")
+                                          (status . "open")
+                                          (priority . 2)
+                                          (issue_type . "task")
+                                          (labels . ["label1" "label2"])))
+      (cl-letf (((symbol-function 'completing-read)
+                 (lambda (_prompt _choices &rest _)
+                   "label1"))
+                ((symbol-function 'beads-rpc-label-remove)
+                 (lambda (id label)
+                   (setq rpc-called t)
+                   (setq rpc-args (list id label))))
+                ((symbol-function 'beads-detail-refresh)
+                 (lambda () nil)))
+        (beads-detail-edit-label-remove)
+        (should rpc-called)
+        (should (equal rpc-args '("test-456" "label1")))))))
+
 (ert-deftest beads-detail-test-mode-inherits-parent-keybindings ()
   "Test that beads-detail-mode inherits special-mode keybindings."
   (with-temp-buffer

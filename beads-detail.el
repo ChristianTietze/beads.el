@@ -37,6 +37,13 @@
 (defvar-local beads-detail--current-issue nil
   "Full issue data currently displayed in this buffer.")
 
+(defvar beads-detail-label-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "a") #'beads-detail-edit-label-add)
+    (define-key map (kbd "r") #'beads-detail-edit-label-remove)
+    map)
+  "Keymap for label commands in beads-detail-mode.")
+
 (defvar beads-detail-edit-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "d") #'beads-detail-edit-description)
@@ -49,6 +56,7 @@
     (define-key map (kbd "T") #'beads-detail-edit-type)
     (define-key map (kbd "A") #'beads-detail-edit-assignee)
     (define-key map (kbd "x") #'beads-detail-edit-external-ref)
+    (define-key map (kbd "l") beads-detail-label-map)
     map)
   "Keymap for edit commands in beads-detail-mode.")
 
@@ -231,6 +239,44 @@ Uses a single reusable buffer in a side window without focusing."
          (external-ref (alist-get 'external_ref issue)))
     (when (beads-edit-field-minibuffer id :external-ref external-ref "External ref: ")
       (beads-detail-refresh))))
+
+(defun beads-detail-edit-label-add ()
+  "Add a label to the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (labels (alist-get 'labels issue))
+         (labels-str (if (and labels (> (length labels) 0))
+                         (format " [current: %s]" (mapconcat #'identity (append labels nil) ", "))
+                       ""))
+         (label (read-string (format "Add label%s: " labels-str))))
+    (when (and label (not (string-empty-p label)))
+      (condition-case err
+          (progn
+            (beads-rpc-label-add id label)
+            (message "Added label '%s' to %s" label id)
+            (beads-detail-refresh))
+        (beads-rpc-error
+         (message "Failed to add label: %s" (error-message-string err)))))))
+
+(defun beads-detail-edit-label-remove ()
+  "Remove a label from the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (labels (alist-get 'labels issue))
+         (labels-list (when labels (append labels nil))))
+    (if (not labels-list)
+        (message "Issue %s has no labels to remove" id)
+      (let ((label (completing-read "Remove label: " labels-list nil t)))
+        (when (and label (not (string-empty-p label)))
+          (condition-case err
+              (progn
+                (beads-rpc-label-remove id label)
+                (message "Removed label '%s' from %s" label id)
+                (beads-detail-refresh))
+            (beads-rpc-error
+             (message "Failed to remove label: %s" (error-message-string err)))))))))
 
 (defun beads-detail--render (issue)
   "Insert formatted ISSUE content into current buffer."
