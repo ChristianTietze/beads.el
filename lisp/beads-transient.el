@@ -177,6 +177,95 @@ Select a priority to filter, or \"all\" to clear the filter."
              (string-to-number (substring priority-str 1)))))
     (beads-list-refresh)))
 
+(defun beads-filter-type ()
+  "Filter issues by type."
+  (interactive)
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (let* ((choices '("all" "bug" "feature" "task" "epic" "chore"))
+         (type (completing-read "Filter by type: " choices nil t)))
+    (setq beads-list--filter
+          (unless (string= type "all")
+            (beads-filter-by-type type)))
+    (beads-list-refresh)))
+
+(defun beads-filter-assignee ()
+  "Filter issues by assignee."
+  (interactive)
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (let* ((issues (beads-rpc-list))
+         (assignees (seq-uniq
+                     (seq-filter #'identity
+                                 (mapcar (lambda (i) (alist-get 'assignee i)) issues))))
+         (choices (cons "all" (cons "unassigned" (sort assignees #'string<))))
+         (assignee (completing-read "Filter by assignee: " choices nil t)))
+    (setq beads-list--filter
+          (cond
+           ((string= assignee "all") nil)
+           ((string= assignee "unassigned") (beads-filter-unassigned))
+           (t (beads-filter-by-assignee assignee))))
+    (beads-list-refresh)))
+
+(defun beads-filter-label ()
+  "Filter issues by label."
+  (interactive)
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (let* ((issues (beads-rpc-list))
+         (labels (seq-uniq
+                  (apply #'append
+                         (mapcar (lambda (i) (alist-get 'labels i)) issues))))
+         (choices (cons "all" (sort labels #'string<)))
+         (label (completing-read "Filter by label: " choices nil t)))
+    (setq beads-list--filter
+          (unless (string= label "all")
+            (beads-filter-by-label label)))
+    (beads-list-refresh)))
+
+(defun beads-filter-ready-issues ()
+  "Filter to show only ready issues (no blockers)."
+  (interactive)
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (setq beads-list--filter (beads-filter-ready))
+  (beads-list-refresh)
+  (message "Showing ready issues only"))
+
+(defun beads-filter-blocked-issues ()
+  "Filter to show only blocked issues."
+  (interactive)
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (setq beads-list--filter (beads-filter-blocked))
+  (beads-list-refresh)
+  (message "Showing blocked issues only"))
+
+(defun beads-filter-clear ()
+  "Clear all filters."
+  (interactive)
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (setq beads-list--filter nil)
+  (beads-list-refresh)
+  (message "Filters cleared"))
+
+(transient-define-prefix beads-filter-menu ()
+  "Beads filter menu."
+  ["Filter by"
+   ("s" "Status" beads-filter-status)
+   ("p" "Priority" beads-filter-priority)
+   ("t" "Type" beads-filter-type)
+   ("a" "Assignee" beads-filter-assignee)
+   ("l" "Label" beads-filter-label)]
+  ["Quick filters"
+   ("r" "Ready (no blockers)" beads-filter-ready-issues)
+   ("b" "Blocked" beads-filter-blocked-issues)]
+  ["Clear"
+   ("c" "Clear all filters" beads-filter-clear)]
+  ["Navigation"
+   ("q" "Back" transient-quit-one)])
+
 (transient-define-prefix beads-list-menu ()
   "Beads list mode menu."
   ["Navigation"
@@ -189,8 +278,7 @@ Select a priority to filter, or \"all\" to clear the filter."
    ("R" "Reopen issue" beads-reopen-issue)
    ("D" "Delete issue" beads-delete-issue)]
   ["Filter"
-   ("f s" "By status" beads-filter-status)
-   ("f p" "By priority" beads-filter-priority)]
+   ("f" "Filter menu..." beads-filter-menu)]
   ["Help"
    ("?" "Describe mode" describe-mode)
    ("q" "Quit" transient-quit-one)])

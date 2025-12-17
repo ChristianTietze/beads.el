@@ -51,8 +51,7 @@ Created via `beads-filter-make' functions.")
   "Project root for this beads list buffer.
 Used to ensure refresh uses the correct project context.")
 
-(declare-function beads-filter-status "beads-transient")
-(declare-function beads-filter-priority "beads-transient")
+(declare-function beads-filter-menu "beads-transient")
 (declare-function beads-delete-issue "beads-transient")
 (declare-function beads-reopen-issue "beads-transient")
 
@@ -66,13 +65,6 @@ Used to ensure refresh uses the correct project context.")
     map)
   "Keymap for edit commands in beads-list-mode.")
 
-(defvar beads-list-filter-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "s") #'beads-filter-status)
-    (define-key map (kbd "p") #'beads-filter-priority)
-    map)
-  "Keymap for filter commands in beads-list-mode.")
-
 (defvar beads-list-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
@@ -80,7 +72,7 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "RET") #'beads-list-goto-issue)
     (define-key map (kbd "e") beads-list-edit-map)
     (define-key map (kbd "E") #'beads-list-edit-form)
-    (define-key map (kbd "f") beads-list-filter-map)
+    (define-key map (kbd "f") #'beads-filter-menu)
     (define-key map (kbd "P") #'beads-preview-mode)
     (define-key map (kbd "D") #'beads-delete-issue)
     (define-key map (kbd "R") #'beads-reopen-issue)

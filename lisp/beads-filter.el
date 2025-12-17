@@ -65,6 +65,31 @@ Optional CONFIG is a plist of additional filter settings."
      (null (alist-get 'assignee issue)))
    (list :type 'assignee :value nil)))
 
+(defun beads-filter-by-label (label)
+  "Create filter for issues with LABEL."
+  (beads-filter-make
+   (format "label:%s" label)
+   (lambda (issue)
+     (member label (alist-get 'labels issue)))
+   (list :type 'label :value label)))
+
+(defun beads-filter-ready ()
+  "Create filter for ready issues (open/in_progress with no blockers)."
+  (beads-filter-make
+   "ready"
+   (lambda (issue)
+     (and (member (alist-get 'status issue) '("open" "in_progress"))
+          (zerop (or (alist-get 'dependency_count issue) 0))))
+   (list :type 'ready :value t)))
+
+(defun beads-filter-blocked ()
+  "Create filter for blocked issues."
+  (beads-filter-make
+   "blocked"
+   (lambda (issue)
+     (string= (alist-get 'status issue) "blocked"))
+   (list :type 'blocked :value t)))
+
 (defun beads-filter-not-closed ()
   "Create filter for non-closed issues (open, in_progress, blocked)."
   (beads-filter-make

@@ -69,8 +69,15 @@ Or use the form editor (`E`) to edit all fields at once:
 | `e p` | `beads-list-edit-priority` | Edit priority |
 | `e T` | `beads-list-edit-type` | Edit type |
 | `e d` | `beads-list-edit-description` | Edit description |
+| `f` | `beads-filter-menu` | Open filter menu |
 | `f s` | `beads-filter-status` | Filter by status |
 | `f p` | `beads-filter-priority` | Filter by priority |
+| `f t` | `beads-filter-type` | Filter by type |
+| `f a` | `beads-filter-assignee` | Filter by assignee |
+| `f l` | `beads-filter-label` | Filter by label |
+| `f r` | `beads-filter-ready-issues` | Show ready issues only |
+| `f b` | `beads-filter-blocked-issues` | Show blocked issues only |
+| `f c` | `beads-filter-clear` | Clear all filters |
 | `P` | `beads-preview-mode` | Toggle preview mode |
 | `D` | `beads-delete-issue` | Delete issue (with confirmation) |
 | `R` | `beads-reopen-issue` | Reopen closed issue |
