@@ -142,7 +142,12 @@ Returns the parent issue or nil if ISSUE is root."
   (interactive)
   (unless beads-hierarchy--root-id
     (user-error "No root issue set"))
-  (beads-hierarchy-show beads-hierarchy--root-id))
+  (let ((saved-point (point))
+        (saved-start (window-start)))
+    (beads-hierarchy-show beads-hierarchy--root-id)
+    (goto-char (min saved-point (point-max)))
+    (when-let ((win (get-buffer-window (current-buffer))))
+      (set-window-start win (min saved-start (point-max))))))
 
 ;;;###autoload
 (defun beads-hierarchy-show (issue-id)

@@ -110,7 +110,8 @@ When SILENT is non-nil, don't show message.
 Applies `beads-list--filter' if set."
   (interactive)
   (let ((saved-id (tabulated-list-get-id))
-        (saved-line (line-number-at-pos)))
+        (saved-line (line-number-at-pos))
+        (saved-start (window-start)))
     (condition-case err
         (let* ((all-issues (beads-rpc-list))
                (issues (if beads-list--filter
@@ -124,6 +125,8 @@ Applies `beads-list--filter' if set."
                 (goto-char (point-min))
                 (forward-line (1- (min saved-line (line-number-at-pos (point-max))))))
             (goto-char (point-min)))
+          (when-let ((win (get-buffer-window (current-buffer))))
+            (set-window-start win (min saved-start (point-max))))
           (unless silent
             (let ((filter-msg (if beads-list--filter
                                   (format " [%s]" (beads-filter-name beads-list--filter))

@@ -142,17 +142,21 @@ Uses a single reusable buffer in a side window without focusing."
   (interactive)
   (unless beads-detail--current-issue-id
     (user-error "No issue to refresh"))
-  (condition-case err
-      (let ((issue (beads-rpc-show beads-detail--current-issue-id)))
-        (setq beads-detail--current-issue issue)
-        (let ((inhibit-read-only t))
-          (erase-buffer)
-          (beads-detail--render issue)
-          (goto-char (point-min)))
-        (beads-detail--refresh-list-buffers)
-        (message "Refreshed issue %s" beads-detail--current-issue-id))
-    (beads-rpc-error
-     (message "Failed to refresh issue: %s" (error-message-string err)))))
+  (let ((saved-point (point))
+        (saved-start (window-start)))
+    (condition-case err
+        (let ((issue (beads-rpc-show beads-detail--current-issue-id)))
+          (setq beads-detail--current-issue issue)
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (beads-detail--render issue)
+            (goto-char (min saved-point (point-max))))
+          (when-let ((win (get-buffer-window (current-buffer))))
+            (set-window-start win (min saved-start (point-max))))
+          (beads-detail--refresh-list-buffers)
+          (message "Refreshed issue %s" beads-detail--current-issue-id))
+      (beads-rpc-error
+       (message "Failed to refresh issue: %s" (error-message-string err))))))
 
 (defun beads-detail--require-issue ()
   "Return current issue or signal error."
