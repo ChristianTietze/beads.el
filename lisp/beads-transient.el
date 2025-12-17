@@ -19,6 +19,19 @@
   "Transient menus for Beads issue tracker."
   :group 'beads)
 
+(defun beads--truncate-middle (str max-len)
+  "Truncate STR to MAX-LEN using middle ellipsis.
+Shows beginning and end of string with … in the middle."
+  (if (<= (length str) max-len)
+      str
+    (let* ((ellipsis "…")
+           (available (- max-len (length ellipsis)))
+           (head-len (/ (1+ available) 2))
+           (tail-len (/ available 2)))
+      (concat (substring str 0 head-len)
+              ellipsis
+              (substring str (- (length str) tail-len))))))
+
 (defun beads-create-issue ()
   "Create a new issue interactively.
 Prompts for title (required), type, and priority."
@@ -72,15 +85,28 @@ Prompts for an optional close reason."
   "Permanently delete the issue at point.
 Prompts for confirmation with `yes-or-no-p'."
   (interactive)
-  (let ((id (cond
-             ((derived-mode-p 'beads-detail-mode)
-              (bound-and-true-p beads-detail--current-issue-id))
-             ((derived-mode-p 'beads-list-mode)
-              (tabulated-list-get-id))
-             (t nil))))
+  (let* ((id (cond
+              ((derived-mode-p 'beads-detail-mode)
+               (bound-and-true-p beads-detail--current-issue-id))
+              ((derived-mode-p 'beads-list-mode)
+               (tabulated-list-get-id))
+              (t nil)))
+         (title (cond
+                 ((derived-mode-p 'beads-detail-mode)
+                  (alist-get 'title (bound-and-true-p beads-detail--current-issue)))
+                 ((derived-mode-p 'beads-list-mode)
+                  (when-let ((entry (tabulated-list-get-entry)))
+                    (aref entry 5)))
+                 (t nil)))
+         (display-title (if title
+                            (beads--truncate-middle title 30)
+                          ""))
+         (prompt (if (string-empty-p display-title)
+                     (format "Permanently delete issue %s? " id)
+                   (format "Permanently delete '%s' (%s)? " display-title id))))
     (if (not id)
         (message "No issue at point")
-      (when (yes-or-no-p (format "Permanently delete issue %s? " id))
+      (when (yes-or-no-p prompt)
         (condition-case err
             (progn
               (beads-rpc-delete (list id))
