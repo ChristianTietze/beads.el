@@ -41,9 +41,29 @@ Prompts for title (required), type, and priority."
          (message "Failed to create issue: %s" (error-message-string err)))))))
 
 (defun beads-close-issue ()
-  "Close the current issue."
+  "Close the issue at point or in current detail buffer.
+Prompts for an optional close reason."
   (interactive)
-  (message "Close issue not yet implemented"))
+  (let ((id (cond
+             ((derived-mode-p 'beads-detail-mode)
+              (bound-and-true-p beads-detail--current-issue-id))
+             ((derived-mode-p 'beads-list-mode)
+              (tabulated-list-get-id))
+             (t nil))))
+    (if (not id)
+        (message "No issue at point")
+      (let ((reason (read-string (format "Close %s reason (optional): " id))))
+        (condition-case err
+            (progn
+              (beads-rpc-close id (unless (string-empty-p reason) reason))
+              (message "Closed issue %s" id)
+              (cond
+               ((derived-mode-p 'beads-list-mode)
+                (beads-list-refresh))
+               ((derived-mode-p 'beads-detail-mode)
+                (beads-detail-refresh))))
+          (beads-rpc-error
+           (message "Failed to close issue: %s" (error-message-string err))))))))
 
 (defun beads-filter-status ()
   "Filter issues by status."

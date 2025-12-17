@@ -111,15 +111,15 @@
   "Test that beads-close-issue is an interactive command."
   (should (commandp 'beads-close-issue)))
 
-(ert-deftest beads-transient-test-close-issue-is-placeholder ()
-  "Test that beads-close-issue displays placeholder message."
+(ert-deftest beads-transient-test-close-issue-requires-context ()
+  "Test that beads-close-issue requires an issue context."
   (with-temp-buffer
     (let ((message-log-max t))
       (beads-close-issue)
       (with-current-buffer "*Messages*"
         (goto-char (point-max))
         (forward-line -1)
-        (should (string-match-p "Close issue not yet implemented"
+        (should (string-match-p "No issue at point"
                                (buffer-substring (line-beginning-position)
                                                 (line-end-position))))))))
 
