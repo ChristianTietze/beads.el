@@ -29,6 +29,7 @@
   "Major mode for editing Beads issue metadata in a form.
 
 \\{beads-form-mode-map}"
+  (setq buffer-read-only nil)
   (use-local-map beads-form-mode-map)
   (beads-show-hint))
 
