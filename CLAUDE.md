@@ -44,6 +44,12 @@ mise run test    # Run ERT tests
 mise run build   # Byte-compile all .el files
 ```
 
+**Interactive testing**:
+```bash
+mise run interactive   # Launch Emacs with beads.el loaded
+```
+This starts Emacs with `--init-directory=dev`, loading dev/init.el which sets up load-path and requires beads modules. Run `M-x beads-list` to test.
+
 **Testing the daemon connection**:
 ```bash
 bd daemon --status

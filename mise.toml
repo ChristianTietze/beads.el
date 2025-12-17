@@ -17,3 +17,7 @@ run = "python3 scripts/build.py"
 [tasks.check]
 description = "Run lint and test"
 depends = ["lint", "test"]
+
+[tasks.interactive]
+description = "Launch Emacs with beads.el loaded for interactive testing"
+run = "emacs --init-directory=dev"
