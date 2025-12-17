@@ -129,3 +129,18 @@ and communicates with a daemon via Unix socket RPC.
 - Running Beads daemon (=bd daemon=)
 - =transient= package (for menus)
 - =markdown-mode= (optional, for editing long text fields)
+
+* Development
+
+This project uses [[https://github.com/steveyegge/beads][Beads]] itself for issue tracking.
+You can check out the repository and view the project's issues:
+
+#+begin_src bash
+# Start the daemon
+bd daemon
+
+# Launch Emacs with beads.el loaded
+mise run interactive
+#+end_src
+
+Then run =M-x beads-list= to see the beads.el development issues.

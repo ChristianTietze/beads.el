@@ -76,12 +76,13 @@ Used to ensure refresh uses the correct project context.")
 \\{beads-list-mode-map}"
   (setq tabulated-list-format
         [("ID" 10 t)
+         ("Date" 10 beads-list--sort-by-date)
          ("Status" 12 t)
          ("Pri" 4 t)
          ("Type" 8 t)
          ("Title" 50 t)])
   (setq tabulated-list-padding 2)
-  (setq tabulated-list-sort-key (cons "ID" nil))
+  (setq tabulated-list-sort-key (cons "Date" t))
   (add-hook 'tabulated-list-revert-hook #'beads-list-refresh nil t)
   (tabulated-list-init-header)
   (hl-line-mode 1)
@@ -126,6 +127,7 @@ Returns t if found, nil otherwise."
               (list id
                     (vector
                      (beads--format-id issue)
+                     (beads--format-date issue)
                      (beads--format-status issue)
                      (beads--format-priority issue)
                      (beads--format-type issue)
@@ -135,6 +137,22 @@ Returns t if found, nil otherwise."
 (defun beads--format-id (issue)
   "Format ID column for ISSUE."
   (alist-get 'id issue))
+
+(defun beads--format-date (issue)
+  "Format date column for ISSUE.
+Displays YYYY-MM-DD from created_at timestamp."
+  (let ((created (alist-get 'created_at issue)))
+    (if (and created (stringp created))
+        (let ((parts (split-string created "T")))
+          (or (car parts) ""))
+      "")))
+
+(defun beads-list--sort-by-date (a b)
+  "Compare entries A and B by their date column for sorting.
+Returns non-nil if A should come before B."
+  (let ((date-a (aref (cadr a) 1))
+        (date-b (aref (cadr b) 1)))
+    (string< date-a date-b)))
 
 (defun beads--format-status (issue)
   "Format status column for ISSUE with face."
