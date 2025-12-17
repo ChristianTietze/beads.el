@@ -48,6 +48,7 @@ INDENT is ignored as hierarchy.el handles indentation via tree widget."
   (let ((id (alist-get 'id issue))
         (title (alist-get 'title issue ""))
         (status (alist-get 'status issue "open")))
+    (insert " ")
     (insert (propertize id 'face 'beads-detail-id-face))
     (insert " ")
     (insert (truncate-string-to-width title 40 nil nil "…"))
@@ -125,6 +126,17 @@ Returns the parent issue or nil if ISSUE is root."
            (message "Failed to fetch issue: %s" (error-message-string err))))
       (message "No issue at point"))))
 
+(defun beads-hierarchy--expand-all ()
+  "Expand all tree nodes in current buffer."
+  (save-excursion
+    (goto-char (point-min))
+    (while (not (eobp))
+      (when-let ((widget (widget-at (point))))
+        (when (and (widget-get widget :tag)
+                   (not (widget-get widget :open)))
+          (widget-apply-action widget)))
+      (forward-line 1))))
+
 (defun beads-hierarchy-refresh ()
   "Refresh the dependency tree display."
   (interactive)
@@ -159,11 +171,14 @@ Returns the parent issue or nil if ISSUE is root."
         (setq beads-hierarchy--root-id issue-id)
         (setq beads-hierarchy--hierarchy h)
         (setq beads-hierarchy--by-id by-id)
+        (beads-hierarchy--expand-all)
         (goto-char (point-min)))
-      (display-buffer buffer
-                      '((display-buffer-in-side-window)
-                        (side . right)
-                        (window-width . 0.4))))))
+      (let ((window (display-buffer buffer
+                                    '((display-buffer-in-side-window)
+                                      (side . right)
+                                      (window-width . 0.4)))))
+        (when window
+          (select-window window))))))
 
 (provide 'beads-hierarchy)
 ;;; beads-hierarchy.el ends here
