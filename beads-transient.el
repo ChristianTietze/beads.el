@@ -112,8 +112,8 @@ Select a priority to filter, or \"all\" to clear the filter."
    ("E" "Edit issue" beads-list-edit-form)
    ("x" "Close issue" beads-close-issue)]
   ["Filter"
-   ("s" "By status" beads-filter-status)
-   ("p" "By priority" beads-filter-priority)]
+   ("f s" "By status" beads-filter-status)
+   ("f p" "By priority" beads-filter-priority)]
   ["Help"
    ("?" "Describe mode" describe-mode)
    ("q" "Quit" transient-quit-one)])

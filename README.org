@@ -32,6 +32,8 @@ and communicates with a daemon via Unix socket RPC.
 | =e p=   | =beads-list-edit-priority=| Edit priority                   |
 | =e T=   | =beads-list-edit-type=    | Edit type                       |
 | =e d=   | =beads-list-edit-description= | Edit description            |
+| =f s=   | =beads-filter-status=     | Filter by status                |
+| =f p=   | =beads-filter-priority=   | Filter by priority              |
 | =P=     | =beads-preview-mode=      | Toggle preview mode             |
 | =g=     | =beads-list-refresh=      | Refresh issue list              |
 | =?=     | =beads-menu=              | Show transient menu             |

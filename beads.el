@@ -38,11 +38,11 @@ Hints are shown when entering beads modes to help with discoverability."
 
 (defvar beads-hints-alist
   '((beads-list-mode
-     . "? menu | RET open | e <key> edit (C-h list) | E form | P preview | q quit")
+     . "? menu | RET open | e <key> edit | f <key> filter | E form | P preview | q quit")
     (beads-list-mode-preview
      . "↑↓ browse | RET open | e/E edit | P/q exit preview | ? menu")
     (beads-detail-mode
-     . "? menu | e <key> edit (C-h list) | E form | g refresh | q quit")
+     . "? menu | e <key> edit | E form | g refresh | q quit")
     (beads-form-mode
      . "TAB next | C-c C-c save | C-c C-k cancel"))
   "Alist of mode symbols to hint strings.")
