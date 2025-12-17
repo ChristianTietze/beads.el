@@ -8,6 +8,7 @@
 (declare-function beads-menu "beads-transient")
 (declare-function beads-list-refresh "beads-list")
 (declare-function beads-form-open "beads-form")
+(declare-function beads-show-hint "beads")
 
 (defgroup beads-detail nil
   "Issue detail display for Beads."
@@ -78,7 +79,8 @@
 
 \\{beads-detail-mode-map}"
   (setq buffer-read-only t)
-  (setq truncate-lines nil))
+  (setq truncate-lines nil)
+  (beads-show-hint))
 
 (defun beads-detail-open (issue)
   "Open ISSUE in a dedicated detail buffer in bottom window.

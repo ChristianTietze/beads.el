@@ -4,6 +4,9 @@
 
 (require 'beads-rpc)
 
+(defvar beads-verbose)
+(declare-function beads-show-hint "beads")
+
 (defgroup beads-edit nil
   "Dedicated editing buffers for Beads issues."
   :group 'beads)
@@ -40,9 +43,12 @@
   :lighter " BeadsEdit"
   :keymap beads-edit-mode-map
   (if beads-edit-mode
-      (setq header-line-format
-            (substitute-command-keys
-             "Edit: \\[beads-edit-commit] to save, \\[beads-edit-abort] to discard"))
+      (progn
+        (setq header-line-format
+              (substitute-command-keys
+               "Edit: \\[beads-edit-commit] to save, \\[beads-edit-abort] to discard"))
+        (when (bound-and-true-p beads-verbose)
+          (run-at-time 0.1 nil #'message "C-c C-c save | C-c C-k discard")))
     (setq header-line-format nil)))
 
 (defun beads-edit--exit ()

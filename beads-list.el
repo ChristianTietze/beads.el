@@ -8,6 +8,11 @@
 (require 'tabulated-list)
 
 (declare-function beads-menu "beads-transient")
+(declare-function beads-show-hint "beads")
+(declare-function beads-form-open "beads-form")
+(declare-function beads-edit-field-minibuffer "beads-edit")
+(declare-function beads-edit-field-completing "beads-edit")
+(declare-function beads-edit-field-markdown "beads-edit")
 
 (defgroup beads-list nil
   "Issue list display for Beads."
@@ -36,11 +41,23 @@
 (defvar beads-list--issues nil
   "Cached list of issues for current buffer.")
 
+(defvar beads-list-edit-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "t") #'beads-list-edit-title)
+    (define-key map (kbd "s") #'beads-list-edit-status)
+    (define-key map (kbd "p") #'beads-list-edit-priority)
+    (define-key map (kbd "T") #'beads-list-edit-type)
+    (define-key map (kbd "d") #'beads-list-edit-description)
+    map)
+  "Keymap for edit commands in beads-list-mode.")
+
 (defvar beads-list-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "g") #'beads-list-refresh)
     (define-key map (kbd "RET") #'beads-list-goto-issue)
+    (define-key map (kbd "e") beads-list-edit-map)
+    (define-key map (kbd "E") #'beads-list-edit-form)
     (define-key map (kbd "P") #'beads-preview-mode)
     (define-key map (kbd "q") #'beads-list-quit)
     (define-key map (kbd "?") #'beads-menu)
@@ -62,7 +79,8 @@
   (setq tabulated-list-sort-key (cons "ID" nil))
   (add-hook 'tabulated-list-revert-hook #'beads-list-refresh nil t)
   (tabulated-list-init-header)
-  (hl-line-mode 1))
+  (hl-line-mode 1)
+  (beads-show-hint))
 
 (defun beads-list-refresh ()
   "Fetch issues from daemon and refresh the display."
@@ -155,6 +173,90 @@ Returns the issue alist or nil if not found."
               (beads-detail-open full-issue)))
         (beads-rpc-error
          (message "Failed to fetch issue details: %s" (error-message-string err))))
+    (message "No issue at point")))
+
+(defun beads-list-edit-form ()
+  "Open form editor for issue at point."
+  (interactive)
+  (if-let ((issue (beads--get-issue-at-point)))
+      (condition-case err
+          (let ((id (alist-get 'id issue)))
+            (let ((full-issue (beads-rpc-show id)))
+              (require 'beads-form)
+              (beads-form-open full-issue)))
+        (beads-rpc-error
+         (message "Failed to fetch issue: %s" (error-message-string err))))
+    (message "No issue at point")))
+
+(defun beads-list-edit-title ()
+  "Edit title of issue at point."
+  (interactive)
+  (if-let ((issue (beads--get-issue-at-point)))
+      (let ((id (alist-get 'id issue))
+            (title (alist-get 'title issue)))
+        (require 'beads-edit)
+        (when (beads-edit-field-minibuffer id :title title "Title: ")
+          (beads-list-refresh)))
+    (message "No issue at point")))
+
+(defun beads-list-edit-status ()
+  "Edit status of issue at point."
+  (interactive)
+  (if-let ((issue (beads--get-issue-at-point)))
+      (let ((id (alist-get 'id issue))
+            (status (alist-get 'status issue)))
+        (require 'beads-edit)
+        (when (beads-edit-field-completing
+               id :status status "Status: "
+               '("open" "in_progress" "blocked" "closed"))
+          (beads-list-refresh)))
+    (message "No issue at point")))
+
+(defun beads-list-edit-priority ()
+  "Edit priority of issue at point."
+  (interactive)
+  (if-let ((issue (beads--get-issue-at-point)))
+      (let* ((id (alist-get 'id issue))
+             (priority (alist-get 'priority issue))
+             (priority-str (format "P%d" priority))
+             (choices '("P0" "P1" "P2" "P3" "P4")))
+        (when-let ((new-value (completing-read "Priority: " choices nil t priority-str)))
+          (unless (string= new-value priority-str)
+            (let ((new-priority (string-to-number (substring new-value 1))))
+              (condition-case err
+                  (progn
+                    (beads-rpc-update id :priority new-priority)
+                    (message "Updated priority for %s" id)
+                    (beads-list-refresh))
+                (beads-rpc-error
+                 (message "Failed to update: %s" (error-message-string err))))))))
+    (message "No issue at point")))
+
+(defun beads-list-edit-type ()
+  "Edit type of issue at point."
+  (interactive)
+  (if-let ((issue (beads--get-issue-at-point)))
+      (let ((id (alist-get 'id issue))
+            (type (alist-get 'issue_type issue)))
+        (require 'beads-edit)
+        (when (beads-edit-field-completing
+               id :issue-type type "Type: "
+               '("bug" "feature" "task" "epic" "chore"))
+          (beads-list-refresh)))
+    (message "No issue at point")))
+
+(defun beads-list-edit-description ()
+  "Edit description of issue at point."
+  (interactive)
+  (if-let ((issue (beads--get-issue-at-point)))
+      (condition-case err
+          (let* ((id (alist-get 'id issue))
+                 (full-issue (beads-rpc-show id))
+                 (description (alist-get 'description full-issue)))
+            (require 'beads-edit)
+            (beads-edit-field-markdown id :description description))
+        (beads-rpc-error
+         (message "Failed to fetch issue: %s" (error-message-string err))))
     (message "No issue at point")))
 
 ;;;###autoload

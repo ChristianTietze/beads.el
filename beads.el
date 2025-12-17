@@ -30,6 +30,34 @@
   :group 'tools
   :prefix "beads-")
 
+(defcustom beads-verbose t
+  "When non-nil, show helpful hints about keybindings in the minibuffer.
+Hints are shown when entering beads modes to help with discoverability."
+  :type 'boolean
+  :group 'beads)
+
+(defvar beads-hints-alist
+  '((beads-list-mode
+     . "? menu | RET open | e <key> edit (C-h list) | E form | P preview | q quit")
+    (beads-list-mode-preview
+     . "↑↓ browse | RET open | e/E edit | P/q exit preview | ? menu")
+    (beads-detail-mode
+     . "? menu | e <key> edit (C-h list) | E form | g refresh | q quit")
+    (beads-form-mode
+     . "TAB next | C-c C-c save | C-c C-k cancel"))
+  "Alist of mode symbols to hint strings.")
+
+(defun beads-show-hint ()
+  "Show hint for current major mode if `beads-verbose' is enabled."
+  (when beads-verbose
+    (let* ((mode-key (if (and (eq major-mode 'beads-list-mode)
+                              (bound-and-true-p beads-preview-mode))
+                         'beads-list-mode-preview
+                       major-mode))
+           (hint (alist-get mode-key beads-hints-alist)))
+      (when hint
+        (run-at-time 0.1 nil (lambda (h) (message h)) hint)))))
+
 (require 'beads-rpc)
 (require 'beads-list)
 (require 'beads-detail)

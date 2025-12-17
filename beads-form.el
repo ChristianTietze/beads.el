@@ -6,6 +6,8 @@
 (require 'wid-edit)
 (require 'beads-rpc)
 
+(declare-function beads-show-hint "beads")
+
 (defvar-local beads-form--issue-id nil
   "Issue ID being edited in this form buffer.")
 
@@ -27,7 +29,8 @@
   "Major mode for editing Beads issue metadata in a form.
 
 \\{beads-form-mode-map}"
-  (use-local-map beads-form-mode-map))
+  (use-local-map beads-form-mode-map)
+  (beads-show-hint))
 
 (defun beads-form-open (issue)
   "Open form editor for ISSUE."
