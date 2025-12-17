@@ -145,6 +145,7 @@
   "Add a multi-line text field NAME with LABEL and VALUE."
   (widget-insert (propertize (concat label ":\n") 'face 'bold))
   (let ((widget (widget-create 'text
+                               :format "%v"
                                :keymap beads-form-text-keymap
                                :value value)))
     (push (cons name widget) beads-form--widgets)))
