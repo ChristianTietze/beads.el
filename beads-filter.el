@@ -1,0 +1,131 @@
+;;; beads-filter.el --- Filter system for Beads -*- lexical-binding: t -*-
+
+;;; Code:
+
+(require 'seq)
+
+(defgroup beads-filter nil
+  "Filter system for Beads issues."
+  :group 'beads)
+
+(defun beads-filter-make (name predicate-fn &optional config)
+  "Create a filter with NAME and PREDICATE-FN.
+Optional CONFIG is a plist of additional filter settings."
+  (list :name name :predicate predicate-fn :config (or config '())))
+
+(defun beads-filter-name (filter)
+  "Return the name of FILTER."
+  (plist-get filter :name))
+
+(defun beads-filter-predicate (filter)
+  "Return the predicate function of FILTER."
+  (plist-get filter :predicate))
+
+(defun beads-filter-apply (filter issues)
+  "Apply FILTER to ISSUES, returning matching issues."
+  (seq-filter (plist-get filter :predicate) issues))
+
+(defun beads-filter-by-status (status)
+  "Create filter for STATUS (open, in_progress, closed, blocked)."
+  (beads-filter-make
+   (format "status:%s" status)
+   (lambda (issue)
+     (string= (alist-get 'status issue) status))
+   (list :type 'status :value status)))
+
+(defun beads-filter-by-priority (priority)
+  "Create filter for PRIORITY (0-4)."
+  (beads-filter-make
+   (format "priority:P%d" priority)
+   (lambda (issue)
+     (= (alist-get 'priority issue) priority))
+   (list :type 'priority :value priority)))
+
+(defun beads-filter-by-type (type)
+  "Create filter for TYPE (bug, feature, task, epic, chore)."
+  (beads-filter-make
+   (format "type:%s" type)
+   (lambda (issue)
+     (string= (alist-get 'issue_type issue) type))
+   (list :type 'issue-type :value type)))
+
+(defun beads-filter-by-assignee (assignee)
+  "Create filter for ASSIGNEE."
+  (beads-filter-make
+   (format "assignee:%s" assignee)
+   (lambda (issue)
+     (string= (alist-get 'assignee issue) assignee))
+   (list :type 'assignee :value assignee)))
+
+(defun beads-filter-unassigned ()
+  "Create filter for unassigned issues."
+  (beads-filter-make
+   "assignee:none"
+   (lambda (issue)
+     (null (alist-get 'assignee issue)))
+   (list :type 'assignee :value nil)))
+
+(defun beads-filter-not-closed ()
+  "Create filter for non-closed issues (open, in_progress, blocked)."
+  (beads-filter-make
+   "status:!closed"
+   (lambda (issue)
+     (not (string= (alist-get 'status issue) "closed")))
+   (list :type 'status :value 'not-closed)))
+
+(defun beads-filter-compose (&rest filters)
+  "Compose FILTERS with logical AND."
+  (beads-filter-make
+   (mapconcat #'beads-filter-name filters "+")
+   (lambda (issue)
+     (seq-every-p (lambda (f) (funcall (beads-filter-predicate f) issue))
+                  filters))
+   (list :type 'composed :filters filters)))
+
+(defun beads-filter-compose-or (&rest filters)
+  "Compose FILTERS with logical OR."
+  (beads-filter-make
+   (mapconcat #'beads-filter-name filters "|")
+   (lambda (issue)
+     (seq-some (lambda (f) (funcall (beads-filter-predicate f) issue))
+               filters))
+   (list :type 'composed-or :filters filters)))
+
+(defun beads-filter-negate (filter)
+  "Negate FILTER (logical NOT)."
+  (beads-filter-make
+   (concat "!" (beads-filter-name filter))
+   (lambda (issue)
+     (not (funcall (beads-filter-predicate filter) issue)))
+   (list :type 'negated :original filter)))
+
+(defun beads-filter-apply-pipeline (issues &rest filters)
+  "Apply FILTERS to ISSUES in sequence."
+  (let ((result issues))
+    (dolist (filter filters result)
+      (setq result (beads-filter-apply filter result)))))
+
+(defun beads-filter-identity ()
+  "Create identity filter that matches all issues."
+  (beads-filter-make
+   "all"
+   (lambda (_issue) t)
+   (list :type 'identity)))
+
+(defun beads-filter-from-state (state)
+  "Build filter from STATE plist."
+  (let ((filters nil))
+    (when-let ((status (plist-get state :status-filter)))
+      (push (beads-filter-by-status status) filters))
+    (when-let ((type (plist-get state :type-filter)))
+      (push (beads-filter-by-type type) filters))
+    (when-let ((priority (plist-get state :priority-filter)))
+      (push (beads-filter-by-priority priority) filters))
+    (when-let ((assignee (plist-get state :assignee-filter)))
+      (push (beads-filter-by-assignee assignee) filters))
+    (if filters
+        (apply #'beads-filter-compose filters)
+      (beads-filter-identity))))
+
+(provide 'beads-filter)
+;;; beads-filter.el ends here
