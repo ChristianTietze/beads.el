@@ -7,4 +7,4 @@
 
 (require 'beads)
 
-(add-hook 'emacs-startup-hook #'beads)
+(add-hook 'emacs-startup-hook #'beads-list)

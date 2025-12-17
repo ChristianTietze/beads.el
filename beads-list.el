@@ -61,7 +61,8 @@
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key (cons "ID" nil))
   (add-hook 'tabulated-list-revert-hook #'beads-list-refresh nil t)
-  (tabulated-list-init-header))
+  (tabulated-list-init-header)
+  (hl-line-mode 1))
 
 (defun beads-list-refresh ()
   "Fetch issues from daemon and refresh the display."
