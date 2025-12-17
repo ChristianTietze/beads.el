@@ -20,4 +20,5 @@ depends = ["lint", "test"]
 
 [tasks.interactive]
 description = "Launch Emacs with beads.el loaded for interactive testing"
-run = "emacs --init-directory=dev"
+depends = ["build"]
+run = "emacs -nw --init-directory=dev"

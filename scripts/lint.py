@@ -8,11 +8,12 @@ from pathlib import Path
 
 
 def find_el_files(root_dir):
-    """Find all .el files in the project, excluding test files."""
+    """Find all .el files in the project, excluding hidden and dev dirs."""
     root = Path(root_dir)
     return [
         f for f in root.rglob("*.el")
         if not any(part.startswith('.') for part in f.parts)
+        and 'dev' not in f.parts
     ]
 
 

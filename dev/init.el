@@ -1,4 +1,4 @@
-;;; init.el --- Development init file for beads.el -*- lexical-binding: t -*-
+;;; init.el --- Development init file for beads.el -*- lexical-binding: t; no-byte-compile: t -*-
 
 (let ((project-root (file-name-directory
                      (directory-file-name
@@ -8,6 +8,3 @@
 (require 'beads)
 
 (add-hook 'emacs-startup-hook #'beads)
-
-(provide 'init)
-;;; init.el ends here
