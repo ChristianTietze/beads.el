@@ -173,8 +173,8 @@
   (should (commandp 'beads-list-refresh)))
 
 (ert-deftest beads-transient-test-menu-contains-edit-command ()
-  "Test that beads-menu includes beads-detail-edit-issue command."
-  (should (commandp 'beads-detail-edit-issue)))
+  "Test that beads-detail-edit-description command exists."
+  (should (commandp 'beads-detail-edit-description)))
 
 (ert-deftest beads-transient-test-menu-contains-describe-mode ()
   "Test that beads-menu includes describe-mode command."
@@ -208,7 +208,7 @@
     (beads-detail-mode)
     (should (eq (lookup-key beads-detail-mode-map (kbd "?")) #'beads-menu))
     (should (eq (lookup-key beads-detail-mode-map (kbd "g")) #'beads-detail-refresh))
-    (should (eq (lookup-key beads-detail-mode-map (kbd "e")) #'beads-detail-edit-issue))
+    (should (keymapp (lookup-key beads-detail-mode-map (kbd "e"))))
     (should (eq (lookup-key beads-detail-mode-map (kbd "q")) #'quit-window))))
 
 (provide 'beads-transient-test)

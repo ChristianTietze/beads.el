@@ -3,6 +3,7 @@
 ;;; Code:
 
 (require 'beads-rpc)
+(require 'beads-edit)
 
 (declare-function beads-menu "beads-transient")
 
@@ -33,11 +34,29 @@
 (defvar-local beads-detail--current-issue-id nil
   "Issue ID currently displayed in this buffer.")
 
+(defvar-local beads-detail--current-issue nil
+  "Full issue data currently displayed in this buffer.")
+
+(defvar beads-detail-edit-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "d") #'beads-detail-edit-description)
+    (define-key map (kbd "D") #'beads-detail-edit-design)
+    (define-key map (kbd "a") #'beads-detail-edit-acceptance)
+    (define-key map (kbd "n") #'beads-detail-edit-notes)
+    (define-key map (kbd "t") #'beads-detail-edit-title)
+    (define-key map (kbd "s") #'beads-detail-edit-status)
+    (define-key map (kbd "p") #'beads-detail-edit-priority)
+    (define-key map (kbd "T") #'beads-detail-edit-type)
+    (define-key map (kbd "A") #'beads-detail-edit-assignee)
+    (define-key map (kbd "x") #'beads-detail-edit-external-ref)
+    map)
+  "Keymap for edit commands in beads-detail-mode.")
+
 (defvar beads-detail-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "g") #'beads-detail-refresh)
     (define-key map (kbd "q") #'quit-window)
-    (define-key map (kbd "e") #'beads-detail-edit-issue)
+    (define-key map (kbd "e") beads-detail-edit-map)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
     map)
@@ -60,6 +79,7 @@ Creates a unique buffer per issue and focuses it."
       (unless (eq major-mode 'beads-detail-mode)
         (beads-detail-mode))
       (setq beads-detail--current-issue-id id)
+      (setq beads-detail--current-issue issue)
       (let ((inhibit-read-only t))
         (erase-buffer)
         (beads-detail--render issue)
@@ -81,6 +101,7 @@ Uses a single reusable buffer in a side window without focusing."
       (unless (eq major-mode 'beads-detail-mode)
         (beads-detail-mode))
       (setq beads-detail--current-issue-id id)
+      (setq beads-detail--current-issue issue)
       (let ((inhibit-read-only t))
         (erase-buffer)
         (beads-detail--render issue)
@@ -96,6 +117,7 @@ Uses a single reusable buffer in a side window without focusing."
     (user-error "No issue to refresh"))
   (condition-case err
       (let ((issue (beads-rpc-show beads-detail--current-issue-id)))
+        (setq beads-detail--current-issue issue)
         (let ((inhibit-read-only t))
           (erase-buffer)
           (beads-detail--render issue)
@@ -104,10 +126,111 @@ Uses a single reusable buffer in a side window without focusing."
     (beads-rpc-error
      (message "Failed to refresh issue: %s" (error-message-string err)))))
 
-(defun beads-detail-edit-issue ()
-  "Edit the current issue."
+(defun beads-detail--require-issue ()
+  "Return current issue or signal error."
+  (unless beads-detail--current-issue
+    (user-error "No issue in current buffer"))
+  beads-detail--current-issue)
+
+(defun beads-detail-edit-description ()
+  "Edit the description of the current issue."
   (interactive)
-  (message "Edit functionality not yet implemented"))
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (description (alist-get 'description issue)))
+    (beads-edit-field-markdown id :description description)))
+
+(defun beads-detail-edit-design ()
+  "Edit the design notes of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (design (alist-get 'design issue)))
+    (beads-edit-field-markdown id :design design)))
+
+(defun beads-detail-edit-acceptance ()
+  "Edit the acceptance criteria of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (acceptance (alist-get 'acceptance_criteria issue)))
+    (beads-edit-field-markdown id :acceptance-criteria acceptance)))
+
+(defun beads-detail-edit-notes ()
+  "Edit the notes of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (notes (alist-get 'notes issue)))
+    (beads-edit-field-markdown id :notes notes)))
+
+(defun beads-detail-edit-title ()
+  "Edit the title of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (title (alist-get 'title issue)))
+    (when (beads-edit-field-minibuffer id :title title "Title: ")
+      (beads-detail-refresh))))
+
+(defun beads-detail-edit-status ()
+  "Edit the status of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (status (alist-get 'status issue)))
+    (when (beads-edit-field-completing
+           id :status status "Status: "
+           '("open" "in_progress" "blocked" "closed"))
+      (beads-detail-refresh))))
+
+(defun beads-detail-edit-priority ()
+  "Edit the priority of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (priority (alist-get 'priority issue))
+         (priority-str (format "P%d" priority))
+         (choices '("P0" "P1" "P2" "P3" "P4")))
+    (when-let ((new-value (completing-read "Priority: " choices nil t nil nil priority-str)))
+      (unless (string= new-value priority-str)
+        (let ((new-priority (string-to-number (substring new-value 1))))
+          (condition-case err
+              (progn
+                (beads-rpc-update id :priority new-priority)
+                (message "Updated priority for %s" id)
+                (beads-detail-refresh))
+            (beads-rpc-error
+             (message "Failed to update: %s" (error-message-string err)))))))))
+
+(defun beads-detail-edit-type ()
+  "Edit the type of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (type (alist-get 'issue_type issue)))
+    (when (beads-edit-field-completing
+           id :issue-type type "Type: "
+           '("bug" "feature" "task" "epic" "chore"))
+      (beads-detail-refresh))))
+
+(defun beads-detail-edit-assignee ()
+  "Edit the assignee of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (assignee (alist-get 'assignee issue)))
+    (when (beads-edit-field-minibuffer id :assignee assignee "Assignee: ")
+      (beads-detail-refresh))))
+
+(defun beads-detail-edit-external-ref ()
+  "Edit the external reference of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (external-ref (alist-get 'external_ref issue)))
+    (when (beads-edit-field-minibuffer id :external-ref external-ref "External ref: ")
+      (beads-detail-refresh))))
 
 (defun beads-detail--render (issue)
   "Insert formatted ISSUE content into current buffer."

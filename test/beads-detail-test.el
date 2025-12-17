@@ -323,11 +323,12 @@
                 #'quit-window))))
 
 (ert-deftest beads-detail-test-mode-keybinding-edit ()
-  "Test that beads-detail-mode binds 'e' to beads-detail-edit-issue."
+  "Test that beads-detail-mode binds 'e' to edit prefix map."
   (with-temp-buffer
     (beads-detail-mode)
-    (should (eq (lookup-key beads-detail-mode-map (kbd "e"))
-                #'beads-detail-edit-issue))))
+    (should (keymapp (lookup-key beads-detail-mode-map (kbd "e"))))
+    (should (eq (lookup-key beads-detail-mode-map (kbd "e d"))
+                #'beads-detail-edit-description))))
 
 (ert-deftest beads-detail-test-mode-inherits-parent-keybindings ()
   "Test that beads-detail-mode inherits special-mode keybindings."
