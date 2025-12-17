@@ -47,7 +47,7 @@ Or use the form editor (`E`) to edit all fields at once:
 ## Installation
 
 ```elisp
-(add-to-list 'load-path "/path/to/beads.el")
+(add-to-list 'load-path "/path/to/beads.el/lisp")
 (require 'beads)
 ```
 
