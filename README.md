@@ -69,6 +69,7 @@ Or use the form editor (`E`) to edit all fields at once:
 | `e p` | `beads-list-edit-priority` | Edit priority |
 | `e T` | `beads-list-edit-type` | Edit type |
 | `e d` | `beads-list-edit-description` | Edit description |
+| `/` | `beads-search` | Search issues by title/description |
 | `f` | `beads-filter-menu` | Open filter menu |
 | `f s` | `beads-filter-status` | Filter by status |
 | `f p` | `beads-filter-priority` | Filter by priority |

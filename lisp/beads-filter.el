@@ -90,6 +90,19 @@ Optional CONFIG is a plist of additional filter settings."
      (string= (alist-get 'status issue) "blocked"))
    (list :type 'blocked :value t)))
 
+(defun beads-filter-by-search (query)
+  "Create filter for issues matching QUERY in title or description.
+Search is case-insensitive."
+  (let ((query-re (regexp-quote (downcase query))))
+    (beads-filter-make
+     (format "search:%s" query)
+     (lambda (issue)
+       (let ((title (or (alist-get 'title issue) ""))
+             (description (or (alist-get 'description issue) "")))
+         (or (string-match-p query-re (downcase title))
+             (string-match-p query-re (downcase description)))))
+     (list :type 'search :value query))))
+
 (defun beads-filter-not-closed ()
   "Create filter for non-closed issues (open, in_progress, blocked)."
   (beads-filter-make

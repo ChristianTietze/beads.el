@@ -8,6 +8,11 @@
 
 (defvar beads-list--filter)
 
+(declare-function beads-filter-by-label "beads-filter")
+(declare-function beads-filter-ready "beads-filter")
+(declare-function beads-filter-blocked "beads-filter")
+(declare-function beads-filter-by-search "beads-filter")
+
 (declare-function beads-list "beads-list")
 (declare-function beads-list-refresh "beads-list")
 (declare-function beads-list-edit-form "beads-list")
@@ -250,6 +255,21 @@ Select a priority to filter, or \"all\" to clear the filter."
   (beads-list-refresh)
   (message "Filters cleared"))
 
+(defun beads-search ()
+  "Search issues by title or description.
+Prompts for a search query and filters the list to matching issues."
+  (interactive)
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (let ((query (read-string "Search issues: ")))
+    (if (string-empty-p query)
+        (progn
+          (setq beads-list--filter nil)
+          (beads-list-refresh)
+          (message "Search cleared"))
+      (setq beads-list--filter (beads-filter-by-search query))
+      (beads-list-refresh))))
+
 (transient-define-prefix beads-filter-menu ()
   "Beads filter menu."
   ["Filter by"
@@ -277,7 +297,8 @@ Select a priority to filter, or \"all\" to clear the filter."
    ("x" "Close issue" beads-close-issue)
    ("R" "Reopen issue" beads-reopen-issue)
    ("D" "Delete issue" beads-delete-issue)]
-  ["Filter"
+  ["Search & Filter"
+   ("/" "Search..." beads-search)
    ("f" "Filter menu..." beads-filter-menu)]
   ["Help"
    ("?" "Describe mode" describe-mode)
