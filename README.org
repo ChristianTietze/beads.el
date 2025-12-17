@@ -8,6 +8,39 @@ Beads is a lightweight, Git-backed issue tracker that stores data locally in
 =.beads/= alongside your code. It works well with AI coding assistants but
 doesn't require them—you can use it entirely from Emacs or the command line.
 
+* Screenshots
+
+/(Screenshots use [[https://protesilaos.com/emacs/modus-themes][modus-themes]])/
+
+** Issue List
+
+Browse issues in a sortable, filterable table. Press =P= to toggle preview mode.
+
+[[file:screenshots/beads-list.png]]
+
+** Preview Mode
+
+Navigate issues with live preview in a side window:
+
+[[file:screenshots/beads-preview-mode-demo.webm]]
+
+** Issue Details
+
+View full issue details including description, design notes, and metadata:
+
+[[file:screenshots/beads-details.png]]
+
+** Editing
+
+Edit long-form fields (description, design, notes) in dedicated buffers with
+=markdown-mode= support:
+
+[[file:screenshots/beads-edit-description.png]]
+
+Or use the form editor (=E=) to edit all fields at once:
+
+[[file:screenshots/beads-edit-widgets.png]]
+
 * Installation
 
 #+begin_src elisp
