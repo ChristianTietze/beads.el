@@ -25,6 +25,20 @@
     map)
   "Keymap for beads-form-mode.")
 
+(defvar beads-form-field-keymap
+  (let ((map (copy-keymap widget-field-keymap)))
+    (define-key map (kbd "C-c C-c") #'beads-form-commit)
+    (define-key map (kbd "C-c C-k") #'beads-form-cancel)
+    map)
+  "Keymap for editable fields inside beads form buffers.")
+
+(defvar beads-form-text-keymap
+  (let ((map (copy-keymap widget-text-keymap)))
+    (define-key map (kbd "C-c C-c") #'beads-form-commit)
+    (define-key map (kbd "C-c C-k") #'beads-form-cancel)
+    map)
+  "Keymap for text widgets inside beads form buffers.")
+
 (define-derived-mode beads-form-mode nil "Beads-Form"
   "Major mode for editing Beads issue metadata in a form.
 
@@ -117,6 +131,7 @@
            ('editable-field
             (widget-create 'editable-field
                            :size 40
+                           :keymap beads-form-field-keymap
                            :value value))
            ('menu-choice
             (let ((choices (plist-get args :choices)))
@@ -130,6 +145,7 @@
   "Add a multi-line text field NAME with LABEL and VALUE."
   (widget-insert (propertize (concat label ":\n") 'face 'bold))
   (let ((widget (widget-create 'text
+                               :keymap beads-form-text-keymap
                                :value value)))
     (push (cons name widget) beads-form--widgets)))
 
