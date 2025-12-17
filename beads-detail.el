@@ -7,6 +7,7 @@
 
 (declare-function beads-menu "beads-transient")
 (declare-function beads-list-refresh "beads-list")
+(declare-function beads-form-open "beads-form")
 
 (defgroup beads-detail nil
   "Issue detail display for Beads."
@@ -66,6 +67,7 @@
     (define-key map (kbd "g") #'beads-detail-refresh)
     (define-key map (kbd "q") #'quit-window)
     (define-key map (kbd "e") beads-detail-edit-map)
+    (define-key map (kbd "E") #'beads-detail-edit-form)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
     map)
@@ -287,6 +289,13 @@ Uses a single reusable buffer in a side window without focusing."
                 (beads-detail-refresh))
             (beads-rpc-error
              (message "Failed to remove label: %s" (error-message-string err)))))))))
+
+(defun beads-detail-edit-form ()
+  "Open form editor for the current issue."
+  (interactive)
+  (let ((issue (beads-detail--require-issue)))
+    (require 'beads-form)
+    (beads-form-open issue)))
 
 (defun beads-detail--render (issue)
   "Insert formatted ISSUE content into current buffer."
