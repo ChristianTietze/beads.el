@@ -67,6 +67,19 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Commit Strategy
+
+**Atomic commits as you go** - Create logical commits during development, not after:
+
+1. **Tests must pass** - Never commit breaking changes. Run `mise run check` before every commit.
+2. **Fix code, not tests** - If tests fail, fix the implementation first. Only modify tests if they are genuinely wrong.
+3. **Commit at logical points**:
+   - When a beads task is complete
+   - When a meaningful milestone is reached during an in-progress task
+   - After fixing a bug or completing a feature unit
+4. **No reconstructed history** - Don't batch changes then create artificial commits from a working state. Commits must represent actual development order so checking out any commit yields a working state.
+5. **Branches and rollbacks are fine** - Use feature branches, rollback broken changes, experiment freely.
+
 ## Session Completion
 
 Work is NOT complete until `git push` succeeds:
