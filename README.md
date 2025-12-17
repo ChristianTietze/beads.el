@@ -79,6 +79,7 @@ Or use the form editor (`E`) to edit all fields at once:
 | `f r` | `beads-filter-ready-issues` | Show ready issues only |
 | `f b` | `beads-filter-blocked-issues` | Show blocked issues only |
 | `f c` | `beads-filter-clear` | Clear all filters |
+| `H` | `beads-hierarchy-show` | Show dependency tree |
 | `P` | `beads-preview-mode` | Toggle preview mode |
 | `D` | `beads-delete-issue` | Delete issue (with confirmation) |
 | `R` | `beads-reopen-issue` | Reopen closed issue |

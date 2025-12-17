@@ -291,7 +291,8 @@ Prompts for a search query and filters the list to matching issues."
   "Beads list mode menu."
   ["Navigation"
    ("g" "Refresh" beads-list-refresh)
-   ("P" "Toggle preview" beads-preview-mode)]
+   ("P" "Toggle preview" beads-preview-mode)
+   ("H" "Dependency tree" beads-hierarchy-show)]
   ["Actions"
    ("c" "Create issue" beads-create-issue)
    ("E" "Edit issue" beads-list-edit-form)
