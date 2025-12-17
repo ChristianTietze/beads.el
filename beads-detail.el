@@ -6,6 +6,7 @@
 (require 'beads-edit)
 
 (declare-function beads-menu "beads-transient")
+(declare-function beads-list-refresh "beads-list")
 
 (defgroup beads-detail nil
   "Issue detail display for Beads."
@@ -118,6 +119,14 @@ Uses a single reusable buffer in a side window without focusing."
                              (side . right)
                              (window-width . 0.4)))))
 
+(defun beads-detail--refresh-list-buffers ()
+  "Refresh all beads-list-mode buffers."
+  (dolist (buf (buffer-list))
+    (when (and (buffer-live-p buf)
+               (eq (buffer-local-value 'major-mode buf) 'beads-list-mode))
+      (with-current-buffer buf
+        (beads-list-refresh)))))
+
 (defun beads-detail-refresh ()
   "Re-fetch and redisplay current issue."
   (interactive)
@@ -130,6 +139,7 @@ Uses a single reusable buffer in a side window without focusing."
           (erase-buffer)
           (beads-detail--render issue)
           (goto-char (point-min)))
+        (beads-detail--refresh-list-buffers)
         (message "Refreshed issue %s" beads-detail--current-issue-id))
     (beads-rpc-error
      (message "Failed to refresh issue: %s" (error-message-string err)))))
