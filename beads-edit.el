@@ -147,9 +147,9 @@ Returns the new value, or nil if unchanged."
 
 (defun beads-edit-field-completing (issue-id field current-value prompt choices)
   "Edit FIELD of ISSUE-ID via completing-read.
-CURRENT-VALUE is the default, PROMPT is shown, CHOICES is the list of options.
-Returns the new value, or nil if unchanged."
-  (let ((new-value (completing-read prompt choices nil t nil nil current-value)))
+CURRENT-VALUE is pre-filled in minibuffer, PROMPT is shown, CHOICES is
+the list of options.  Returns the new value, or nil if unchanged."
+  (let ((new-value (completing-read prompt choices nil t current-value)))
     (unless (string= new-value (or current-value ""))
       (condition-case err
           (progn

@@ -200,7 +200,7 @@ Uses a single reusable buffer in a side window without focusing."
          (priority (alist-get 'priority issue))
          (priority-str (format "P%d" priority))
          (choices '("P0" "P1" "P2" "P3" "P4")))
-    (when-let ((new-value (completing-read "Priority: " choices nil t nil nil priority-str)))
+    (when-let ((new-value (completing-read "Priority: " choices nil t priority-str)))
       (unless (string= new-value priority-str)
         (let ((new-priority (string-to-number (substring new-value 1))))
           (condition-case err
