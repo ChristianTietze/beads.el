@@ -24,6 +24,8 @@ Navigate issues with live preview in a side window:
 
 [[file:screenshots/beads-preview-mode-demo.webm]]
 
+([[file:screenshots/beads-preview-mode-demo.webm][Open video]] if playback controls are missing)
+
 ** Issue Details
 
 View full issue details including description, design notes, and metadata:
