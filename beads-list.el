@@ -13,6 +13,7 @@
 (declare-function beads-edit-field-minibuffer "beads-edit")
 (declare-function beads-edit-field-completing "beads-edit")
 (declare-function beads-edit-field-markdown "beads-edit")
+(declare-function beads-project-buffer-name "beads-project")
 
 (defgroup beads-list nil
   "Issue list display for Beads."
@@ -40,6 +41,10 @@
 
 (defvar beads-list--issues nil
   "Cached list of issues for current buffer.")
+
+(defvar-local beads-list--project-root nil
+  "Project root for this beads list buffer.
+Used to ensure refresh uses the correct project context.")
 
 (defvar beads-list-edit-map
   (let ((map (make-sparse-keymap)))
@@ -281,11 +286,19 @@ Returns the issue alist or nil if not found."
 
 ;;;###autoload
 (defun beads-list ()
-  "Open the Beads issue list buffer."
+  "Open the Beads issue list buffer.
+If beads-project.el is loaded and per-project buffers are enabled,
+creates a project-specific buffer."
   (interactive)
-  (let ((buffer (get-buffer-create "*Beads Issues*")))
+  (let* ((buffer-name (if (featurep 'beads-project)
+                          (beads-project-buffer-name)
+                        "*Beads Issues*"))
+         (buffer (get-buffer-create buffer-name))
+         (project-root default-directory))
     (with-current-buffer buffer
-      (beads-list-mode)
+      (unless (eq major-mode 'beads-list-mode)
+        (beads-list-mode))
+      (setq beads-list--project-root project-root)
       (beads-list-refresh))
     (switch-to-buffer buffer)))
 

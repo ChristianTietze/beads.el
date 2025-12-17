@@ -63,6 +63,7 @@ Hints are shown when entering beads modes to help with discoverability."
 (require 'beads-detail)
 (require 'beads-transient)
 (require 'beads-autoupdate)
+(require 'beads-project)
 
 ;;;###autoload
 (defun beads ()
