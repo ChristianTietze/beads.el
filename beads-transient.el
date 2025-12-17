@@ -39,7 +39,7 @@
    ("P" "Toggle preview" beads-preview-mode :transient t)]
   ["Actions"
    ("c" "Create issue" beads-create-issue)
-   ("e" "Edit issue" beads-detail-edit-issue)
+   ("E" "Edit form" beads-detail-edit-form)
    ("x" "Close issue" beads-close-issue)]
   ["Filter"
    ("s" "By status" beads-filter-status)
