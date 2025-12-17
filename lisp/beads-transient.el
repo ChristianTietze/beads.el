@@ -68,6 +68,55 @@ Prompts for an optional close reason."
           (beads-rpc-error
            (message "Failed to close issue: %s" (error-message-string err))))))))
 
+(defun beads-delete-issue ()
+  "Permanently delete the issue at point.
+Prompts for confirmation with `yes-or-no-p'."
+  (interactive)
+  (let ((id (cond
+             ((derived-mode-p 'beads-detail-mode)
+              (bound-and-true-p beads-detail--current-issue-id))
+             ((derived-mode-p 'beads-list-mode)
+              (tabulated-list-get-id))
+             (t nil))))
+    (if (not id)
+        (message "No issue at point")
+      (when (yes-or-no-p (format "Permanently delete issue %s? " id))
+        (condition-case err
+            (progn
+              (beads-rpc-delete (list id))
+              (message "Deleted issue %s" id)
+              (cond
+               ((derived-mode-p 'beads-list-mode)
+                (beads-list-refresh))
+               ((derived-mode-p 'beads-detail-mode)
+                (quit-window t))))
+          (beads-rpc-error
+           (message "Failed to delete issue: %s" (error-message-string err))))))))
+
+(defun beads-reopen-issue ()
+  "Reopen the closed issue at point.
+Sets status to open and clears closed_at timestamp."
+  (interactive)
+  (let ((id (cond
+             ((derived-mode-p 'beads-detail-mode)
+              (bound-and-true-p beads-detail--current-issue-id))
+             ((derived-mode-p 'beads-list-mode)
+              (tabulated-list-get-id))
+             (t nil))))
+    (if (not id)
+        (message "No issue at point")
+      (condition-case err
+          (progn
+            (beads-rpc-update id :status "open")
+            (message "Reopened issue %s" id)
+            (cond
+             ((derived-mode-p 'beads-list-mode)
+              (beads-list-refresh))
+             ((derived-mode-p 'beads-detail-mode)
+              (beads-detail-refresh))))
+        (beads-rpc-error
+         (message "Failed to reopen issue: %s" (error-message-string err)))))))
+
 (defun beads-filter-status ()
   "Filter issues by status.
 Select a status to filter, or \"all\" to clear the filter."
@@ -110,7 +159,9 @@ Select a priority to filter, or \"all\" to clear the filter."
   ["Actions"
    ("c" "Create issue" beads-create-issue)
    ("E" "Edit issue" beads-list-edit-form)
-   ("x" "Close issue" beads-close-issue)]
+   ("x" "Close issue" beads-close-issue)
+   ("R" "Reopen issue" beads-reopen-issue)
+   ("D" "Delete issue" beads-delete-issue)]
   ["Filter"
    ("f s" "By status" beads-filter-status)
    ("f p" "By priority" beads-filter-priority)]
@@ -130,7 +181,9 @@ Select a priority to filter, or \"all\" to clear the filter."
    ("e p" "Priority" beads-detail-edit-priority)
    ("e t" "Title" beads-detail-edit-title)]
   ["Actions"
-   ("x" "Close issue" beads-close-issue)]
+   ("x" "Close issue" beads-close-issue)
+   ("R" "Reopen issue" beads-reopen-issue)
+   ("D" "Delete issue" beads-delete-issue)]
   ["Help"
    ("?" "Describe mode" describe-mode)
    ("q" "Quit" transient-quit-one)])

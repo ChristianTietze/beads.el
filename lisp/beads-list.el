@@ -53,6 +53,8 @@ Used to ensure refresh uses the correct project context.")
 
 (declare-function beads-filter-status "beads-transient")
 (declare-function beads-filter-priority "beads-transient")
+(declare-function beads-delete-issue "beads-transient")
+(declare-function beads-reopen-issue "beads-transient")
 
 (defvar beads-list-edit-map
   (let ((map (make-sparse-keymap)))
@@ -80,6 +82,8 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "E") #'beads-list-edit-form)
     (define-key map (kbd "f") beads-list-filter-map)
     (define-key map (kbd "P") #'beads-preview-mode)
+    (define-key map (kbd "D") #'beads-delete-issue)
+    (define-key map (kbd "R") #'beads-reopen-issue)
     (define-key map (kbd "q") #'beads-list-quit)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)

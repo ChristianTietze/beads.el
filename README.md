@@ -72,6 +72,8 @@ Or use the form editor (`E`) to edit all fields at once:
 | `f s` | `beads-filter-status` | Filter by status |
 | `f p` | `beads-filter-priority` | Filter by priority |
 | `P` | `beads-preview-mode` | Toggle preview mode |
+| `D` | `beads-delete-issue` | Delete issue (with confirmation) |
+| `R` | `beads-reopen-issue` | Reopen closed issue |
 | `g` | `beads-list-refresh` | Refresh issue list |
 | `?` | `beads-menu` | Show transient menu |
 | `q` | `beads-list-quit` | Quit |
@@ -93,6 +95,8 @@ Or use the form editor (`E`) to edit all fields at once:
 | `e x` | `beads-detail-edit-external-ref` | Edit external reference |
 | `e l a` | `beads-detail-edit-label-add` | Add label |
 | `e l r` | `beads-detail-edit-label-remove` | Remove label |
+| `D` | `beads-delete-issue` | Delete issue (with confirmation) |
+| `R` | `beads-reopen-issue` | Reopen closed issue |
 | `g` | `beads-detail-refresh` | Refresh detail view |
 | `?` | `beads-menu` | Show transient menu |
 | `q` | `quit-window` | Quit |

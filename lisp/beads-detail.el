@@ -6,6 +6,8 @@
 (require 'beads-edit)
 
 (declare-function beads-menu "beads-transient")
+(declare-function beads-delete-issue "beads-transient")
+(declare-function beads-reopen-issue "beads-transient")
 (declare-function beads-list-refresh "beads-list")
 (declare-function beads-form-open "beads-form")
 (declare-function beads-show-hint "beads")
@@ -69,6 +71,8 @@
     (define-key map (kbd "q") #'quit-window)
     (define-key map (kbd "e") beads-detail-edit-map)
     (define-key map (kbd "E") #'beads-detail-edit-form)
+    (define-key map (kbd "D") #'beads-delete-issue)
+    (define-key map (kbd "R") #'beads-reopen-issue)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
     map)
