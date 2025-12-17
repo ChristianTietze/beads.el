@@ -90,15 +90,16 @@
   "Test that beads-create-issue is an interactive command."
   (should (commandp 'beads-create-issue)))
 
-(ert-deftest beads-transient-test-create-issue-is-placeholder ()
-  "Test that beads-create-issue displays placeholder message."
-  (with-temp-buffer
+(ert-deftest beads-transient-test-create-issue-requires-title ()
+  "Test that beads-create-issue requires a title."
+  (cl-letf (((symbol-function 'read-string) (lambda (&rest _) ""))
+            ((symbol-function 'completing-read) (lambda (&rest _) "task")))
     (let ((message-log-max t))
       (beads-create-issue)
       (with-current-buffer "*Messages*"
         (goto-char (point-max))
         (forward-line -1)
-        (should (string-match-p "Create issue not yet implemented"
+        (should (string-match-p "Title is required"
                                (buffer-substring (line-beginning-position)
                                                 (line-end-position))))))))
 

@@ -3,6 +3,7 @@
 ;;; Code:
 
 (require 'transient)
+(require 'beads-rpc)
 
 (declare-function beads-list "beads-list")
 (declare-function beads-list-refresh "beads-list")
@@ -16,9 +17,28 @@
   :group 'beads)
 
 (defun beads-create-issue ()
-  "Create a new issue."
+  "Create a new issue interactively.
+Prompts for title (required), type, and priority."
   (interactive)
-  (message "Create issue not yet implemented"))
+  (let* ((title (read-string "Title: "))
+         (type (completing-read "Type: "
+                                '("task" "bug" "feature" "epic" "chore")
+                                nil t "task"))
+         (priority-str (completing-read "Priority: "
+                                         '("P0" "P1" "P2" "P3" "P4")
+                                         nil t "P2"))
+         (priority (string-to-number (substring priority-str 1))))
+    (if (string-empty-p title)
+        (message "Title is required")
+      (condition-case err
+          (let ((issue (beads-rpc-create title
+                                         :issue-type type
+                                         :priority priority)))
+            (message "Created issue %s" (alist-get 'id issue))
+            (when (derived-mode-p 'beads-list-mode)
+              (beads-list-refresh)))
+        (beads-rpc-error
+         (message "Failed to create issue: %s" (error-message-string err)))))))
 
 (defun beads-close-issue ()
   "Close the current issue."
