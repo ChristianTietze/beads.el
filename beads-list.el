@@ -4,6 +4,7 @@
 
 (require 'beads-rpc)
 (require 'beads-detail)
+(require 'beads-preview)
 (require 'tabulated-list)
 
 (declare-function beads-menu "beads-transient")
@@ -40,6 +41,7 @@
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "g") #'beads-list-refresh)
     (define-key map (kbd "RET") #'beads-list-goto-issue)
+    (define-key map (kbd "P") #'beads-preview-mode)
     (define-key map (kbd "q") #'quit-window)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)

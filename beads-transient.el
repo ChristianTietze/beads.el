@@ -5,6 +5,7 @@
 (require 'transient)
 (require 'beads-list)
 (require 'beads-detail)
+(require 'beads-preview)
 
 (defgroup beads-transient nil
   "Transient menus for Beads issue tracker."
@@ -34,7 +35,8 @@
   "Beads issue tracker menu."
   ["Navigation"
    ("l" "List issues" beads-list)
-   ("g" "Refresh" beads-list-refresh)]
+   ("g" "Refresh" beads-list-refresh)
+   ("P" "Toggle preview" beads-preview-mode :transient t)]
   ["Actions"
    ("c" "Create issue" beads-create-issue)
    ("e" "Edit issue" beads-detail-edit-issue)
