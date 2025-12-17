@@ -422,22 +422,19 @@ Decouple cross-component communication:
 | **Window parameters** | Identify special windows | Set/check parameters like `'beads-preview` |
 | **unwind-protect** | Safe window operations | Guarantee cleanup after temporary selection |
 
-## 12. Implementation Checklist
+## 12. Implementation
 
-- [ ] **RPC Layer**: JSON-over-socket communication with daemon
-- [ ] **List Mode**: `tabulated-list-mode` with column definitions
-- [ ] **Detail Mode**: Formatted content generation with faces
-- [ ] **Preview System**:
-  - [ ] `post-command-hook` for selection tracking
-  - [ ] Timer-based delayed preview (debouncing)
-  - [ ] Deduplication (skip if same issue)
-  - [ ] Buffer pooling
-  - [ ] Window parameter marking
-- [ ] **State Management**: Closure-based state with lazy init
-- [ ] **Filter System**: Composable higher-order filters
-- [ ] **Transient Menus**: View/filter/action commands
-- [ ] **Observer Pattern**: Cross-component notifications
-- [ ] **Window Helpers**: Safe selection with `unwind-protect`
+Implementation tasks are tracked in beads. Run `bd ready` to find unblocked tasks, or `bd epic status` to see progress on Milestone 1 (bdel-5w1).
+
+**Suggested implementation order:**
+1. `bdel-e7i` - RPC layer (no blockers, start here)
+2. `bdel-dkc` - State management (no blockers, can parallel with RPC)
+3. `bdel-ppm` - List mode (needs RPC)
+4. `bdel-ijt` - Detail mode (needs RPC)
+5. `bdel-aw7` - Filter system (needs state)
+6. `bdel-xkf` - Preview mode (needs detail)
+7. `bdel-uxi` - Transient menus (needs filters)
+8. `bdel-nde` - Main entry point (needs list)
 
 ## 13. File Structure Suggestion
 
