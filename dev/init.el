@@ -7,8 +7,7 @@
 
 (require 'beads)
 
-(message "beads.el loaded from %s" (locate-library "beads"))
-(message "Run M-x beads to open the issue tracker")
+(add-hook 'emacs-startup-hook #'beads)
 
 (provide 'init)
 ;;; init.el ends here
