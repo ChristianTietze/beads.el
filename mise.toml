@@ -1,2 +1,19 @@
 [tools]
 go = "latest"
+python = "latest"
+
+[tasks.lint]
+description = "Check Emacs Lisp syntax and parentheses"
+run = "python3 scripts/lint.py"
+
+[tasks.test]
+description = "Run ERT tests"
+run = "python3 scripts/test.py"
+
+[tasks.build]
+description = "Byte-compile Emacs Lisp files"
+run = "python3 scripts/build.py"
+
+[tasks.check]
+description = "Run lint and test"
+depends = ["lint", "test"]

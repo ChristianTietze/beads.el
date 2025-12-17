@@ -34,7 +34,15 @@ See `docs/beads-client-howto.md` for the complete protocol specification includi
 
 ## Development
 
-**Tools**: Go (managed by mise, see `mise.toml`)
+**Tools**: Go, Python (managed by mise, see `mise.toml`)
+
+**Quality checks** (run before committing):
+```bash
+mise run check   # Run lint + test
+mise run lint    # Check syntax/parens, byte-compile
+mise run test    # Run ERT tests
+mise run build   # Byte-compile all .el files
+```
 
 **Testing the daemon connection**:
 ```bash
