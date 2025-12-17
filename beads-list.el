@@ -82,17 +82,37 @@
   (hl-line-mode 1)
   (beads-show-hint))
 
-(defun beads-list-refresh ()
-  "Fetch issues from daemon and refresh the display."
+(defun beads-list-refresh (&optional silent)
+  "Fetch issues from daemon and refresh the display.
+When SILENT is non-nil, don't show message."
   (interactive)
-  (condition-case err
-      (let ((issues (beads-rpc-list)))
-        (setq beads-list--issues (append issues nil))
-        (setq tabulated-list-entries (beads-list-entries beads-list--issues))
-        (tabulated-list-print t)
-        (message "Refreshed %d issues" (length beads-list--issues)))
-    (beads-rpc-error
-     (message "Failed to fetch issues: %s" (error-message-string err)))))
+  (let ((saved-id (tabulated-list-get-id))
+        (saved-line (line-number-at-pos)))
+    (condition-case err
+        (let ((issues (beads-rpc-list)))
+          (setq beads-list--issues (append issues nil))
+          (setq tabulated-list-entries (beads-list-entries beads-list--issues))
+          (tabulated-list-print t)
+          (if saved-id
+              (unless (beads-list-goto-id saved-id)
+                (goto-char (point-min))
+                (forward-line (1- (min saved-line (line-number-at-pos (point-max))))))
+            (goto-char (point-min)))
+          (unless silent
+            (message "Refreshed %d issues" (length beads-list--issues))))
+      (beads-rpc-error
+       (message "Failed to fetch issues: %s" (error-message-string err))))))
+
+(defun beads-list-goto-id (id)
+  "Move point to the line with issue ID.
+Returns t if found, nil otherwise."
+  (let ((found nil))
+    (goto-char (point-min))
+    (while (and (not found) (not (eobp)))
+      (if (equal id (tabulated-list-get-id))
+          (setq found t)
+        (forward-line 1)))
+    found))
 
 (defun beads-list-entries (issues)
   "Convert ISSUES to tabulated-list entries."
