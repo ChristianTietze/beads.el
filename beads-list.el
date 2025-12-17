@@ -3,6 +3,7 @@
 ;;; Code:
 
 (require 'beads-rpc)
+(require 'beads-detail)
 (require 'tabulated-list)
 
 (defgroup beads-list nil
@@ -134,9 +135,12 @@ Returns the issue alist or nil if not found."
   "Navigate to or display details for issue at point."
   (interactive)
   (if-let ((issue (beads--get-issue-at-point)))
-      (let ((id (alist-get 'id issue))
-            (title (alist-get 'title issue)))
-        (message "Selected issue %s: %s" id title))
+      (condition-case err
+          (let ((id (alist-get 'id issue)))
+            (let ((full-issue (beads-rpc-show id)))
+              (beads-detail-show full-issue)))
+        (beads-rpc-error
+         (message "Failed to fetch issue details: %s" (error-message-string err))))
     (message "No issue at point")))
 
 ;;;###autoload
