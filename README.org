@@ -4,8 +4,9 @@
 * Overview
 
 beads.el provides an Emacs interface to the [[https://github.com/steveyegge/beads][Beads]] issue tracking system.
-Beads is a Git-backed, AI-native issue tracker that stores data in =.beads/=
-and communicates with a daemon via Unix socket RPC.
+Beads is a lightweight, Git-backed issue tracker that stores data locally in
+=.beads/= alongside your code. It works well with AI coding assistants but
+doesn't require them—you can use it entirely from Emacs or the command line.
 
 * Installation
 
