@@ -4,6 +4,9 @@
 
 (require 'transient)
 (require 'beads-rpc)
+(require 'beads-filter)
+
+(defvar beads-list--filter)
 
 (declare-function beads-list "beads-list")
 (declare-function beads-list-refresh "beads-list")
@@ -66,14 +69,38 @@ Prompts for an optional close reason."
            (message "Failed to close issue: %s" (error-message-string err))))))))
 
 (defun beads-filter-status ()
-  "Filter issues by status."
+  "Filter issues by status.
+Select a status to filter, or \"all\" to clear the filter."
   (interactive)
-  (message "Filter by status not yet implemented"))
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (let* ((choices '("all" "open" "in_progress" "blocked" "closed"))
+         (current (when beads-list--filter
+                    (plist-get (plist-get beads-list--filter :config) :value)))
+         (status (completing-read "Filter by status: " choices nil t
+                                  (or current ""))))
+    (setq beads-list--filter
+          (unless (string= status "all")
+            (beads-filter-by-status status)))
+    (beads-list-refresh)))
 
 (defun beads-filter-priority ()
-  "Filter issues by priority."
+  "Filter issues by priority.
+Select a priority to filter, or \"all\" to clear the filter."
   (interactive)
-  (message "Filter by priority not yet implemented"))
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (let* ((choices '("all" "P0" "P1" "P2" "P3" "P4"))
+         (current (when beads-list--filter
+                    (let ((val (plist-get (plist-get beads-list--filter :config) :value)))
+                      (when (numberp val) (format "P%d" val)))))
+         (priority-str (completing-read "Filter by priority: " choices nil t
+                                        (or current ""))))
+    (setq beads-list--filter
+          (unless (string= priority-str "all")
+            (beads-filter-by-priority
+             (string-to-number (substring priority-str 1)))))
+    (beads-list-refresh)))
 
 (transient-define-prefix beads-list-menu ()
   "Beads list mode menu."

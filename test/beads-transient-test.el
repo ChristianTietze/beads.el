@@ -131,17 +131,10 @@
   "Test that beads-filter-status is an interactive command."
   (should (commandp 'beads-filter-status)))
 
-(ert-deftest beads-transient-test-filter-status-is-placeholder ()
-  "Test that beads-filter-status displays placeholder message."
+(ert-deftest beads-transient-test-filter-status-requires-list-mode ()
+  "Test that beads-filter-status requires beads-list-mode."
   (with-temp-buffer
-    (let ((message-log-max t))
-      (beads-filter-status)
-      (with-current-buffer "*Messages*"
-        (goto-char (point-max))
-        (forward-line -1)
-        (should (string-match-p "Filter by status not yet implemented"
-                               (buffer-substring (line-beginning-position)
-                                                (line-end-position))))))))
+    (should-error (beads-filter-status) :type 'user-error)))
 
 (ert-deftest beads-transient-test-filter-priority-defined ()
   "Test that beads-filter-priority is defined."
@@ -151,17 +144,10 @@
   "Test that beads-filter-priority is an interactive command."
   (should (commandp 'beads-filter-priority)))
 
-(ert-deftest beads-transient-test-filter-priority-is-placeholder ()
-  "Test that beads-filter-priority displays placeholder message."
+(ert-deftest beads-transient-test-filter-priority-requires-list-mode ()
+  "Test that beads-filter-priority requires beads-list-mode."
   (with-temp-buffer
-    (let ((message-log-max t))
-      (beads-filter-priority)
-      (with-current-buffer "*Messages*"
-        (goto-char (point-max))
-        (forward-line -1)
-        (should (string-match-p "Filter by priority not yet implemented"
-                               (buffer-substring (line-beginning-position)
-                                                (line-end-position))))))))
+    (should-error (beads-filter-priority) :type 'user-error)))
 
 ;;; Integration tests for menu structure
 

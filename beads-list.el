@@ -4,6 +4,7 @@
 
 (require 'beads-rpc)
 (require 'beads-detail)
+(require 'beads-filter)
 (require 'beads-preview)
 (require 'tabulated-list)
 
@@ -41,6 +42,10 @@
 
 (defvar beads-list--issues nil
   "Cached list of issues for current buffer.")
+
+(defvar-local beads-list--filter nil
+  "Current filter applied to issue list.
+Created via `beads-filter-make' functions.")
 
 (defvar-local beads-list--project-root nil
   "Project root for this beads list buffer.
@@ -90,12 +95,16 @@ Used to ensure refresh uses the correct project context.")
 
 (defun beads-list-refresh (&optional silent)
   "Fetch issues from daemon and refresh the display.
-When SILENT is non-nil, don't show message."
+When SILENT is non-nil, don't show message.
+Applies `beads-list--filter' if set."
   (interactive)
   (let ((saved-id (tabulated-list-get-id))
         (saved-line (line-number-at-pos)))
     (condition-case err
-        (let ((issues (beads-rpc-list)))
+        (let* ((all-issues (beads-rpc-list))
+               (issues (if beads-list--filter
+                           (beads-filter-apply beads-list--filter all-issues)
+                         all-issues)))
           (setq beads-list--issues (append issues nil))
           (setq tabulated-list-entries (beads-list-entries beads-list--issues))
           (tabulated-list-print t)
@@ -105,7 +114,10 @@ When SILENT is non-nil, don't show message."
                 (forward-line (1- (min saved-line (line-number-at-pos (point-max))))))
             (goto-char (point-min)))
           (unless silent
-            (message "Refreshed %d issues" (length beads-list--issues))))
+            (let ((filter-msg (if beads-list--filter
+                                  (format " [%s]" (beads-filter-name beads-list--filter))
+                                "")))
+              (message "Refreshed %d issues%s" (length beads-list--issues) filter-msg))))
       (beads-rpc-error
        (message "Failed to fetch issues: %s" (error-message-string err))))))
 
