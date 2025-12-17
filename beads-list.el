@@ -42,7 +42,7 @@
     (define-key map (kbd "g") #'beads-list-refresh)
     (define-key map (kbd "RET") #'beads-list-goto-issue)
     (define-key map (kbd "P") #'beads-preview-mode)
-    (define-key map (kbd "q") #'quit-window)
+    (define-key map (kbd "q") #'beads-list-quit)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
     map)
@@ -138,6 +138,13 @@ Returns the issue alist or nil if not found."
                 (string= (alist-get 'id issue) id))
               beads-list--issues)))
 
+(defun beads-list-quit ()
+  "Quit beads list, closing preview first if active."
+  (interactive)
+  (if beads-preview-mode
+      (beads-preview-mode -1)
+    (quit-window)))
+
 (defun beads-list-goto-issue ()
   "Navigate to or display details for issue at point."
   (interactive)
@@ -145,7 +152,7 @@ Returns the issue alist or nil if not found."
       (condition-case err
           (let ((id (alist-get 'id issue)))
             (let ((full-issue (beads-rpc-show id)))
-              (beads-detail-show full-issue)))
+              (beads-detail-open full-issue)))
         (beads-rpc-error
          (message "Failed to fetch issue details: %s" (error-message-string err))))
     (message "No issue at point")))

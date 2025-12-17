@@ -6,13 +6,8 @@
 ;; Test categories:
 ;; 1. Mode tests - test minor mode lifecycle (no daemon)
 ;; 2. Timer tests - test idle timer management (mocked)
-;; 3. Buffer pool tests - test preview buffer cleanup (no daemon)
-;; 4. Keybinding tests - test mode activation keybindings (no daemon)
-;; 5. Customization tests - test defcustom defaults
-;;
-;; Note on test isolation:
-;; These tests do not require a running daemon. Display and RPC tests
-;; are mocked to avoid integration dependencies.
+;; 3. Keybinding tests - test mode activation keybindings (no daemon)
+;; 4. Customization tests - test defcustom defaults
 
 ;;; Code:
 
@@ -77,7 +72,7 @@
     (beads-list-mode)
     (let ((timer-created nil))
       (cl-letf (((symbol-function 'beads-preview--start-timer)
-                 (lambda ()
+                 (lambda (_issue)
                    (setq timer-created t)
                    (run-with-idle-timer 0.1 nil #'ignore)))
                 ((symbol-function 'beads-preview--cancel-timer)
@@ -97,7 +92,7 @@
     (beads-preview-mode 1)
     (let ((timer-created nil))
       (cl-letf (((symbol-function 'run-with-idle-timer)
-                 (lambda (secs _repeat _function)
+                 (lambda (secs _repeat _function &rest _args)
                    (setq timer-created secs)
                    (timer-create))))
         (beads-preview--start-timer '((id . "test-123")))
@@ -135,7 +130,7 @@
                  (lambda (_timer)
                    (setq cancel-count (1+ cancel-count))))
                 ((symbol-function 'run-with-idle-timer)
-                 (lambda (_secs _repeat _function)
+                 (lambda (_secs _repeat _function &rest _args)
                    (setq timer-count (1+ timer-count))
                    (timer-create))))
         (setq beads-preview--timer (timer-create))
@@ -145,100 +140,6 @@
         (beads-preview--start-timer '((id . "test-2")))
         (should (= cancel-count 2))
         (should (= timer-count 2))))))
-
-(ert-deftest beads-preview-test-trigger-cancels-before-start ()
-  "Test that beads-preview-trigger cancels timer before starting new one."
-  (with-temp-buffer
-    (beads-list-mode)
-    (beads-preview-mode 1)
-    (let ((cancel-called nil)
-          (start-called nil))
-      (cl-letf (((symbol-function 'beads-preview--cancel-timer)
-                 (lambda ()
-                   (setq cancel-called t)))
-                ((symbol-function 'beads-preview--start-timer)
-                 (lambda ()
-                   (should cancel-called)
-                   (setq start-called t))))
-        (beads-preview-trigger)
-        (should cancel-called)
-        (should start-called)))))
-
-;;; Buffer pool tests (no daemon)
-
-(ert-deftest beads-preview-test-cleanup-buffers-empty-pool ()
-  "Test that beads-preview--cleanup-buffers handles empty pool."
-  (let ((beads-preview--buffers '()))
-    (beads-preview--cleanup-buffers)
-    (should (equal beads-preview--buffers '()))))
-
-(ert-deftest beads-preview-test-cleanup-buffers-removes-dead ()
-  "Test that dead buffers are removed from pool."
-  (let* ((live-buffer (generate-new-buffer " *test-live*"))
-         (dead-buffer (generate-new-buffer " *test-dead*"))
-         (beads-preview--buffers (list live-buffer dead-buffer)))
-    (unwind-protect
-        (progn
-          (kill-buffer dead-buffer)
-          (beads-preview--cleanup-buffers)
-          (should (= (length beads-preview--buffers) 1))
-          (should (eq (car beads-preview--buffers) live-buffer)))
-      (when (buffer-live-p live-buffer)
-        (kill-buffer live-buffer)))))
-
-(ert-deftest beads-preview-test-cleanup-buffers-keeps-max ()
-  "Test that cleanup keeps only max buffers."
-  (let ((beads-preview-max-buffers 3)
-        (beads-preview--buffers '()))
-    (dotimes (i 5)
-      (push (generate-new-buffer (format " *test-%d*" i))
-            beads-preview--buffers))
-    (unwind-protect
-        (progn
-          (beads-preview--cleanup-buffers)
-          (should (<= (length beads-preview--buffers)
-                     beads-preview-max-buffers)))
-      (mapc #'kill-buffer beads-preview--buffers))))
-
-(ert-deftest beads-preview-test-cleanup-buffers-kills-old ()
-  "Test that old buffers are killed during cleanup."
-  (let ((beads-preview-max-buffers 2)
-        (beads-preview--buffers '()))
-    (dotimes (i 4)
-      (push (generate-new-buffer (format " *test-%d*" i))
-            beads-preview--buffers))
-    (let ((old-buffers (nthcdr 2 beads-preview--buffers)))
-      (beads-preview--cleanup-buffers)
-      (should (<= (length beads-preview--buffers) 2))
-      (dolist (buf old-buffers)
-        (should-not (buffer-live-p buf))))
-    (mapc (lambda (buf)
-            (when (buffer-live-p buf)
-              (kill-buffer buf)))
-          beads-preview--buffers)))
-
-(ert-deftest beads-preview-test-cleanup-buffers-preserves-order ()
-  "Test that cleanup preserves buffer order (LRU)."
-  (let ((beads-preview-max-buffers 3)
-        (beads-preview--buffers '())
-        (buffer-ids '()))
-    (dotimes (i 5)
-      (let ((buf (generate-new-buffer (format " *test-%d*" i))))
-        (push buf beads-preview--buffers)
-        (push i buffer-ids)))
-    (unwind-protect
-        (progn
-          (beads-preview--cleanup-buffers)
-          (should (= (length beads-preview--buffers) 3))
-          (should (equal (mapcar (lambda (buf)
-                                   (string-to-number
-                                    (substring (buffer-name buf) -2 -1)))
-                                beads-preview--buffers)
-                        '(4 3 2))))
-      (mapc (lambda (buf)
-              (when (buffer-live-p buf)
-                (kill-buffer buf)))
-            beads-preview--buffers))))
 
 ;;; Keybinding tests (no daemon)
 
@@ -277,28 +178,15 @@
   "Test that beads-preview-delay is a customizable variable."
   (should (custom-variable-p 'beads-preview-delay)))
 
-(ert-deftest beads-preview-test-max-buffers-default ()
-  "Test that beads-preview-max-buffers defaults to 3."
-  (should (= beads-preview-max-buffers 3)))
-
-(ert-deftest beads-preview-test-max-buffers-customizable ()
-  "Test that beads-preview-max-buffers is a customizable variable."
-  (should (custom-variable-p 'beads-preview-max-buffers)))
-
 (ert-deftest beads-preview-test-delay-positive ()
   "Test that beads-preview-delay is positive."
   (should (> beads-preview-delay 0)))
-
-(ert-deftest beads-preview-test-max-buffers-positive ()
-  "Test that beads-preview-max-buffers is positive."
-  (should (> beads-preview-max-buffers 0)))
 
 ;;; Display tests (mocked, no daemon)
 
 (ert-deftest beads-preview-test-display-issue-mocked ()
   "Test that beads-preview--display-issue creates preview buffer."
-  (let ((beads-preview--buffers '())
-        (buffer-created nil))
+  (let ((buffer-created nil))
     (cl-letf (((symbol-function 'beads-rpc-show)
                (lambda (_issue-id)
                  '((id . "bd-test")
@@ -311,65 +199,19 @@
                (lambda (buffer _action)
                  (setq buffer-created buffer)
                  buffer)))
-      (beads-preview--display-issue "bd-test")
+      (beads-preview--display-issue '((id . "bd-test")))
       (should buffer-created)
       (should (buffer-live-p buffer-created))
-      (should (member buffer-created beads-preview--buffers))
       (kill-buffer buffer-created))))
-
-(ert-deftest beads-preview-test-display-issue-buffer-name ()
-  "Test that preview buffer has correct naming pattern."
-  (let ((beads-preview--buffers '()))
-    (cl-letf (((symbol-function 'beads-rpc-show)
-               (lambda (_issue-id)
-                 '((id . "bd-a1b2")
-                   (title . "Test")
-                   (status . "open"))))
-              ((symbol-function 'display-buffer)
-               (lambda (buffer _action) buffer)))
-      (let ((buffer (beads-preview--display-issue "bd-a1b2")))
-        (should (string-match-p "bd-a1b2" (buffer-name buffer)))
-        (kill-buffer buffer)))))
-
-(ert-deftest beads-preview-test-display-issue-adds-to-pool ()
-  "Test that display-issue adds buffer to pool."
-  (let ((beads-preview--buffers '()))
-    (cl-letf (((symbol-function 'beads-rpc-show)
-               (lambda (_issue-id)
-                 '((id . "bd-test")
-                   (title . "Test"))))
-              ((symbol-function 'display-buffer)
-               (lambda (buffer _action) buffer)))
-      (let ((buffer (beads-preview--display-issue "bd-test")))
-        (should (member buffer beads-preview--buffers))
-        (kill-buffer buffer)))))
-
-(ert-deftest beads-preview-test-display-issue-triggers-cleanup ()
-  "Test that display-issue triggers buffer pool cleanup."
-  (let ((beads-preview--buffers '())
-        (beads-preview-max-buffers 2)
-        (cleanup-called nil))
-    (cl-letf (((symbol-function 'beads-rpc-show)
-               (lambda (_issue-id)
-                 '((id . "bd-test")
-                   (title . "Test"))))
-              ((symbol-function 'display-buffer)
-               (lambda (buffer _action) buffer))
-              ((symbol-function 'beads-preview--cleanup-buffers)
-               (lambda ()
-                 (setq cleanup-called t))))
-      (beads-preview--display-issue "bd-test")
-      (should cleanup-called))))
 
 (ert-deftest beads-preview-test-display-issue-error-handling ()
   "Test that display-issue handles RPC errors gracefully."
-  (let ((beads-preview--buffers '()))
-    (cl-letf (((symbol-function 'beads-rpc-show)
-               (lambda (_issue-id)
-                 (signal 'beads-rpc-error '("Test error"))))
-              ((symbol-function 'message)
-               (lambda (_format &rest _args) nil)))
-      (beads-preview--display-issue "bd-test"))))
+  (cl-letf (((symbol-function 'beads-rpc-show)
+             (lambda (_issue-id)
+               (signal 'beads-rpc-error '("Test error"))))
+            ((symbol-function 'message)
+             (lambda (_format &rest _args) nil)))
+    (beads-preview--display-issue '((id . "bd-test")))))
 
 ;;; Trigger tests (mocked)
 
@@ -378,7 +220,7 @@
   (with-temp-buffer
     (let ((timer-started nil))
       (cl-letf (((symbol-function 'beads-preview--start-timer)
-                 (lambda ()
+                 (lambda (_issue)
                    (setq timer-started t))))
         (beads-preview-trigger)
         (should-not timer-started)))))
@@ -389,7 +231,7 @@
     (beads-list-mode)
     (let ((timer-started nil))
       (cl-letf (((symbol-function 'beads-preview--start-timer)
-                 (lambda ()
+                 (lambda (_issue)
                    (setq timer-started t))))
         (beads-preview-trigger)
         (should-not timer-started)))))
@@ -403,10 +245,22 @@
       (cl-letf (((symbol-function 'beads-preview--cancel-timer)
                  (lambda () nil))
                 ((symbol-function 'beads-preview--start-timer)
-                 (lambda ()
+                 (lambda (_issue)
                    (setq timer-started t))))
         (beads-preview-trigger)
         (should timer-started)))))
+
+;;; Cleanup tests
+
+(ert-deftest beads-preview-test-cleanup-kills-preview-buffer ()
+  "Test that cleanup kills the preview buffer."
+  (let ((preview-buf (get-buffer-create "*beads-preview*")))
+    (unwind-protect
+        (progn
+          (beads-preview--cleanup)
+          (should-not (buffer-live-p preview-buf)))
+      (when (buffer-live-p preview-buf)
+        (kill-buffer preview-buf)))))
 
 (provide 'beads-preview-test)
 ;;; beads-preview-test.el ends here

@@ -50,10 +50,33 @@
   (setq buffer-read-only t)
   (setq truncate-lines nil))
 
-(defun beads-detail-show (issue)
-  "Display ISSUE in detail buffer."
+(defun beads-detail-open (issue)
+  "Open ISSUE in a dedicated detail buffer in bottom window.
+Creates a unique buffer per issue and focuses it."
   (let* ((id (alist-get 'id issue))
-         (buffer (get-buffer-create "*beads-detail*")))
+         (buffer-name (format "*beads-detail: %s*" id))
+         (buffer (get-buffer-create buffer-name)))
+    (with-current-buffer buffer
+      (unless (eq major-mode 'beads-detail-mode)
+        (beads-detail-mode))
+      (setq beads-detail--current-issue-id id)
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (beads-detail--render issue)
+        (goto-char (point-min))))
+    (let ((window (display-buffer buffer
+                                  '((display-buffer-reuse-mode-window
+                                     display-buffer-below-selected)
+                                    (mode . beads-detail-mode)
+                                    (window-height . 0.4)))))
+      (when window
+        (select-window window)))))
+
+(defun beads-detail-show (issue)
+  "Display ISSUE in preview buffer (for preview mode).
+Uses a single reusable buffer in a side window without focusing."
+  (let* ((id (alist-get 'id issue))
+         (buffer (get-buffer-create "*beads-preview*")))
     (with-current-buffer buffer
       (unless (eq major-mode 'beads-detail-mode)
         (beads-detail-mode))

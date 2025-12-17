@@ -16,19 +16,11 @@
   :type 'number
   :group 'beads-preview)
 
-(defcustom beads-preview-max-buffers 3
-  "Maximum number of preview buffers to keep in the pool."
-  :type 'integer
-  :group 'beads-preview)
-
 (defvar-local beads-preview--timer nil
   "Idle timer for debouncing preview updates.")
 
 (defvar-local beads-preview--current-issue-id nil
   "Issue ID currently displayed in preview (deduplication).")
-
-(defvar beads-preview--buffers nil
-  "List of preview buffers for pooling and cleanup.")
 
 (define-minor-mode beads-preview-mode
   "Enable automatic issue preview as cursor moves in issue list."
@@ -73,39 +65,18 @@ Only active when in beads-list-mode with preview mode enabled."
         (setq beads-preview--current-issue-id issue-id)
         (condition-case err
             (let ((full-issue (beads-rpc-show issue-id)))
-              (beads-detail-show full-issue)
-              (let ((detail-buffer (get-buffer "*beads-detail*")))
-                (when detail-buffer
-                  (beads-preview--track-buffer detail-buffer)
-                  (beads-preview--cleanup-buffers))))
+              (beads-detail-show full-issue))
           (beads-rpc-error
            (message "Preview failed: %s" (error-message-string err))))))))
-
-(defun beads-preview--track-buffer (buffer)
-  "Add BUFFER to the pool for tracking."
-  (setq beads-preview--buffers
-        (cons buffer (delq buffer beads-preview--buffers))))
-
-(defun beads-preview--cleanup-buffers ()
-  "Clean up old preview buffers, keeping only the N most recent."
-  (let ((live-buffers (seq-filter #'buffer-live-p beads-preview--buffers)))
-    (when (> (length live-buffers) beads-preview-max-buffers)
-      (dolist (buf (nthcdr beads-preview-max-buffers live-buffers))
-        (when (buffer-live-p buf)
-          (kill-buffer buf))))
-    (setq beads-preview--buffers
-          (seq-take live-buffers beads-preview-max-buffers))))
 
 (defun beads-preview--cleanup ()
   "Full cleanup when preview mode is disabled."
   (beads-preview--cancel-timer)
   (setq beads-preview--current-issue-id nil)
-  (dolist (buf beads-preview--buffers)
-    (when (buffer-live-p buf)
-      (let ((window (get-buffer-window buf)))
-        (when window
-          (delete-window window)))))
-  (setq beads-preview--buffers nil))
+  (when-let ((buf (get-buffer "*beads-preview*")))
+    (when-let ((window (get-buffer-window buf)))
+      (delete-window window))
+    (kill-buffer buf)))
 
 (provide 'beads-preview)
 ;;; beads-preview.el ends here
