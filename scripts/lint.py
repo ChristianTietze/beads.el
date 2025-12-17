@@ -42,9 +42,11 @@ def check_parens(el_file):
 
 def byte_compile(el_file, root_dir):
     """Byte-compile the file to catch warnings and errors."""
+    lisp_dir = root_dir / "lisp"
     result = subprocess.run(
         ["emacs", "-Q", "--batch",
          "-L", str(root_dir),
+         "-L", str(lisp_dir),
          "-f", "batch-byte-compile", str(el_file)],
         capture_output=True,
         text=True

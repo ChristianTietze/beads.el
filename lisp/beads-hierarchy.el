@@ -56,28 +56,52 @@ INDENT is ignored as hierarchy.el handles indentation via tree widget."
                         'face (beads-hierarchy--status-face status)))))
 
 (defun beads-hierarchy--build (issue-id)
-  "Build hierarchy for ISSUE-ID from dep_tree RPC.
-Returns a cons of (hierarchy . by-id-hash)."
+  "Build hierarchy for ISSUE-ID using show RPC.
+Returns a cons of (hierarchy . by-id-hash).
+Shows the issue as root with its dependents as children."
   (condition-case err
-      (let* ((tree-data (beads-rpc-dep-tree issue-id))
+      (let* ((root-issue (beads-rpc-show issue-id))
              (h (hierarchy-new))
              (by-id (make-hash-table :test 'equal)))
 
-        (seq-doseq (issue tree-data)
-          (puthash (alist-get 'id issue) issue by-id))
+        (puthash (alist-get 'id root-issue) root-issue by-id)
 
-        (seq-doseq (issue tree-data)
-          (hierarchy-add-tree h issue
-            (lambda (i)
-              (let ((pid (alist-get 'parent_id i))
-                    (id (alist-get 'id i)))
-                (unless (equal pid id)
-                  (gethash pid by-id))))))
+        (beads-hierarchy--collect-dependents root-issue by-id)
+
+        (maphash (lambda (_id issue)
+                   (hierarchy-add-tree h issue
+                     (lambda (i)
+                       (beads-hierarchy--find-parent i by-id))))
+                 by-id)
 
         (cons h by-id))
     (beads-rpc-error
      (message "Failed to fetch dependency tree: %s" (error-message-string err))
      nil)))
+
+(defun beads-hierarchy--collect-dependents (issue by-id)
+  "Recursively collect dependents of ISSUE into BY-ID hash table."
+  (let ((dependents (alist-get 'dependents issue)))
+    (when (and dependents (> (length dependents) 0))
+      (seq-doseq (dep (append dependents nil))
+        (let ((dep-id (alist-get 'id dep)))
+          (unless (gethash dep-id by-id)
+            (let ((dep-with-parent (cons (cons 'beads--parent-id (alist-get 'id issue)) dep)))
+              (puthash dep-id dep-with-parent by-id))
+            (condition-case nil
+                (let ((full-dep (beads-rpc-show dep-id)))
+                  (puthash dep-id
+                           (cons (cons 'beads--parent-id (alist-get 'id issue)) full-dep)
+                           by-id)
+                  (beads-hierarchy--collect-dependents full-dep by-id))
+              (beads-rpc-error nil))))))))
+
+(defun beads-hierarchy--find-parent (issue by-id)
+  "Find parent of ISSUE in BY-ID hash table.
+Returns the parent issue or nil if ISSUE is root."
+  (let ((parent-id (alist-get 'beads--parent-id issue)))
+    (when parent-id
+      (gethash parent-id by-id))))
 
 (defun beads-hierarchy-goto-issue ()
   "Open detail view for issue at point."
