@@ -23,9 +23,9 @@ Browse issues in a sortable, filterable table. Press `P` to toggle preview mode.
 
 Navigate issues with live preview in a side window:
 
-<video src="screenshots/beads-preview-mode-demo.mp4" controls width="100%"></video>
+![Preview Mode](screenshots/beads-preview-mode-demo.gif)
 
-([Download video](screenshots/beads-preview-mode-demo.mp4) if it doesn't play above)
+([View full quality video](screenshots/beads-preview-mode-demo.mp4))
 
 ### Issue Details
 
