@@ -1,6 +1,8 @@
 #+TITLE: beads.el - Emacs Client for Beads Issue Tracker
 #+AUTHOR: Beads Contributors
 
+[[https://codeberg.org/ctietze/beads.el][https://img.shields.io/badge/Codeberg-Repository-2185D0?logo=codeberg&logoColor=white]]
+
 * Overview
 
 beads.el provides an Emacs interface to the [[https://github.com/steveyegge/beads][Beads]] issue tracking system.
