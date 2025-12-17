@@ -19,6 +19,7 @@
 (declare-function beads-preview-mode "beads-preview")
 (declare-function beads-detail-refresh "beads-detail")
 (declare-function beads-detail-edit-form "beads-detail")
+(declare-function beads-hierarchy-show "beads-hierarchy")
 
 (defgroup beads-transient nil
   "Transient menus for Beads issue tracker."
@@ -308,7 +309,8 @@ Prompts for a search query and filters the list to matching issues."
   "Beads detail mode menu."
   ["Navigation"
    ("l" "List issues" beads-list)
-   ("g" "Refresh" beads-detail-refresh)]
+   ("g" "Refresh" beads-detail-refresh)
+   ("H" "Dependency tree" beads-hierarchy-show)]
   ["Edit"
    ("E" "Edit form" beads-detail-edit-form)
    ("e d" "Description" beads-detail-edit-description)

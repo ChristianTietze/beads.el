@@ -103,6 +103,7 @@ Or use the form editor (`E`) to edit all fields at once:
 | `e x` | `beads-detail-edit-external-ref` | Edit external reference |
 | `e l a` | `beads-detail-edit-label-add` | Add label |
 | `e l r` | `beads-detail-edit-label-remove` | Remove label |
+| `H` | `beads-hierarchy-show` | Show dependency tree |
 | `D` | `beads-delete-issue` | Delete issue (with confirmation) |
 | `R` | `beads-reopen-issue` | Reopen closed issue |
 | `g` | `beads-detail-refresh` | Refresh detail view |

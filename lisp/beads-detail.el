@@ -11,6 +11,7 @@
 (declare-function beads-list-refresh "beads-list")
 (declare-function beads-form-open "beads-form")
 (declare-function beads-show-hint "beads")
+(declare-function beads-hierarchy-show "beads-hierarchy")
 
 (defgroup beads-detail nil
   "Issue detail display for Beads."
@@ -71,6 +72,7 @@
     (define-key map (kbd "q") #'quit-window)
     (define-key map (kbd "e") beads-detail-edit-map)
     (define-key map (kbd "E") #'beads-detail-edit-form)
+    (define-key map (kbd "H") #'beads-hierarchy-show)
     (define-key map (kbd "D") #'beads-delete-issue)
     (define-key map (kbd "R") #'beads-reopen-issue)
     (define-key map (kbd "?") #'beads-menu)
