@@ -65,6 +65,8 @@ Hints are shown when entering beads modes to help with discoverability."
 (require 'beads-autoupdate)
 (require 'beads-project)
 
+(autoload 'beads-hierarchy-show "beads-hierarchy" "Display dependency tree." t)
+
 ;;;###autoload
 (defun beads ()
   "Open the Beads issue tracker."
