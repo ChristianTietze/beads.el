@@ -294,7 +294,96 @@ Implement filters as composable functions (SICP pattern):
     ("q" "Quit" quit-window)]])
 ```
 
-## 7. Mode Definition
+## 7. State Management (Closure Pattern)
+
+Encapsulate mutable state cleanly using closures:
+
+```elisp
+(defun beads-state-create ()
+  "Create state manager using closure."
+  (let ((view 'open)
+        (type-filter nil)
+        (priority-filter nil)
+        (assignee-filter nil))
+    (lambda (message &rest args)
+      (pcase message
+        ('get-view view)
+        ('set-view (setq view (car args)))
+        ('get-type-filter type-filter)
+        ('set-type-filter (setq type-filter (car args)))
+        ('get-priority-filter priority-filter)
+        ('set-priority-filter (setq priority-filter (car args)))
+        ('get-assignee-filter assignee-filter)
+        ('set-assignee-filter (setq assignee-filter (car args)))
+        ('clear-filters (setq type-filter nil
+                              priority-filter nil
+                              assignee-filter nil))))))
+
+(defvar beads--state nil "Global state manager.")
+
+(defun beads-state-get-view ()
+  "Get current view state."
+  (unless beads--state (setq beads--state (beads-state-create)))
+  (funcall beads--state 'get-view))
+
+(defun beads-state-set-view (view)
+  "Set view state."
+  (unless beads--state (setq beads--state (beads-state-create)))
+  (funcall beads--state 'set-view view))
+```
+
+## 8. Window Helpers
+
+Safe window operations with guaranteed cleanup:
+
+```elisp
+(defun beads--with-window-selection (window-or-fn &rest body)
+  "Execute BODY with target window selected, restore original after."
+  (when-let ((target (if (functionp window-or-fn)
+                         (funcall window-or-fn)
+                       window-or-fn)))
+    (let ((original (selected-window)))
+      (unwind-protect
+          (progn
+            (select-window target)
+            (apply #'funcall body))
+        (when (window-live-p original)
+          (select-window original))))))
+```
+
+Mark preview windows for reliable identification:
+
+```elisp
+(defun beads-preview--set-window-parameters (window)
+  "Mark WINDOW as a preview window."
+  (set-window-parameter window 'beads-preview t)
+  (set-window-parameter window 'dedicated t))
+
+(defun beads-preview--get-windows ()
+  "Return all preview windows."
+  (seq-filter (lambda (w) (window-parameter w 'beads-preview))
+              (window-list)))
+```
+
+## 9. Observer Pattern
+
+Decouple cross-component communication:
+
+```elisp
+(defvar beads--filter-change-observers nil)
+
+(defun beads--add-observer (observer)
+  "Add OBSERVER for filter changes."
+  (unless (memq observer beads--filter-change-observers)
+    (push observer beads--filter-change-observers)))
+
+(defun beads--notify-filter-changed ()
+  "Notify all observers of filter change."
+  (dolist (observer beads--filter-change-observers)
+    (funcall observer)))
+```
+
+## 10. Mode Definition
 
 ```elisp
 (defvar beads-list-mode-map
@@ -319,7 +408,7 @@ Implement filters as composable functions (SICP pattern):
   (hl-line-mode 1))
 ```
 
-## 8. Key Patterns Summary
+## 11. Key Patterns Summary
 
 | Pattern | Purpose | Implementation |
 |---------|---------|----------------|
@@ -329,8 +418,28 @@ Implement filters as composable functions (SICP pattern):
 | **Filter composition** | Flexible filtering | Higher-order functions, pipeline application |
 | **Buffer pool** | Memory management | Keep N most recent buffers, kill older ones |
 | **Observer pattern** | Decoupled updates | Notify functions when state changes |
+| **Closure state** | Encapsulate mutable state | Message-passing interface to closure |
+| **Window parameters** | Identify special windows | Set/check parameters like `'beads-preview` |
+| **unwind-protect** | Safe window operations | Guarantee cleanup after temporary selection |
 
-## 9. File Structure Suggestion
+## 12. Implementation Checklist
+
+- [ ] **RPC Layer**: JSON-over-socket communication with daemon
+- [ ] **List Mode**: `tabulated-list-mode` with column definitions
+- [ ] **Detail Mode**: Formatted content generation with faces
+- [ ] **Preview System**:
+  - [ ] `post-command-hook` for selection tracking
+  - [ ] Timer-based delayed preview (debouncing)
+  - [ ] Deduplication (skip if same issue)
+  - [ ] Buffer pooling
+  - [ ] Window parameter marking
+- [ ] **State Management**: Closure-based state with lazy init
+- [ ] **Filter System**: Composable higher-order filters
+- [ ] **Transient Menus**: View/filter/action commands
+- [ ] **Observer Pattern**: Cross-component notifications
+- [ ] **Window Helpers**: Safe selection with `unwind-protect`
+
+## 13. File Structure Suggestion
 
 ```
 beads.el/
