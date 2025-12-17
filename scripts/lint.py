@@ -39,10 +39,12 @@ def check_parens(el_file):
     return result.returncode == 0, result.stderr + result.stdout
 
 
-def byte_compile(el_file):
+def byte_compile(el_file, root_dir):
     """Byte-compile the file to catch warnings and errors."""
     result = subprocess.run(
-        ["emacs", "-Q", "--batch", "-f", "batch-byte-compile", str(el_file)],
+        ["emacs", "-Q", "--batch",
+         "-L", str(root_dir),
+         "-f", "batch-byte-compile", str(el_file)],
         capture_output=True,
         text=True
     )
@@ -79,7 +81,7 @@ def main():
             all_passed = False
             continue
 
-        compile_ok, has_warnings, compile_output = byte_compile(el_file)
+        compile_ok, has_warnings, compile_output = byte_compile(el_file, root_dir)
 
         if not compile_ok:
             print(f"  ✗ Byte-compilation failed")
