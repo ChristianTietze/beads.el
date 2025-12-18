@@ -183,17 +183,18 @@
 (defun beads-form-commit ()
   "Save all changes and close the form."
   (interactive)
-  (let ((changes (beads-form--collect-changes)))
+  (let ((changes (beads-form--collect-changes))
+        (issue-id beads-form--issue-id))
     (if (null changes)
         (progn
           (message "No changes to save")
           (beads-form--close))
       (condition-case err
           (progn
-            (apply #'beads-rpc-update beads-form--issue-id changes)
-            (message "Updated %s" beads-form--issue-id)
+            (apply #'beads-rpc-update issue-id changes)
+            (message "Updated %s" issue-id)
             (beads-form--close)
-            (beads-form--refresh-views))
+            (beads-form--refresh-views issue-id))
         (beads-rpc-error
          (message "Failed to update: %s" (error-message-string err)))))))
 
@@ -207,8 +208,8 @@
   "Close the form buffer."
   (quit-window t))
 
-(defun beads-form--refresh-views ()
-  "Refresh detail and list views after form edit."
+(defun beads-form--refresh-views (issue-id)
+  "Refresh detail and list views after form edit for ISSUE-ID."
   (dolist (buf (buffer-list))
     (when (buffer-live-p buf)
       (with-current-buffer buf
@@ -218,7 +219,7 @@
             (beads-list-refresh)))
          ((and (eq major-mode 'beads-detail-mode)
                (boundp 'beads-detail--current-issue-id)
-               (equal beads-detail--current-issue-id beads-form--issue-id))
+               (equal beads-detail--current-issue-id issue-id))
           (when (fboundp 'beads-detail-refresh)
             (beads-detail-refresh))))))))
 
