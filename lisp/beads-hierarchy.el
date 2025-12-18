@@ -26,6 +26,8 @@
     (define-key map (kbd "q") #'quit-window)
     (define-key map (kbd "g") #'beads-hierarchy-refresh)
     (define-key map (kbd "RET") #'beads-hierarchy-goto-issue)
+    (define-key map (kbd "TAB") #'widget-forward)
+    (define-key map (kbd "<backtab>") #'widget-backward)
     map)
   "Keymap for beads-hierarchy-mode.")
 
