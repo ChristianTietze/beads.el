@@ -149,6 +149,31 @@ Sets status to open and clears closed_at timestamp."
         (beads-rpc-error
          (message "Failed to reopen issue: %s" (error-message-string err)))))))
 
+(defun beads-stats ()
+  "Display project statistics in a temporary buffer."
+  (interactive)
+  (condition-case err
+      (let ((stats (beads-rpc-stats)))
+        (with-current-buffer (get-buffer-create "*Beads Stats*")
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (insert (propertize "Beads Project Statistics\n" 'face 'bold))
+            (insert (make-string 25 ?=) "\n\n")
+            (insert (format "%-20s %d\n" "Total Issues:" (alist-get 'total_issues stats 0)))
+            (insert (format "%-20s %d\n" "Open:" (alist-get 'open_issues stats 0)))
+            (insert (format "%-20s %d\n" "In Progress:" (alist-get 'in_progress_issues stats 0)))
+            (insert (format "%-20s %d\n" "Closed:" (alist-get 'closed_issues stats 0)))
+            (insert (format "%-20s %d\n" "Blocked:" (alist-get 'blocked_issues stats 0)))
+            (insert (format "%-20s %d\n" "Ready:" (alist-get 'ready_issues stats 0)))
+            (let ((lead-time (alist-get 'average_lead_time_hours stats)))
+              (when (and lead-time (> lead-time 0))
+                (insert (format "\n%-20s %.1f hours\n" "Avg Lead Time:" lead-time)))))
+          (special-mode)
+          (goto-char (point-min))
+          (display-buffer (current-buffer))))
+    (beads-rpc-error
+     (message "Failed to fetch stats: %s" (error-message-string err)))))
+
 (defun beads-filter-status ()
   "Filter issues by status.
 Select a status to filter, or \"all\" to clear the filter."
@@ -292,7 +317,8 @@ Prompts for a search query and filters the list to matching issues."
   ["Navigation"
    ("g" "Refresh" beads-list-refresh)
    ("P" "Toggle preview" beads-preview-mode)
-   ("H" "Dependency tree" beads-hierarchy-show)]
+   ("H" "Dependency tree" beads-hierarchy-show)
+   ("S" "Project stats" beads-stats)]
   ["Actions"
    ("c" "Create issue" beads-create-issue)
    ("E" "Edit issue" beads-list-edit-form)
@@ -311,7 +337,8 @@ Prompts for a search query and filters the list to matching issues."
   ["Navigation"
    ("l" "List issues" beads-list)
    ("g" "Refresh" beads-detail-refresh)
-   ("H" "Dependency tree" beads-hierarchy-show)]
+   ("H" "Dependency tree" beads-hierarchy-show)
+   ("S" "Project stats" beads-stats)]
   ["Edit"
    ("E" "Edit form" beads-detail-edit-form)
    ("e d" "Description" beads-detail-edit-description)

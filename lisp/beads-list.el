@@ -40,6 +40,14 @@
   '((t :foreground "orange"))
   "Face for P1 priority.")
 
+(defface beads-list-header-line
+  '((t :inherit header-line))
+  "Face for stats header line.")
+
+(defface beads-list-header-count
+  '((t :inherit bold))
+  "Face for counts in header line.")
+
 (defvar beads-list--issues nil
   "Cached list of issues for current buffer.")
 
@@ -55,6 +63,7 @@ Used to ensure refresh uses the correct project context.")
 (declare-function beads-delete-issue "beads-transient")
 (declare-function beads-reopen-issue "beads-transient")
 (declare-function beads-search "beads-transient")
+(declare-function beads-stats "beads-transient")
 (declare-function beads-hierarchy-show "beads-hierarchy")
 
 (defvar beads-list-edit-map
@@ -78,6 +87,7 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "/") #'beads-search)
     (define-key map (kbd "H") #'beads-hierarchy-show)
     (define-key map (kbd "P") #'beads-preview-mode)
+    (define-key map (kbd "S") #'beads-stats)
     (define-key map (kbd "D") #'beads-delete-issue)
     (define-key map (kbd "R") #'beads-reopen-issue)
     (define-key map (kbd "q") #'beads-list-quit)
@@ -85,6 +95,28 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "C-c m") #'beads-menu)
     map)
   "Keymap for beads-list-mode.")
+
+(defun beads-list--format-header-line (stats)
+  "Format STATS for display in header line."
+  (let ((total (alist-get 'total_issues stats 0))
+        (open (alist-get 'open_issues stats 0))
+        (in-progress (alist-get 'in_progress_issues stats 0))
+        (blocked (alist-get 'blocked_issues stats 0))
+        (ready (alist-get 'ready_issues stats 0)))
+    (format " %s total | %s open | %s in progress | %s blocked | %s ready"
+            (propertize (number-to-string total) 'face 'beads-list-header-count)
+            (propertize (number-to-string open) 'face 'beads-list-header-count)
+            (propertize (number-to-string in-progress) 'face 'beads-list-header-count)
+            (propertize (number-to-string blocked) 'face 'beads-list-header-count)
+            (propertize (number-to-string ready) 'face 'beads-list-header-count))))
+
+(defun beads-list--update-header-line ()
+  "Update the header line with current stats."
+  (condition-case nil
+      (let ((stats (beads-rpc-stats)))
+        (setq header-line-format (beads-list--format-header-line stats)))
+    (beads-rpc-error
+     (setq header-line-format nil))))
 
 (define-derived-mode beads-list-mode tabulated-list-mode "Beads-List"
   "Major mode for displaying Beads issues in a table.
@@ -127,6 +159,7 @@ Applies `beads-list--filter' if set."
             (goto-char (point-min)))
           (when-let ((win (get-buffer-window (current-buffer))))
             (set-window-start win (min saved-start (point-max))))
+          (beads-list--update-header-line)
           (unless silent
             (let ((filter-msg (if beads-list--filter
                                   (format " [%s]" (beads-filter-name beads-list--filter))

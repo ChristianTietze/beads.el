@@ -81,6 +81,7 @@ Or use the form editor (`E`) to edit all fields at once:
 | `f c` | `beads-filter-clear` | Clear all filters |
 | `H` | `beads-hierarchy-show` | Show dependency tree |
 | `P` | `beads-preview-mode` | Toggle preview mode |
+| `S` | `beads-stats` | Show project statistics |
 | `D` | `beads-delete-issue` | Delete issue (with confirmation) |
 | `R` | `beads-reopen-issue` | Reopen closed issue |
 | `g` | `beads-list-refresh` | Refresh issue list |
