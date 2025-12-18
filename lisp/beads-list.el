@@ -20,6 +20,13 @@
   "Issue list display for Beads."
   :group 'beads)
 
+(defcustom beads-list-show-header-stats t
+  "Whether to show statistics in the header line.
+When non-nil, displays issue counts (total, open, blocked, ready)
+in the header line of the list view."
+  :type 'boolean
+  :group 'beads-list)
+
 (defface beads-list-status-open
   '((t :inherit default))
   "Face for open status.")
@@ -111,12 +118,15 @@ Used to ensure refresh uses the correct project context.")
             (propertize (number-to-string ready) 'face 'beads-list-header-count))))
 
 (defun beads-list--update-header-line ()
-  "Update the header line with current stats."
-  (condition-case nil
-      (let ((stats (beads-rpc-stats)))
-        (setq header-line-format (beads-list--format-header-line stats)))
-    (beads-rpc-error
-     (setq header-line-format nil))))
+  "Update the header line with current stats.
+Respects `beads-list-show-header-stats'."
+  (if beads-list-show-header-stats
+      (condition-case nil
+          (let ((stats (beads-rpc-stats)))
+            (setq header-line-format (beads-list--format-header-line stats)))
+        (beads-rpc-error
+         (setq header-line-format nil)))
+    (setq header-line-format nil)))
 
 (define-derived-mode beads-list-mode tabulated-list-mode "Beads-List"
   "Major mode for displaying Beads issues in a table.

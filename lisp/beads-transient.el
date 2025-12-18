@@ -150,7 +150,8 @@ Sets status to open and clears closed_at timestamp."
          (message "Failed to reopen issue: %s" (error-message-string err)))))))
 
 (defun beads-stats ()
-  "Display project statistics in a temporary buffer."
+  "Display project statistics in a popup buffer.
+Press `q' to close the stats window."
   (interactive)
   (condition-case err
       (let ((stats (beads-rpc-stats)))
@@ -170,7 +171,10 @@ Sets status to open and clears closed_at timestamp."
                 (insert (format "\n%-20s %.1f hours\n" "Avg Lead Time:" lead-time)))))
           (special-mode)
           (goto-char (point-min))
-          (display-buffer (current-buffer))))
+          (pop-to-buffer (current-buffer)
+                         '((display-buffer-in-side-window)
+                           (side . bottom)
+                           (window-height . fit-window-to-buffer)))))
     (beads-rpc-error
      (message "Failed to fetch stats: %s" (error-message-string err)))))
 
