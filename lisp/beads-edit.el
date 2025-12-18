@@ -106,7 +106,7 @@
 MAJOR-MODE-FN is the major mode to use (defaults to `text-mode').
 Returns the edit buffer."
   (let* ((field-name (substring (symbol-name field) 1))
-         (buffer-name (format "*beads-edit: %s %s*" issue-id field-name))
+         (buffer-name (format "*Beads Edit: %s %s*" issue-id field-name))
          (buffer (get-buffer-create buffer-name))
          (source-buffer (current-buffer))
          (window-config (current-window-configuration)))

@@ -168,7 +168,7 @@ Returns the parent issue or nil if ISSUE is root."
       (user-error "Could not build dependency tree"))
     (let* ((h (car result))
            (by-id (cdr result))
-           (buffer-name (format "*beads-deps: %s*" issue-id))
+           (buffer-name (format "*Beads Deps: %s*" issue-id))
            (buffer (get-buffer-create buffer-name)))
       (when (zerop (hierarchy-length h))
         (message "No dependencies found for %s" issue-id))

@@ -49,7 +49,7 @@
 (defun beads-form-open (issue)
   "Open form editor for ISSUE."
   (let* ((id (alist-get 'id issue))
-         (buffer-name (format "*beads-form: %s*" id))
+         (buffer-name (format "*Beads Form: %s*" id))
          (buffer (get-buffer-create buffer-name)))
     (with-current-buffer buffer
       (let ((inhibit-read-only t))

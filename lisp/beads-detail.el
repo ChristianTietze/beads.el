@@ -92,7 +92,7 @@
   "Open ISSUE in a dedicated detail buffer in bottom window.
 Creates a unique buffer per issue and focuses it."
   (let* ((id (alist-get 'id issue))
-         (buffer-name (format "*beads-detail: %s*" id))
+         (buffer-name (format "*Beads Detail: %s*" id))
          (buffer (get-buffer-create buffer-name)))
     (with-current-buffer buffer
       (unless (eq major-mode 'beads-detail-mode)
@@ -115,7 +115,7 @@ Creates a unique buffer per issue and focuses it."
   "Display ISSUE in preview buffer (for preview mode).
 Uses a single reusable buffer in a side window without focusing."
   (let* ((id (alist-get 'id issue))
-         (buffer (get-buffer-create "*beads-preview*")))
+         (buffer (get-buffer-create "*Beads Preview*")))
     (with-current-buffer buffer
       (unless (eq major-mode 'beads-detail-mode)
         (beads-detail-mode))
