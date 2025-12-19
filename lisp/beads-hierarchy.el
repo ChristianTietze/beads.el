@@ -26,10 +26,50 @@
     (define-key map (kbd "q") #'quit-window)
     (define-key map (kbd "g") #'beads-hierarchy-refresh)
     (define-key map (kbd "RET") #'beads-hierarchy-goto-issue)
-    (define-key map (kbd "TAB") #'widget-forward)
-    (define-key map (kbd "<backtab>") #'widget-backward)
+    (define-key map (kbd "TAB") #'beads-hierarchy-next)
+    (define-key map (kbd "<backtab>") #'beads-hierarchy-previous)
     map)
   "Keymap for beads-hierarchy-mode.")
+
+(defun beads-hierarchy--collect-positions ()
+  "Collect positions of all interactable elements in buffer.
+Returns sorted list of positions for widgets and buttons."
+  (let ((positions nil))
+    (save-excursion
+      (goto-char (point-min))
+      (while (not (eobp))
+        (when (widget-at (point))
+          (push (point) positions))
+        (forward-char 1)))
+    (save-excursion
+      (goto-char (point-min))
+      (let ((button (next-button (point))))
+        (while button
+          (push (button-start button) positions)
+          (setq button (next-button (button-end button))))))
+    (sort (delete-dups positions) #'<)))
+
+(defun beads-hierarchy-next ()
+  "Move to next interactable element (widget or button)."
+  (interactive)
+  (let* ((positions (beads-hierarchy--collect-positions))
+         (pos (point))
+         (next (seq-find (lambda (p) (> p pos)) positions)))
+    (if next
+        (goto-char next)
+      (when positions
+        (goto-char (car positions))))))
+
+(defun beads-hierarchy-previous ()
+  "Move to previous interactable element (widget or button)."
+  (interactive)
+  (let* ((positions (beads-hierarchy--collect-positions))
+         (pos (point))
+         (prev (seq-find (lambda (p) (< p pos)) (reverse positions))))
+    (if prev
+        (goto-char prev)
+      (when positions
+        (goto-char (car (last positions)))))))
 
 (define-derived-mode beads-hierarchy-mode special-mode "Beads-Deps"
   "Major mode for displaying issue dependency trees.
@@ -52,12 +92,27 @@
          (fixed-width (+ (length id) (length status) 6))
          (available (- (window-body-width) tree-indent fixed-width)))
     (insert " ")
-    (insert (propertize id 'face 'beads-detail-id-face))
+    (insert-text-button id
+                        'face 'beads-detail-id-face
+                        'action #'beads-hierarchy--button-action
+                        'beads-issue issue
+                        'follow-link t)
     (insert " ")
     (insert (truncate-string-to-width title (max 10 available) nil nil "…"))
     (insert " ")
     (insert (propertize (format "[%s]" status)
                         'face (beads-hierarchy--status-face status)))))
+
+(defun beads-hierarchy--button-action (button)
+  "Handle activation of issue BUTTON."
+  (let ((issue (button-get button 'beads-issue)))
+    (when issue
+      (condition-case err
+          (let* ((id (alist-get 'id issue))
+                 (full-issue (beads-rpc-show id)))
+            (beads-detail-open full-issue))
+        (beads-rpc-error
+         (message "Failed to fetch issue: %s" (error-message-string err)))))))
 
 (defun beads-hierarchy--build (issue-id)
   "Build hierarchy for ISSUE-ID using show RPC.
