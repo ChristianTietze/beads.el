@@ -97,6 +97,8 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "S") #'beads-stats)
     (define-key map (kbd "D") #'beads-delete-issue)
     (define-key map (kbd "R") #'beads-reopen-issue)
+    (define-key map (kbd "o") #'beads-list-cycle-sort)
+    (define-key map (kbd "O") #'beads-list-reverse-sort)
     (define-key map (kbd "q") #'beads-list-quit)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
@@ -274,6 +276,30 @@ Returns the issue alist or nil if not found."
   (if beads-preview-mode
       (beads-preview-mode -1)
     (quit-window)))
+
+(defun beads-list-cycle-sort ()
+  "Cycle through sort columns."
+  (interactive)
+  (let* ((columns '("ID" "Date" "Status" "Pri" "Type" "Title"))
+         (current (car tabulated-list-sort-key))
+         (flip (cdr tabulated-list-sort-key))
+         (idx (or (seq-position columns current #'string=) 0))
+         (next-idx (mod (1+ idx) (length columns)))
+         (next-col (nth next-idx columns)))
+    (setq tabulated-list-sort-key (cons next-col flip))
+    (tabulated-list-init-header)
+    (tabulated-list-print t)
+    (message "Sorted by %s%s" next-col (if flip " (descending)" ""))))
+
+(defun beads-list-reverse-sort ()
+  "Reverse the current sort direction."
+  (interactive)
+  (let ((current (car tabulated-list-sort-key))
+        (flip (cdr tabulated-list-sort-key)))
+    (setq tabulated-list-sort-key (cons current (not flip)))
+    (tabulated-list-init-header)
+    (tabulated-list-print t)
+    (message "Sorted by %s%s" current (if (not flip) " (descending)" ""))))
 
 (defun beads-list-goto-issue ()
   "Navigate to or display details for issue at point."
