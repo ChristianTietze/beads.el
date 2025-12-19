@@ -27,6 +27,21 @@ in the header line of the list view."
   :type 'boolean
   :group 'beads-list)
 
+(defcustom beads-list-columns
+  '(id date status priority type title)
+  "Columns to display in beads list view.
+Available: id, date, status, priority, type, title, assignee, labels, deps."
+  :type '(repeat (choice (const :tag "ID" id)
+                         (const :tag "Date" date)
+                         (const :tag "Status" status)
+                         (const :tag "Priority" priority)
+                         (const :tag "Type" type)
+                         (const :tag "Title" title)
+                         (const :tag "Assignee" assignee)
+                         (const :tag "Labels" labels)
+                         (const :tag "Dependencies" deps)))
+  :group 'beads-list)
+
 (defface beads-list-status-open
   '((t :inherit default))
   "Face for open status.")
@@ -54,6 +69,58 @@ in the header line of the list view."
 (defface beads-list-header-count
   '((t :inherit bold))
   "Face for counts in header line.")
+
+(defface beads-list-deps-blocked
+  '((t :foreground "red"))
+  "Face for blocked dependency indicator.")
+
+(defface beads-list-deps-parent
+  '((t :foreground "yellow"))
+  "Face for has-parent dependency indicator.")
+
+(defface beads-list-deps-child
+  '((t :foreground "green"))
+  "Face for has-children dependency indicator.")
+
+(defvar beads-list--column-defs
+  '((id       . ("ID"       10 t              beads--format-id))
+    (date     . ("Date"     10 beads-list--sort-by-date beads--format-date))
+    (status   . ("Status"   12 t              beads--format-status))
+    (priority . ("Pri"       4 t              beads--format-priority))
+    (type     . ("Type"      8 t              beads--format-type))
+    (title    . ("Title"    50 t              beads--format-title))
+    (assignee . ("Assignee" 12 t              beads--format-assignee))
+    (labels   . ("Labels"   15 t              beads--format-labels))
+    (deps     . ("Dep"       3 t              beads--format-deps)))
+  "Column definitions for beads list view.
+Each entry is (SYMBOL . (HEADER WIDTH SORTABLE FORMATTER)).")
+
+(defun beads-list--build-format ()
+  "Build `tabulated-list-format' from `beads-list-columns'."
+  (vconcat
+   (mapcar (lambda (col)
+             (let ((def (alist-get col beads-list--column-defs)))
+               (if def
+                   (list (nth 0 def) (nth 1 def) (nth 2 def))
+                 (error "Unknown column: %s" col))))
+           beads-list-columns)))
+
+(defun beads-list--build-entry (issue)
+  "Build entry vector for ISSUE based on `beads-list-columns'."
+  (vconcat
+   (mapcar (lambda (col)
+             (let ((def (alist-get col beads-list--column-defs)))
+               (if def
+                   (funcall (nth 3 def) issue)
+                 "")))
+           beads-list-columns)))
+
+(defun beads-list--column-names ()
+  "Get list of column header names for current configuration."
+  (mapcar (lambda (col)
+            (let ((def (alist-get col beads-list--column-defs)))
+              (if def (nth 0 def) "")))
+          beads-list-columns))
 
 (defvar beads-list--issues nil
   "Cached list of issues for current buffer.")
@@ -134,13 +201,7 @@ Respects `beads-list-show-header-stats'."
   "Major mode for displaying Beads issues in a table.
 
 \\{beads-list-mode-map}"
-  (setq tabulated-list-format
-        [("ID" 10 t)
-         ("Date" 10 beads-list--sort-by-date)
-         ("Status" 12 t)
-         ("Pri" 4 t)
-         ("Type" 8 t)
-         ("Title" 50 t)])
+  (setq tabulated-list-format (beads-list--build-format))
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key (cons "Date" t))
   (add-hook 'tabulated-list-revert-hook #'beads-list-refresh nil t)
@@ -195,14 +256,7 @@ Returns t if found, nil otherwise."
   "Convert ISSUES to tabulated-list entries."
   (mapcar (lambda (issue)
             (let ((id (alist-get 'id issue)))
-              (list id
-                    (vector
-                     (beads--format-id issue)
-                     (beads--format-date issue)
-                     (beads--format-status issue)
-                     (beads--format-priority issue)
-                     (beads--format-type issue)
-                     (beads--format-title issue)))))
+              (list id (beads-list--build-entry issue))))
           issues))
 
 (defun beads--format-id (issue)
@@ -262,6 +316,31 @@ Returns non-nil if A should come before B."
         (concat (substring title 0 47) "...")
       title)))
 
+(defun beads--format-assignee (issue)
+  "Format assignee column for ISSUE."
+  (or (alist-get 'assignee issue) ""))
+
+(defun beads--format-labels (issue)
+  "Format labels column for ISSUE as comma-separated string."
+  (let ((labels (alist-get 'labels issue)))
+    (if (and labels (> (length labels) 0))
+        (mapconcat #'identity labels ",")
+      "")))
+
+(defun beads--format-deps (issue)
+  "Format dependency indicator for ISSUE.
+Shows ↑ for has parents, ↓ for has children, ↕ for both."
+  (let ((dep-count (alist-get 'dependency_count issue 0))
+        (dependent-count (alist-get 'dependent_count issue 0)))
+    (cond
+     ((and (> dep-count 0) (> dependent-count 0))
+      (propertize "↕" 'face 'beads-list-deps-parent))
+     ((> dep-count 0)
+      (propertize "↑" 'face 'beads-list-deps-blocked))
+     ((> dependent-count 0)
+      (propertize "↓" 'face 'beads-list-deps-child))
+     (t ""))))
+
 (defun beads--get-issue-at-point ()
   "Get issue data at current line.
 Returns the issue alist or nil if not found."
@@ -280,7 +359,7 @@ Returns the issue alist or nil if not found."
 (defun beads-list-cycle-sort ()
   "Cycle through sort columns."
   (interactive)
-  (let* ((columns '("ID" "Date" "Status" "Pri" "Type" "Title"))
+  (let* ((columns (beads-list--column-names))
          (current (car tabulated-list-sort-key))
          (flip (cdr tabulated-list-sort-key))
          (idx (or (seq-position columns current #'string=) 0))
