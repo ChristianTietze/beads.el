@@ -44,16 +44,17 @@
     (_ 'beads-list-status-open)))
 
 (defun beads-hierarchy--labelfn (issue indent)
-  "Insert formatted ISSUE at INDENT level.
-INDENT is ignored as hierarchy.el handles indentation via tree widget."
-  (ignore indent)
-  (let ((id (alist-get 'id issue))
-        (title (alist-get 'title issue ""))
-        (status (alist-get 'status issue "open")))
+  "Insert formatted ISSUE at INDENT level."
+  (let* ((id (alist-get 'id issue))
+         (title (alist-get 'title issue ""))
+         (status (alist-get 'status issue "open"))
+         (tree-indent (* indent 3))
+         (fixed-width (+ (length id) (length status) 6))
+         (available (- (window-body-width) tree-indent fixed-width)))
     (insert " ")
     (insert (propertize id 'face 'beads-detail-id-face))
     (insert " ")
-    (insert (truncate-string-to-width title 40 nil nil "…"))
+    (insert (truncate-string-to-width title (max 10 available) nil nil "…"))
     (insert " ")
     (insert (propertize (format "[%s]" status)
                         'face (beads-hierarchy--status-face status)))))
