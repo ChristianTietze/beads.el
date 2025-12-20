@@ -46,9 +46,34 @@ Or use the form editor (`E`) to edit all fields at once:
 
 ## Installation
 
+### From MELPA (Recommended)
+
+Once available on MELPA:
+
+```elisp
+(use-package beads
+  :ensure t)
+```
+
+Or with `package.el`:
+
+```elisp
+(package-install 'beads)
+```
+
+### Manual Installation
+
 ```elisp
 (add-to-list 'load-path "/path/to/beads.el/lisp")
 (require 'beads)
+```
+
+### With straight.el
+
+```elisp
+(straight-use-package
+ '(beads :type git :host github :repo "ChristianTietze/beads.el"
+         :files ("lisp/*.el")))
 ```
 
 ## Usage

@@ -4,9 +4,9 @@
 
 ;; Author: Beads Contributors
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "28.1"))
+;; Package-Requires: ((emacs "28.1") (transient "0.4.0") (hierarchy "0.7.0"))
 ;; Keywords: tools, project
-;; URL: https://github.com/steveyegge/beads
+;; URL: https://github.com/ChristianTietze/beads.el
 
 ;; This file is NOT part of GNU Emacs.
 
