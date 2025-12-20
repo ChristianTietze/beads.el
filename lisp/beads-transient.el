@@ -466,7 +466,9 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("j" "Next" next-line :transient t)
    ("k" "Prev" previous-line :transient t)
    ("<down>" "Next" next-line :transient t)
-   ("<up>" "Prev" previous-line :transient t)])
+   ("<up>" "Prev" previous-line :transient t)
+   ("C-n" "Next" next-line :transient t)
+   ("C-p" "Prev" previous-line :transient t)])
 
 (transient-define-prefix beads-filter-menu ()
   "Beads filter menu."
