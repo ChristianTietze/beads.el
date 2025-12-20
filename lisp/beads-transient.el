@@ -489,7 +489,8 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("x" "Close issue" beads-close-issue)
    ("R" "Reopen issue" beads-reopen-issue)
    ("D" "Delete issue" beads-delete-issue)
-   ("m" beads--mark-menu-description beads-mark-menu)]
+   ("m" "Mark & Bulk..." beads-mark-menu
+    :description beads--mark-menu-description)]
   ["Search & Filter"
    ("/" "Search..." beads-search)
    ("f" "Filter menu..." beads-filter-menu)]
