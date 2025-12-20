@@ -435,25 +435,28 @@ Uses canonical order from `beads-list--column-order' for insertion."
   ["Navigation"
    ("q" "Back" transient-quit-one)])
 
-(defun beads--mark-section-title ()
-  "Return dynamic title for Mark section showing count."
+(defun beads--mark-menu-description ()
+  "Return description for mark menu entry showing count."
   (let ((count (length beads-list--marked)))
     (if (> count 0)
-        (format "Mark (%d)" count)
-      "Mark")))
-
-(defun beads--bulk-section-title ()
-  "Return dynamic title for Bulk section showing count."
-  (let ((count (length beads-list--marked)))
-    (if (> count 0)
-        (format "Bulk (%d)" count)
-      "Bulk")))
+        (format "Mark & Bulk (%d)..." count)
+      "Mark & Bulk...")))
 
 (transient-define-prefix beads-mark-menu ()
-  "Advanced marking operations."
-  ["Mark by..."
-   ("m" "Regexp (title)" beads-list-mark-regexp)
-   ("*" "Show only marked" beads-list-toggle-marked-filter)]
+  "Mark issues and perform bulk operations."
+  :transient-suffix 'transient--do-call
+  [["Mark"
+    ("m" "Mark" beads-list-mark :transient t)
+    ("u" "Unmark" beads-list-unmark :transient t)
+    ("U" "Unmark all" beads-list-unmark-all :transient t)
+    ("t" "Toggle all" beads-list-toggle-marks :transient t)
+    ("%" "Regexp (title)" beads-list-mark-regexp :transient t)
+    ("*" "Show only marked" beads-list-toggle-marked-filter :transient t)]
+   ["Bulk"
+    ("s" "Set status" beads-list-bulk-status)
+    ("p" "Set priority" beads-list-bulk-priority)
+    ("x" "Close" beads-list-bulk-close)
+    ("D" "Delete!" beads-list-bulk-delete)]]
   ["Navigation"
    ("q" "Back" transient-quit-one)])
 
@@ -480,21 +483,13 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("P" "Toggle preview" beads-preview-mode)
    ("H" "Dependency tree" beads-hierarchy-show)
    ("S" "Project stats" beads-stats)]
-  [:description beads--mark-section-title
-   ("m" "Mark" beads-list-mark :transient t)
-   ("u" "Unmark" beads-list-unmark :transient t)
-   ("U" "Unmark all" beads-list-unmark-all :transient t)
-   ("t" "Toggle" beads-list-toggle-marks :transient t)
-   ("*" "More..." beads-mark-menu)]
-  [:description beads--bulk-section-title
-   ("B s" "Set status" beads-list-bulk-status)
-   ("B p" "Set priority" beads-list-bulk-priority)
-   ("x" "Close" beads-list-bulk-close)
-   ("B D" "Delete!" beads-list-bulk-delete)]
   ["Actions"
    ("c" "Create issue" beads-create-issue)
    ("E" "Edit issue" beads-list-edit-form)
-   ("R" "Reopen issue" beads-reopen-issue)]
+   ("x" "Close issue" beads-close-issue)
+   ("R" "Reopen issue" beads-reopen-issue)
+   ("D" "Delete issue" beads-delete-issue)
+   ("m" beads--mark-menu-description beads-mark-menu)]
   ["Search & Filter"
    ("/" "Search..." beads-search)
    ("f" "Filter menu..." beads-filter-menu)]
