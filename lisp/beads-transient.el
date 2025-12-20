@@ -317,8 +317,9 @@ Prompts for a search query and filters the list to matching issues."
 (defun beads-list--toggle-column (col)
   "Toggle column COL in the current buffer's column list.
 Uses canonical order from `beads-list--column-order' for insertion."
+  (require 'beads-list)
   (if (beads-list--column-enabled-p col)
-      (setq-local beads-list-columns (delq col beads-list-columns))
+      (setq-local beads-list-columns (remq col beads-list-columns))
     (let ((new-cols '()))
       (dolist (c beads-list--column-order)
         (when (or (eq c col) (memq c beads-list-columns))
@@ -341,7 +342,7 @@ Uses canonical order from `beads-list--column-order' for insertion."
        :key ,key
        :description (lambda ()
                       (format "%s %s"
-                              (if (beads-list--column-enabled-p ',col) "☑" "☐")
+                              (if (beads-list--column-enabled-p ',col) "[x]" "[ ]")
                               (beads-list--column-description ',col)))
        (interactive)
        (beads-list--toggle-column ',col))))
@@ -389,14 +390,14 @@ Uses canonical order from `beads-list--column-order' for insertion."
 (transient-define-prefix beads-columns-menu ()
   "Configure list view columns."
   :transient-suffix 'transient--do-call
-  ["Toggle Columns"
+  ["Columns"
    :class transient-row
    (beads-list-toggle-column-id)
    (beads-list-toggle-column-date)
    (beads-list-toggle-column-status)
    (beads-list-toggle-column-priority)
    (beads-list-toggle-column-type)]
-  ["More Columns"
+  [""
    :class transient-row
    (beads-list-toggle-column-deps)
    (beads-list-toggle-column-assignee)
