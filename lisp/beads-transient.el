@@ -458,7 +458,13 @@ Uses canonical order from `beads-list--column-order' for insertion."
     ("x" "Close" beads-list-bulk-close)
     ("D" "Delete!" beads-list-bulk-delete)]]
   ["Navigation"
-   ("q" "Back" transient-quit-one)])
+   ("q" "Back" transient-quit-one)]
+  [""
+   :hide always
+   ("n" "Next" next-line :transient t)
+   ("p" "Prev" previous-line :transient t)
+   ("j" "Next" next-line :transient t)
+   ("k" "Prev" previous-line :transient t)])
 
 (transient-define-prefix beads-filter-menu ()
   "Beads filter menu."
