@@ -1,0 +1,3 @@
+(beads :fetcher github
+       :repo "ChristianTietze/beads.el"
+       :files ("lisp/*.el"))
