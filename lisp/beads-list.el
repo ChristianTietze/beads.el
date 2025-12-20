@@ -157,6 +157,15 @@ Used to ensure refresh uses the correct project context.")
     map)
   "Keymap for mark prefix commands in beads-list-mode.")
 
+(defvar beads-list-bulk-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "s") #'beads-list-bulk-status)
+    (define-key map (kbd "p") #'beads-list-bulk-priority)
+    (define-key map (kbd "c") #'beads-list-bulk-close)
+    (define-key map (kbd "D") #'beads-list-bulk-delete)
+    map)
+  "Keymap for bulk operation commands in beads-list-mode.")
+
 (defvar beads-list-edit-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "t") #'beads-list-edit-title)
@@ -190,6 +199,8 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "%") beads-list-mark-map)
     (define-key map (kbd "* m") #'beads-list-mark-regexp)
     (define-key map (kbd "* *") #'beads-list-toggle-marked-filter)
+    (define-key map (kbd "B") beads-list-bulk-map)
+    (define-key map (kbd "x") #'beads-list-bulk-close)
     (define-key map (kbd "q") #'beads-list-quit)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
@@ -474,6 +485,102 @@ Returns the issue alist or nil if not found."
     (message "%s" (if beads-list--show-only-marked
                       (format "Showing %d marked issue(s)" (length beads-list--marked))
                     "Showing all issues"))))
+
+(defun beads-list--get-marked-or-at-point ()
+  "Return list of marked issue IDs, or ID at point if none marked."
+  (if beads-list--marked
+      beads-list--marked
+    (when-let ((id (tabulated-list-get-id)))
+      (list id))))
+
+(defun beads-list-bulk-status (status)
+  "Set STATUS for all marked issues (or issue at point if none marked)."
+  (interactive
+   (list (completing-read "Status: " '("open" "in_progress" "blocked" "closed") nil t)))
+  (let ((ids (beads-list--get-marked-or-at-point)))
+    (unless ids
+      (user-error "No issues marked or at point"))
+    (let ((count 0)
+          (errors 0))
+      (dolist (id ids)
+        (condition-case nil
+            (progn
+              (beads-rpc-update id :status status)
+              (setq count (1+ count)))
+          (beads-rpc-error
+           (setq errors (1+ errors)))))
+      (beads-list-refresh t)
+      (if (> errors 0)
+          (message "Updated %d issue(s), %d error(s)" count errors)
+        (message "Updated %d issue(s) to %s" count status)))))
+
+(defun beads-list-bulk-priority (priority)
+  "Set PRIORITY for all marked issues (or issue at point if none marked)."
+  (interactive
+   (let ((choice (completing-read "Priority: " '("P0" "P1" "P2" "P3" "P4") nil t)))
+     (list (string-to-number (substring choice 1)))))
+  (let ((ids (beads-list--get-marked-or-at-point)))
+    (unless ids
+      (user-error "No issues marked or at point"))
+    (let ((count 0)
+          (errors 0))
+      (dolist (id ids)
+        (condition-case nil
+            (progn
+              (beads-rpc-update id :priority priority)
+              (setq count (1+ count)))
+          (beads-rpc-error
+           (setq errors (1+ errors)))))
+      (beads-list-refresh t)
+      (if (> errors 0)
+          (message "Updated %d issue(s), %d error(s)" count errors)
+        (message "Updated %d issue(s) to P%d" count priority)))))
+
+(defun beads-list-bulk-close ()
+  "Close all marked issues (or issue at point if none marked)."
+  (interactive)
+  (let ((ids (beads-list--get-marked-or-at-point)))
+    (unless ids
+      (user-error "No issues marked or at point"))
+    (when (or (= (length ids) 1)
+              (yes-or-no-p (format "Close %d issues? " (length ids))))
+      (let ((count 0)
+            (errors 0))
+        (dolist (id ids)
+          (condition-case nil
+              (progn
+                (beads-rpc-close id)
+                (setq count (1+ count)))
+            (beads-rpc-error
+             (setq errors (1+ errors)))))
+        (setq beads-list--marked nil)
+        (beads-list-refresh t)
+        (if (> errors 0)
+            (message "Closed %d issue(s), %d error(s)" count errors)
+          (message "Closed %d issue(s)" count))))))
+
+(defun beads-list-bulk-delete ()
+  "Delete all marked issues (or issue at point if none marked).
+Prompts for confirmation."
+  (interactive)
+  (let ((ids (beads-list--get-marked-or-at-point)))
+    (unless ids
+      (user-error "No issues marked or at point"))
+    (when (yes-or-no-p (format "DELETE %d issue(s)? This cannot be undone! " (length ids)))
+      (let ((count 0)
+            (errors 0))
+        (dolist (id ids)
+          (condition-case nil
+              (progn
+                (beads-rpc-delete id)
+                (setq count (1+ count)))
+            (beads-rpc-error
+             (setq errors (1+ errors)))))
+        (setq beads-list--marked nil)
+        (beads-list-refresh t)
+        (if (> errors 0)
+            (message "Deleted %d issue(s), %d error(s)" count errors)
+          (message "Deleted %d issue(s)" count))))))
 
 (defun beads-list-goto-issue ()
   "Navigate to or display details for issue at point."
