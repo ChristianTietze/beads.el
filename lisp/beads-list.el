@@ -95,25 +95,36 @@ Available: id, date, status, priority, type, title, assignee, labels, deps."
   "Column definitions for beads list view.
 Each entry is (SYMBOL . (HEADER WIDTH SORTABLE FORMATTER)).")
 
+(defvar-local beads-list--marked nil
+  "List of marked issue IDs in current buffer.")
+
+(defvar-local beads-list--show-only-marked nil
+  "When non-nil, only show marked issues in the list.")
+
 (defun beads-list--build-format ()
-  "Build `tabulated-list-format' from `beads-list-columns'."
+  "Build `tabulated-list-format' from `beads-list-columns'.
+Automatically prepends the mark column."
   (vconcat
-   (mapcar (lambda (col)
-             (let ((def (alist-get col beads-list--column-defs)))
-               (if def
-                   (list (nth 0 def) (nth 1 def) (nth 2 def))
-                 (error "Unknown column: %s" col))))
-           beads-list-columns)))
+   (cons (list " " 1 nil)
+         (mapcar (lambda (col)
+                   (let ((def (alist-get col beads-list--column-defs)))
+                     (if def
+                         (list (nth 0 def) (nth 1 def) (nth 2 def))
+                       (error "Unknown column: %s" col))))
+                 beads-list-columns))))
 
 (defun beads-list--build-entry (issue)
-  "Build entry vector for ISSUE based on `beads-list-columns'."
-  (vconcat
-   (mapcar (lambda (col)
-             (let ((def (alist-get col beads-list--column-defs)))
-               (if def
-                   (funcall (nth 3 def) issue)
-                 "")))
-           beads-list-columns)))
+  "Build entry vector for ISSUE based on `beads-list-columns'.
+Automatically prepends the mark indicator."
+  (let ((id (alist-get 'id issue)))
+    (vconcat
+     (cons (if (member id beads-list--marked) "*" " ")
+           (mapcar (lambda (col)
+                     (let ((def (alist-get col beads-list--column-defs)))
+                       (if def
+                           (funcall (nth 3 def) issue)
+                         "")))
+                   beads-list-columns)))))
 
 (defun beads-list--column-names ()
   "Get list of column header names for current configuration."
@@ -139,6 +150,12 @@ Used to ensure refresh uses the correct project context.")
 (declare-function beads-search "beads-transient")
 (declare-function beads-stats "beads-transient")
 (declare-function beads-hierarchy-show "beads-hierarchy")
+
+(defvar beads-list-mark-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "m") #'beads-list-mark-regexp)
+    map)
+  "Keymap for mark prefix commands in beads-list-mode.")
 
 (defvar beads-list-edit-map
   (let ((map (make-sparse-keymap)))
@@ -166,6 +183,13 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "R") #'beads-reopen-issue)
     (define-key map (kbd "o") #'beads-list-cycle-sort)
     (define-key map (kbd "O") #'beads-list-reverse-sort)
+    (define-key map (kbd "m") #'beads-list-mark)
+    (define-key map (kbd "u") #'beads-list-unmark)
+    (define-key map (kbd "U") #'beads-list-unmark-all)
+    (define-key map (kbd "t") #'beads-list-toggle-marks)
+    (define-key map (kbd "%") beads-list-mark-map)
+    (define-key map (kbd "* m") #'beads-list-mark-regexp)
+    (define-key map (kbd "* *") #'beads-list-toggle-marked-filter)
     (define-key map (kbd "q") #'beads-list-quit)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
@@ -212,7 +236,7 @@ Respects `beads-list-show-header-stats'."
 (defun beads-list-refresh (&optional silent)
   "Fetch issues from daemon and refresh the display.
 When SILENT is non-nil, don't show message.
-Applies `beads-list--filter' if set."
+Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
   (interactive)
   (let ((saved-id (tabulated-list-get-id))
         (saved-line (line-number-at-pos))
@@ -221,9 +245,14 @@ Applies `beads-list--filter' if set."
         (let* ((all-issues (beads-rpc-list))
                (issues (if beads-list--filter
                            (beads-filter-apply beads-list--filter all-issues)
-                         all-issues)))
+                         all-issues))
+               (display-issues (if beads-list--show-only-marked
+                                   (seq-filter (lambda (issue)
+                                                 (member (alist-get 'id issue) beads-list--marked))
+                                               issues)
+                                 issues)))
           (setq beads-list--issues (append issues nil))
-          (setq tabulated-list-entries (beads-list-entries beads-list--issues))
+          (setq tabulated-list-entries (beads-list-entries display-issues))
           (tabulated-list-print t)
           (if saved-id
               (unless (beads-list-goto-id saved-id)
@@ -379,6 +408,72 @@ Returns the issue alist or nil if not found."
     (tabulated-list-init-header)
     (tabulated-list-print t)
     (message "Sorted by %s%s" current (if (not flip) " (descending)" ""))))
+
+(defun beads-list--update-mark-display ()
+  "Update the display after marking changes."
+  (setq tabulated-list-entries (beads-list-entries beads-list--issues))
+  (tabulated-list-print t))
+
+(defun beads-list-mark ()
+  "Mark issue at point and move to next line."
+  (interactive)
+  (when-let ((id (tabulated-list-get-id)))
+    (unless (member id beads-list--marked)
+      (push id beads-list--marked))
+    (beads-list--update-mark-display)
+    (forward-line 1)
+    (message "%d marked" (length beads-list--marked))))
+
+(defun beads-list-unmark ()
+  "Unmark issue at point and move to next line."
+  (interactive)
+  (when-let ((id (tabulated-list-get-id)))
+    (setq beads-list--marked (delete id beads-list--marked))
+    (beads-list--update-mark-display)
+    (forward-line 1)
+    (message "%d marked" (length beads-list--marked))))
+
+(defun beads-list-unmark-all ()
+  "Unmark all marked issues."
+  (interactive)
+  (let ((count (length beads-list--marked)))
+    (setq beads-list--marked nil)
+    (beads-list--update-mark-display)
+    (message "Unmarked %d issue%s" count (if (= count 1) "" "s"))))
+
+(defun beads-list-toggle-marks ()
+  "Toggle marks: marked become unmarked and vice versa."
+  (interactive)
+  (let ((all-ids (mapcar (lambda (issue) (alist-get 'id issue)) beads-list--issues)))
+    (setq beads-list--marked
+          (seq-filter (lambda (id) (not (member id beads-list--marked))) all-ids))
+    (beads-list--update-mark-display)
+    (message "%d marked" (length beads-list--marked))))
+
+(defun beads-list-mark-regexp (regexp)
+  "Mark all issues whose title matches REGEXP."
+  (interactive "sMark issues matching (title): ")
+  (let ((count 0))
+    (dolist (issue beads-list--issues)
+      (let ((id (alist-get 'id issue))
+            (title (alist-get 'title issue "")))
+        (when (string-match-p regexp title)
+          (unless (member id beads-list--marked)
+            (push id beads-list--marked)
+            (setq count (1+ count))))))
+    (beads-list--update-mark-display)
+    (message "Marked %d issue%s (%d total)" count (if (= count 1) "" "s") (length beads-list--marked))))
+
+(defun beads-list-toggle-marked-filter ()
+  "Toggle display between all issues and only marked issues."
+  (interactive)
+  (if (null beads-list--marked)
+      (message "No marked issues")
+    (setq beads-list--show-only-marked (not beads-list--show-only-marked))
+    (beads-list-refresh t)
+    (message "%s" (if beads-list--show-only-marked
+                      (format "Showing %d marked issue(s)" (length beads-list--marked))
+                    "Showing all issues"))))
 
 (defun beads-list-goto-issue ()
   "Navigate to or display details for issue at point."
