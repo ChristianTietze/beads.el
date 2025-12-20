@@ -17,6 +17,7 @@
 (declare-function beads-list-refresh "beads-list")
 (declare-function beads-list-edit-form "beads-list")
 (declare-function beads-list--build-format "beads-list")
+(declare-function beads-list--column-names "beads-list")
 (declare-function beads-preview-mode "beads-preview")
 (declare-function beads-detail-refresh "beads-detail")
 (declare-function beads-detail-edit-form "beads-detail")
@@ -326,6 +327,10 @@ Uses canonical order from `beads-list--column-order' for insertion."
           (push c new-cols)))
       (setq-local beads-list-columns (nreverse new-cols))))
   (setq tabulated-list-format (beads-list--build-format))
+  (let* ((col-names (beads-list--column-names))
+         (sort-col (car tabulated-list-sort-key)))
+    (unless (member sort-col col-names)
+      (setq tabulated-list-sort-key (cons (car col-names) nil))))
   (tabulated-list-init-header)
   (beads-list-refresh t))
 
@@ -391,18 +396,19 @@ Uses canonical order from `beads-list--column-order' for insertion."
   "Configure list view columns."
   :transient-suffix 'transient--do-call
   ["Columns"
-   :class transient-row
-   (beads-list-toggle-column-id)
-   (beads-list-toggle-column-date)
-   (beads-list-toggle-column-status)
-   (beads-list-toggle-column-priority)
-   (beads-list-toggle-column-type)]
-  [""
-   :class transient-row
-   (beads-list-toggle-column-deps)
-   (beads-list-toggle-column-assignee)
-   (beads-list-toggle-column-labels)
-   (beads-list-toggle-column-title)]
+   [""
+    :class transient-row
+    (beads-list-toggle-column-id)
+    (beads-list-toggle-column-date)
+    (beads-list-toggle-column-status)
+    (beads-list-toggle-column-priority)
+    (beads-list-toggle-column-type)]
+   [""
+    :class transient-row
+    (beads-list-toggle-column-deps)
+    (beads-list-toggle-column-assignee)
+    (beads-list-toggle-column-labels)
+    (beads-list-toggle-column-title)]]
   ["Actions"
    ("e" "Edit list directly" beads-list-columns-edit :transient nil)
    ("r" "Reset to default" beads-list-columns-reset :transient nil)
