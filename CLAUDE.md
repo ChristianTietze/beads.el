@@ -10,6 +10,8 @@ See AGENTS.md for workflow details.
 
 This is **beads.el** - an Emacs Lisp client for the Beads issue tracking system. Beads is a Git-backed, AI-native issue tracker that stores data in `.beads/` and communicates with a daemon via Unix socket RPC.
 
+The canonical upstream is https://codeberg.org/ctietze/beads.el
+
 ## Architecture
 
 The client communicates with the Beads daemon via JSON-over-Unix-socket:
