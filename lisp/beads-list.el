@@ -413,8 +413,18 @@ Within closed section, sort by closed_at date (most recent first)."
         (2 (push issue closed))))
     (setq unblocked (sort unblocked
                           (lambda (a b)
-                            (< (alist-get 'priority a 2)
-                               (alist-get 'priority b 2)))))
+                            (let ((status-a (alist-get 'status a))
+                                  (status-b (alist-get 'status b))
+                                  (prio-a (alist-get 'priority a 2))
+                                  (prio-b (alist-get 'priority b 2)))
+                              (cond
+                               ((and (string= status-a "in_progress")
+                                     (not (string= status-b "in_progress")))
+                                t)
+                               ((and (not (string= status-a "in_progress"))
+                                     (string= status-b "in_progress"))
+                                nil)
+                               (t (< prio-a prio-b)))))))
     (setq blocked (sort blocked
                         (lambda (a b)
                           (< (alist-get 'priority a 2)
