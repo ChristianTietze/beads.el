@@ -64,6 +64,14 @@ Available: id, date, status, priority, type, title, assignee, labels, deps."
                          (const :tag "Dependencies" deps)))
   :group 'beads-list)
 
+(defcustom beads-list-type-style 'full
+  "How to display issue types in the list view.
+When `full', display full type names (bug, feature, task, epic, chore).
+When `short', display 4-character abbreviations (bug, feat, task, epic, chor)."
+  :type '(choice (const :tag "Full names" full)
+                 (const :tag "Short (4-char)" short))
+  :group 'beads-list)
+
 (defface beads-list-status-open
   '((t :inherit default))
   "Face for open status.")
@@ -361,8 +369,14 @@ Returns non-nil if A should come before B."
                         (_ 'default)))))
 
 (defun beads--format-type (issue)
-  "Format type column for ISSUE."
-  (or (alist-get 'issue_type issue) ""))
+  "Format type column for ISSUE based on `beads-list-type-style'."
+  (let ((type (alist-get 'issue_type issue)))
+    (if (eq beads-list-type-style 'short)
+        (pcase type
+          ("feature" "feat")
+          ("chore" "chor")
+          (_ (or type "")))
+      (or type ""))))
 
 (defun beads--format-title (issue)
   "Format title column for ISSUE, truncating if needed."
