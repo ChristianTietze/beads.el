@@ -361,15 +361,8 @@ Returns non-nil if A should come before B."
                         (_ 'default)))))
 
 (defun beads--format-type (issue)
-  "Format type column for ISSUE with abbreviation."
-  (let ((type (alist-get 'issue_type issue)))
-    (pcase type
-      ("bug" "bug")
-      ("feature" "feat")
-      ("task" "task")
-      ("epic" "epic")
-      ("chore" "chor")
-      (_ type))))
+  "Format type column for ISSUE."
+  (or (alist-get 'issue_type issue) ""))
 
 (defun beads--format-title (issue)
   "Format title column for ISSUE, truncating if needed."
