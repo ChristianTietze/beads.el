@@ -1,0 +1,1486 @@
+\input texinfo    @c -*- texinfo -*-
+@c %**start of header
+@setfilename beads.info
+@settitle Beads User Manual
+@documentencoding UTF-8
+@documentlanguage en
+@copying
+Copyright @copyright{} 2025 Christian Tietze
+@quotation
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.
+@end quotation
+@end copying
+@c %**end of header
+
+@dircategory Emacs misc features
+@direntry
+* Beads: (beads).       Git-backed issue tracker for Emacs.
+@end direntry
+
+@finalout
+@titlepage
+@title Beads User Manual
+@subtitle Version 1.0
+@author Christian Tietze
+@end titlepage
+
+@ifnottex
+@node Top
+@top Beads User Manual
+@end ifnottex
+
+@menu
+* Introduction::                 What is Beads and why use it
+* Concepts::                     Understanding Beads terminology
+* Installation::                 How to install Beads
+* Quick Start::                  Get started in 5 minutes
+* Tutorial::                     Your first hour with Beads
+* List View: List View (1).      Working with the issue list
+* Detail View::                  Viewing and editing a single issue
+* Form Editor::                  Widget-based issue editing
+* Preview Mode::                 Live issue preview while browsing
+* Hierarchy View::               Visualizing dependencies
+* Customization::                Configuring Beads
+* Faces::                        Customizing appearance
+* Hooks and Extensions::         For Emacs Lisp developers
+* Troubleshooting::              Common problems and solutions
+* Tips and Tricks::              Power user tips
+* Quick Reference::              Command cheat sheet
+* Index::
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Introduction
+
+* What Beads Does For You::
+* How to Read This Manual::
+
+Concepts
+
+* Issues::
+* Status Lifecycle::
+* Priority Levels::
+* Issue Types::
+* Dependencies::
+* The Daemon::
+
+Installation
+
+* From MELPA::
+* With straight.el: With straightel. 
+* Manual Installation::
+* Project Setup::
+* Testing Your Installation::
+
+Quick Start
+
+* Opening the Issue List::
+* Essential Commands::
+* Understanding the Display::
+* What's Next::
+
+Tutorial
+
+* Creating a Test Issue::
+* Viewing Your Issue::
+* Starting Work::
+* Completing Work::
+* Filtering the List::
+
+List View
+
+* Essential Commands: Essential Commands (1). 
+* Editing Issues::
+* Filtering and Searching::
+* Sorting::
+* Marking and Bulk Operations::
+* Other Commands::
+
+Detail View
+
+* Essential Commands: Essential Commands (2). 
+* Editing Fields::
+* Managing Labels::
+
+Form Editor
+
+* Using the Form::
+
+Hierarchy View
+
+* Adding Dependencies::
+
+Customization
+
+* Columns::
+* Type Display::
+* Sorting: Sorting (1). 
+* Header Statistics::
+* Auto-Update::
+* Preview::
+* Project Integration::
+
+Faces
+
+* List View Faces::
+* Detail View Faces::
+* Example::
+
+Hooks and Extensions
+
+* Mode Hooks::
+* RPC Functions::
+* Filter Composition::
+* Advice Examples::
+* Internal Variables::
+
+Troubleshooting
+
+* "Socket not found" or "Daemon not running"::
+* "No Beads database found"::
+* "bd command not found"::
+* List Shows No Issues::
+* Preview Not Updating::
+* Slow Performance::
+
+Tips and Tricks
+
+* Quick Issue Creation::
+* Keyboard-Driven Workflow::
+* Finding Ready Work::
+* Global Keybindings::
+
+Quick Reference
+
+* Global Commands::
+* List View::
+* Detail View: Detail View (1). 
+* Form Editor: Form Editor (1). 
+
+@end detailmenu
+@end menu
+
+@node Introduction
+@chapter Introduction
+
+@cindex introduction
+@cindex overview
+
+Beads is an Emacs interface for tracking issues, bugs, and tasks
+directly in your project.  Unlike web-based trackers, Beads stores
+everything locally and syncs through Git.
+
+@menu
+* What Beads Does For You::
+* How to Read This Manual::
+@end menu
+
+@node What Beads Does For You
+@section What Beads Does For You
+
+@itemize
+@item
+@strong{Track work offline}: All issues live in your project folder
+@item
+@strong{Sync via Git}: Push and pull issues like code
+@item
+@strong{Stay in Emacs}: No browser tabs, no context switching
+@item
+@strong{Works with AI tools}: Designed for AI-assisted workflows
+@end itemize
+
+@node How to Read This Manual
+@section How to Read This Manual
+
+@itemize
+@item
+@strong{New to Beads?} Start with @ref{Installation} then @ref{Quick Start}
+@item
+@strong{Just need a command?} Jump to @ref{Quick Reference}
+@item
+@strong{Having problems?} See @ref{Troubleshooting}
+@item
+@strong{Want to customize?} See @ref{Customization} and @ref{Hooks and Extensions}
+@end itemize
+
+@node Concepts
+@chapter Concepts
+
+@cindex concepts
+@cindex terminology
+
+Before diving in, here are the key terms you'll encounter.
+
+@menu
+* Issues::
+* Status Lifecycle::
+* Priority Levels::
+* Issue Types::
+* Dependencies::
+* The Daemon::
+@end menu
+
+@node Issues
+@section Issues
+
+@cindex issues
+An @strong{issue} is any tracked item: a bug, feature request, task, or note.
+Each issue has:
+
+@itemize
+@item
+@strong{ID}: A unique identifier like @samp{proj-a1b2} (auto-generated)
+@item
+@strong{Title}: A short description
+@item
+@strong{Status}: Where it is in your workflow
+@item
+@strong{Priority}: How urgent it is (P0-P4)
+@item
+@strong{Type}: What kind of work it represents
+@end itemize
+
+@node Status Lifecycle
+@section Status Lifecycle
+
+@cindex status
+@cindex lifecycle
+Issues move through these states:
+
+@multitable {aaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Status
+@tab Meaning
+@item open
+@tab Not started, available to work on
+@item in@math{_progress}
+@tab Someone is actively working on this
+@item blocked
+@tab Waiting for another issue to finish
+@item closed
+@tab Completed or resolved
+@end multitable
+
+@node Priority Levels
+@section Priority Levels
+
+@cindex priority
+Priority indicates urgency:
+
+@multitable {aaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Priority
+@tab Meaning
+@item P0
+@tab Critical - drop everything
+@item P1
+@tab High - do this soon
+@item P2
+@tab Normal - default priority
+@item P3
+@tab Low - when you have time
+@item P4
+@tab Someday - nice to have
+@end multitable
+
+@node Issue Types
+@section Issue Types
+
+@cindex issue types
+@cindex types
+
+@multitable {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Type
+@tab Use for
+@item bug
+@tab Something broken that needs fixing
+@item feature
+@tab New functionality to add
+@item task
+@tab General work item
+@item epic
+@tab Large effort containing subtasks
+@item chore
+@tab Maintenance, cleanup, refactoring
+@end multitable
+
+@node Dependencies
+@section Dependencies
+
+@cindex dependencies
+@cindex blockers
+Issues can depend on each other.  If issue A "blocks" issue B, then B
+cannot be worked on until A is closed.  The hierarchy view (@samp{H}) shows
+these relationships.
+
+@node The Daemon
+@section The Daemon
+
+@cindex daemon
+Beads uses a background process called a "daemon" to manage the
+database.  You start it once and it runs quietly.  If you see errors
+about "socket not found", the daemon needs to be started.  See
+@ref{Troubleshooting} for help.
+
+@node Installation
+@chapter Installation
+
+@cindex installation
+@findex beads
+@findex beads-list
+
+@menu
+* From MELPA::
+* With straight.el: With straightel. 
+* Manual Installation::
+* Project Setup::
+* Testing Your Installation::
+@end menu
+
+@node From MELPA
+@section From MELPA
+
+@cindex MELPA
+
+@lisp
+(use-package beads
+  :ensure t
+  :commands (beads beads-list))
+@end lisp
+
+@node With straightel
+@section With straight.el
+
+@lisp
+(use-package beads
+  :straight (:host github :repo "ChristianTietze/beads.el"
+             :files ("lisp/*.el"))
+  :commands (beads beads-list))
+@end lisp
+
+@node Manual Installation
+@section Manual Installation
+
+@lisp
+(add-to-list 'load-path "/path/to/beads.el/lisp")
+(require 'beads)
+@end lisp
+
+@node Project Setup
+@section Project Setup
+
+Before using Beads in a project, initialize it from the command line:
+
+@example
+$ cd your-project
+$ bd init
+$ bd daemon start
+@end example
+
+The @samp{bd} command-line tool must be installed separately.  See the
+Beads documentation for installation instructions.
+
+@node Testing Your Installation
+@section Testing Your Installation
+
+Run @samp{M-x beads-list}.  You should see an issue list (possibly empty).
+
+@itemize
+@item
+If you see "No Beads database found", run @samp{bd init} in your project
+@item
+If you see "Socket not found", run @samp{bd daemon start}
+@item
+If you see "bd command not found", install the @samp{bd} tool first
+@end itemize
+
+@node Quick Start
+@chapter Quick Start
+
+@cindex quick start
+@cindex getting started
+
+@menu
+* Opening the Issue List::
+* Essential Commands::
+* Understanding the Display::
+* What's Next::
+@end menu
+
+@node Opening the Issue List
+@section Opening the Issue List
+
+@kindex M-x beads-list
+Run @samp{M-x beads-list} to open your issues.
+
+@node Essential Commands
+@section Essential Commands
+
+These five commands cover most daily use:
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab What it does
+@item @samp{RET}
+@tab View issue details
+@item @samp{e s}
+@tab Change status (open/closed)
+@item @samp{g}
+@tab Refresh the list
+@item @samp{?}
+@tab Show all commands
+@item @samp{q}
+@tab Quit
+@end multitable
+
+@node Understanding the Display
+@section Understanding the Display
+
+The list shows issues in sections:
+
+@enumerate
+@item
+@strong{In Progress} - work you've started (sorted by priority)
+@item
+@strong{Open} - available work (sorted by priority)
+@item
+@strong{Blocked} - waiting on other issues
+@item
+@strong{Completed} - finished work (most recent first)
+@end enumerate
+
+Visual separators mark each section.
+
+@node What's Next
+@section What's Next
+
+@itemize
+@item
+Learn the full @ref{List View} interface
+@item
+Enable @ref{Preview Mode} for faster browsing
+@item
+Customize the display: @ref{Customization}
+@end itemize
+
+@node Tutorial
+@chapter Tutorial
+
+@cindex tutorial
+
+This walkthrough takes you through a complete workflow.
+
+@menu
+* Creating a Test Issue::
+* Viewing Your Issue::
+* Starting Work::
+* Completing Work::
+* Filtering the List::
+@end menu
+
+@node Creating a Test Issue
+@section Creating a Test Issue
+
+From your terminal (not Emacs):
+
+@example
+$ cd your-project
+$ bd create "Learn how to use Beads" --type task
+@end example
+
+@node Viewing Your Issue
+@section Viewing Your Issue
+
+@enumerate
+@item
+In Emacs, run @samp{M-x beads-list}
+@item
+You should see your new issue
+@item
+Press @samp{RET} to view its details
+@item
+Press @samp{q} to close the detail view
+@end enumerate
+
+@node Starting Work
+@section Starting Work
+
+@enumerate
+@item
+Back in the list, press @samp{e s} (edit status)
+@item
+Select @samp{in_progress}
+@item
+Notice the issue moves to the top of the list
+@end enumerate
+
+@node Completing Work
+@section Completing Work
+
+@enumerate
+@item
+Press @samp{e s} again
+@item
+Select @samp{closed}
+@item
+The issue moves to the "Completed" section
+@end enumerate
+
+@node Filtering the List
+@section Filtering the List
+
+@enumerate
+@item
+Press @samp{f} to open the filter menu
+@item
+Select "Open only" to hide completed issues
+@item
+Press @samp{f c} to clear filters and see everything again
+@end enumerate
+
+Congratulations!  You've learned the basic Beads workflow.
+
+@node List View (1)
+@chapter List View
+
+@cindex list view
+@findex beads-list-mode
+
+The list view is your main interface.  Open it with @samp{M-x beads-list}.
+
+@menu
+* Essential Commands: Essential Commands (1). 
+* Editing Issues::
+* Filtering and Searching::
+* Sorting::
+* Marking and Bulk Operations::
+* Other Commands::
+@end menu
+
+@node Essential Commands (1)
+@section Essential Commands
+
+@kindex RET
+@kindex g
+@kindex q
+@kindex ?
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{RET}
+@tab @code{beads-list-goto-issue}
+@tab View issue details
+@item @samp{g}
+@tab @code{beads-list-refresh}
+@tab Refresh the list
+@item @samp{q}
+@tab @code{beads-list-quit}
+@tab Quit (close preview)
+@item @samp{?}
+@tab @code{beads-menu}
+@tab Show help menu
+@end multitable
+
+@node Editing Issues
+@section Editing Issues
+
+@kindex e t
+@kindex e s
+@kindex e p
+@kindex E
+
+Quick edits without leaving the list:
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{e t}
+@tab @code{beads-list-edit-title}
+@tab Edit title
+@item @samp{e s}
+@tab @code{beads-list-edit-status}
+@tab Change status
+@item @samp{e p}
+@tab @code{beads-list-edit-priority}
+@tab Change priority
+@item @samp{e T}
+@tab @code{beads-list-edit-type}
+@tab Change issue type
+@item @samp{e d}
+@tab @code{beads-list-edit-description}
+@tab Edit description
+@item @samp{E}
+@tab @code{beads-list-edit-form}
+@tab Open form editor
+@end multitable
+
+@node Filtering and Searching
+@section Filtering and Searching
+
+@kindex f
+@kindex /
+@findex beads-filter-menu
+@findex beads-search
+
+@multitable {aaa} {aaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{f}
+@tab @code{beads-filter-menu}
+@tab Open filter menu
+@item @samp{/}
+@tab @code{beads-search}
+@tab Search by text
+@end multitable
+
+The filter menu (@samp{f}) offers:
+
+@itemize
+@item
+Filter by status, priority, or type
+@item
+Show only "ready" issues (no blockers)
+@item
+Clear all filters
+@end itemize
+
+Search (@samp{/}) matches against title and description.
+
+@node Sorting
+@section Sorting
+
+@kindex s
+@kindex o
+@kindex O
+@vindex beads-list-sort-mode
+
+@multitable {aaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{s}
+@tab @code{beads-list-toggle-sort-mode}
+@tab Toggle sectioned/column
+@item @samp{o}
+@tab @code{beads-list-cycle-sort}
+@tab Cycle through columns
+@item @samp{O}
+@tab @code{beads-list-reverse-sort}
+@tab Reverse sort direction
+@end multitable
+
+@strong{Sectioned sorting} (default) groups by status then sorts by priority.
+@strong{Column sorting} lets you click headers or cycle with @samp{o}.
+
+@node Marking and Bulk Operations
+@section Marking and Bulk Operations
+
+@cindex marking
+@cindex bulk operations
+@kindex m
+@kindex u
+@kindex U
+
+Mark multiple issues to operate on them together:
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{m}
+@tab @code{beads-list-mark}
+@tab Mark issue at point
+@item @samp{u}
+@tab @code{beads-list-unmark}
+@tab Unmark issue at point
+@item @samp{U}
+@tab @code{beads-list-unmark-all}
+@tab Unmark all
+@item @samp{t}
+@tab @code{beads-list-toggle-marks}
+@tab Toggle all marks
+@item @samp{% m}
+@tab @code{beads-list-mark-regexp}
+@tab Mark by title pattern
+@end multitable
+
+Then apply bulk operations:
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{B s}
+@tab @code{beads-list-bulk-status}
+@tab Set status for marked
+@item @samp{B p}
+@tab @code{beads-list-bulk-priority}
+@tab Set priority for marked
+@item @samp{x}
+@tab @code{beads-list-bulk-close}
+@tab Close marked issues
+@item @samp{B D}
+@tab @code{beads-list-bulk-delete}
+@tab Delete marked issues
+@end multitable
+
+@node Other Commands
+@section Other Commands
+
+@kindex P
+@kindex H
+@kindex S
+@kindex D
+@kindex R
+
+@multitable {aaa} {aaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{P}
+@tab @code{beads-preview-mode}
+@tab Toggle live preview
+@item @samp{H}
+@tab @code{beads-hierarchy-show}
+@tab Show dependency tree
+@item @samp{S}
+@tab @code{beads-stats}
+@tab Show statistics
+@item @samp{D}
+@tab @code{beads-delete-issue}
+@tab Delete issue at point
+@item @samp{R}
+@tab @code{beads-reopen-issue}
+@tab Reopen closed issue
+@end multitable
+
+@node Detail View
+@chapter Detail View
+
+@cindex detail view
+@findex beads-detail-mode
+
+Press @samp{RET} on an issue to open its detail view.
+
+@menu
+* Essential Commands: Essential Commands (2). 
+* Editing Fields::
+* Managing Labels::
+@end menu
+
+@node Essential Commands (2)
+@section Essential Commands
+
+@multitable {aaa} {aaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{g}
+@tab @code{beads-detail-refresh}
+@tab Refresh details
+@item @samp{q}
+@tab @code{quit-window}
+@tab Close detail view
+@item @samp{?}
+@tab @code{beads-detail-menu}
+@tab Show help menu
+@end multitable
+
+@node Editing Fields
+@section Editing Fields
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{e t}
+@tab @code{beads-detail-edit-title}
+@tab Edit title
+@item @samp{e s}
+@tab @code{beads-detail-edit-status}
+@tab Change status
+@item @samp{e p}
+@tab @code{beads-detail-edit-priority}
+@tab Change priority
+@item @samp{e T}
+@tab @code{beads-detail-edit-type}
+@tab Change type
+@item @samp{e A}
+@tab @code{beads-detail-edit-assignee}
+@tab Set assignee
+@item @samp{e d}
+@tab @code{beads-detail-edit-description}
+@tab Edit description
+@item @samp{e D}
+@tab @code{beads-detail-edit-design}
+@tab Edit design notes
+@item @samp{e a}
+@tab @code{beads-detail-edit-acceptance}
+@tab Edit acceptance criteria
+@item @samp{e n}
+@tab @code{beads-detail-edit-notes}
+@tab Edit notes
+@end multitable
+
+@node Managing Labels
+@section Managing Labels
+
+@kindex l a
+@kindex l r
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaa}
+@headitem Key
+@tab Command
+@tab Description
+@item @samp{l a}
+@tab @code{beads-detail-edit-label-add}
+@tab Add a label
+@item @samp{l r}
+@tab @code{beads-detail-edit-label-remove}
+@tab Remove a label
+@end multitable
+
+Labels help categorize issues.  Common patterns:
+@itemize
+@item
+Component: @samp{backend}, @samp{frontend}, @samp{database}
+@item
+Workflow: @samp{needs-review}, @samp{ready-to-test}
+@end itemize
+
+@node Form Editor
+@chapter Form Editor
+
+@cindex form editor
+@findex beads-form-mode
+
+Press @samp{E} to open the form editor.  This shows all fields in one
+place, like filling out a form.
+
+@menu
+* Using the Form::
+@end menu
+
+@node Using the Form
+@section Using the Form
+
+@itemize
+@item
+@samp{TAB} moves between fields
+@item
+Edit text fields directly
+@item
+Use dropdowns for status, priority, type
+@item
+@samp{C-c C-c} saves changes
+@item
+@samp{C-c C-k} cancels
+@end itemize
+
+Use the form editor when:
+@itemize
+@item
+Creating complex issues
+@item
+Editing multiple fields at once
+@item
+You prefer seeing all information together
+@end itemize
+
+@node Preview Mode
+@chapter Preview Mode
+
+@cindex preview mode
+@vindex beads-preview-delay
+@findex beads-preview-mode
+
+Press @samp{P} in the list to toggle preview mode.
+
+When enabled, moving between issues automatically shows their details
+in a side window.  This is useful for quickly reviewing multiple
+issues without pressing @samp{RET} each time.
+
+Customize the delay with @code{beads-preview-delay} (default: 0.1 seconds).
+
+@node Hierarchy View
+@chapter Hierarchy View
+
+@cindex hierarchy view
+@cindex dependency tree
+@findex beads-hierarchy-show
+
+Press @samp{H} on an issue to see its dependency tree.
+
+The hierarchy shows:
+@itemize
+@item
+@strong{Blockers}: Issues that must be completed first
+@item
+@strong{Dependents}: Issues waiting on this one
+@end itemize
+
+This helps you understand what work is blocked and why.
+
+@menu
+* Adding Dependencies::
+@end menu
+
+@node Adding Dependencies
+@section Adding Dependencies
+
+Currently, dependencies are managed from the command line:
+
+@example
+$ bd dep add proj-abc proj-xyz --type blocks
+@end example
+
+This makes @samp{proj-xyz} block @samp{proj-abc} (abc cannot proceed until xyz
+is closed).
+
+@node Customization
+@chapter Customization
+
+@cindex customization
+@cindex configuration
+
+These settings are optional.  The defaults work well for most users.
+
+@menu
+* Columns::
+* Type Display::
+* Sorting: Sorting (1). 
+* Header Statistics::
+* Auto-Update::
+* Preview::
+* Project Integration::
+@end menu
+
+@node Columns
+@section Columns
+
+@vindex beads-list-columns
+
+Control which columns appear:
+
+@lisp
+(setq beads-list-columns '(id date status priority type title))
+@end lisp
+
+Available: @samp{id}, @samp{date}, @samp{status}, @samp{priority}, @samp{type}, @samp{title},
+@samp{assignee}, @samp{labels}, @samp{deps}.
+
+@node Type Display
+@section Type Display
+
+@vindex beads-list-type-style
+
+@lisp
+;; Full names (default): bug, feature, task, epic, chore
+(setq beads-list-type-style 'full)
+
+;; Abbreviations: bug, feat, task, epic, chor
+(setq beads-list-type-style 'short)
+@end lisp
+
+@node Sorting (1)
+@section Sorting
+
+@vindex beads-list-sort-mode
+@vindex beads-list-section-separators
+
+@lisp
+;; Sectioned sorting (default)
+(setq beads-list-sort-mode 'sectioned)
+
+;; Column-based sorting
+(setq beads-list-sort-mode 'column)
+
+;; Hide section separators
+(setq beads-list-section-separators nil)
+@end lisp
+
+@node Header Statistics
+@section Header Statistics
+
+@vindex beads-list-show-header-stats
+
+@lisp
+(setq beads-list-show-header-stats t)  ; Show counts (default)
+@end lisp
+
+@node Auto-Update
+@section Auto-Update
+
+@vindex beads-autoupdate-enable
+@vindex beads-autoupdate-interval
+
+Beads can automatically refresh to show external changes:
+
+@lisp
+(setq beads-autoupdate-enable t)      ; Enable (default)
+(setq beads-autoupdate-interval 30)   ; Seconds between updates
+@end lisp
+
+@node Preview
+@section Preview
+
+@vindex beads-preview-delay
+
+@lisp
+(setq beads-preview-delay 0.1)  ; Seconds before preview appears
+@end lisp
+
+@node Project Integration
+@section Project Integration
+
+@vindex beads-project-per-project-buffers
+@vindex beads-project-add-switch-command
+
+@lisp
+;; Separate buffer per project (default)
+(setq beads-project-per-project-buffers t)
+
+;; Add to project switch commands
+(setq beads-project-add-switch-command t)
+@end lisp
+
+@node Faces
+@chapter Faces
+
+@cindex faces
+@cindex colors
+@cindex themes
+
+Customize colors with @samp{M-x customize-face} or in your init file.
+
+@menu
+* List View Faces::
+* Detail View Faces::
+* Example::
+@end menu
+
+@node List View Faces
+@section List View Faces
+
+@itemize
+@item
+@code{beads-list-status-open} - Open issues
+@item
+@code{beads-list-status-in-progress} - In-progress issues
+@item
+@code{beads-list-status-closed} - Closed issues
+@item
+@code{beads-list-priority-p0} - P0 (critical) - inverted error colors
+@item
+@code{beads-list-priority-p1} - P1 (high) - error colors
+@item
+@code{beads-list-header-line} - Header line background
+@item
+@code{beads-list-header-count} - Count numbers in header
+@item
+@code{beads-list-deps-blocked} - Blocked indicator (red)
+@item
+@code{beads-list-deps-parent} - Has-parent indicator (yellow)
+@item
+@code{beads-list-deps-child} - Has-children indicator (green)
+@end itemize
+
+@node Detail View Faces
+@section Detail View Faces
+
+@itemize
+@item
+@code{beads-detail-id-face} - Issue ID
+@item
+@code{beads-detail-title-face} - Issue title
+@item
+@code{beads-detail-header-face} - Section headers
+@item
+@code{beads-detail-label-face} - Field labels
+@item
+@code{beads-detail-value-face} - Field values
+@end itemize
+
+@node Example
+@section Example
+
+@lisp
+;; Make P0 more prominent
+(set-face-attribute 'beads-list-priority-p0 nil
+                    :background "dark red"
+                    :foreground "white"
+                    :weight 'bold)
+@end lisp
+
+@node Hooks and Extensions
+@chapter Hooks and Extensions
+
+@cindex hooks
+@cindex extensions
+@cindex programmatic usage
+
+This section is for users who want to extend Beads with Emacs Lisp.
+
+@menu
+* Mode Hooks::
+* RPC Functions::
+* Filter Composition::
+* Advice Examples::
+* Internal Variables::
+@end menu
+
+@node Mode Hooks
+@section Mode Hooks
+
+Standard hooks are available for each mode:
+
+@itemize
+@item
+@code{beads-list-mode-hook}
+@item
+@code{beads-detail-mode-hook}
+@item
+@code{beads-form-mode-hook}
+@item
+@code{beads-hierarchy-mode-hook}
+@item
+@code{beads-edit-mode-hook}
+@item
+@code{beads-preview-mode-hook}
+@end itemize
+
+Example:
+
+@lisp
+;; Auto-enable outline-minor-mode in detail view
+(add-hook 'beads-detail-mode-hook #'outline-minor-mode)
+@end lisp
+
+@node RPC Functions
+@section RPC Functions
+
+@findex beads-rpc-list
+@findex beads-rpc-show
+@findex beads-rpc-create
+@findex beads-rpc-update
+@findex beads-rpc-close
+
+The @code{beads-rpc.el} module provides programmatic access:
+
+@lisp
+;; List issues
+(beads-rpc-list)                          ; All issues
+(beads-rpc-list '(:status "open"))        ; Filtered
+
+;; Get single issue
+(beads-rpc-show "proj-123")
+
+;; Create issue
+(beads-rpc-create "Fix the bug"
+                  :issue-type "bug"
+                  :priority 1)
+
+;; Update issue
+(beads-rpc-update "proj-123"
+                  :status "in_progress")
+
+;; Close issue
+(beads-rpc-close "proj-123" "Fixed in commit abc")
+@end lisp
+
+@node Filter Composition
+@section Filter Composition
+
+@findex beads-filter-compose
+@findex beads-filter-by-status
+@findex beads-filter-by-priority
+
+Build complex filters programmatically:
+
+@lisp
+(require 'beads-filter)
+
+(setq my-filter
+      (beads-filter-compose
+       (beads-filter-by-type "bug")
+       (beads-filter-by-priority 0)))
+
+(beads-filter-apply my-filter issues)
+@end lisp
+
+@node Advice Examples
+@section Advice Examples
+
+@lisp
+;; Auto-assign new issues to yourself
+(advice-add 'beads-rpc-create :filter-args
+  (lambda (args)
+    (let ((title (car args))
+          (plist (cdr args)))
+      (unless (plist-get plist :assignee)
+        (setq plist (plist-put plist :assignee user-login-name)))
+      (cons title plist))))
+@end lisp
+
+@node Internal Variables
+@section Internal Variables
+
+These buffer-local variables are available for advanced use:
+
+@itemize
+@item
+@code{beads-list--issues} - Current issue list (vector)
+@item
+@code{beads-list--marked} - List of marked issue IDs
+@item
+@code{beads-list--filter} - Active filter object
+@item
+@code{beads-detail--current-issue-id} - Displayed issue ID
+@end itemize
+
+@node Troubleshooting
+@chapter Troubleshooting
+
+@cindex troubleshooting
+@cindex errors
+@cindex problems
+
+@menu
+* "Socket not found" or "Daemon not running"::
+* "No Beads database found"::
+* "bd command not found"::
+* List Shows No Issues::
+* Preview Not Updating::
+* Slow Performance::
+@end menu
+
+@node "Socket not found" or "Daemon not running"
+@section "Socket not found" or "Daemon not running"
+
+The Beads daemon needs to be started:
+
+@example
+$ bd daemon start
+@end example
+
+Check status with:
+
+@example
+$ bd daemon status
+@end example
+
+@node "No Beads database found"
+@section "No Beads database found"
+
+Initialize Beads in your project:
+
+@example
+$ cd your-project
+$ bd init
+@end example
+
+Make sure you're in the right directory when opening Emacs.
+
+@node "bd command not found"
+@section "bd command not found"
+
+The @samp{bd} command-line tool isn't installed or not in your PATH@.
+See the Beads documentation for installation.
+
+@node List Shows No Issues
+@section List Shows No Issues
+
+@itemize
+@item
+Check if filters are hiding issues: press @samp{f c} to clear filters
+@item
+Refresh with @samp{g}
+@item
+Verify the daemon is running
+@end itemize
+
+@node Preview Not Updating
+@section Preview Not Updating
+
+@itemize
+@item
+Check @code{beads-preview-delay} setting
+@item
+Toggle preview mode off and on with @samp{P}
+@end itemize
+
+@node Slow Performance
+@section Slow Performance
+
+For large projects (1000+ issues):
+
+@lisp
+(setq beads-autoupdate-interval 60)    ; Less frequent updates
+(setq beads-list-show-header-stats nil) ; Disable header stats
+@end lisp
+
+@node Tips and Tricks
+@chapter Tips and Tricks
+
+@cindex tips
+
+@menu
+* Quick Issue Creation::
+* Keyboard-Driven Workflow::
+* Finding Ready Work::
+* Global Keybindings::
+@end menu
+
+@node Quick Issue Creation
+@section Quick Issue Creation
+
+Create issues from the shell and refresh in Emacs:
+
+@example
+$ bd create "Fix the bug" --type bug -p 1
+@end example
+
+Then press @samp{g} in Emacs to refresh.
+
+@node Keyboard-Driven Workflow
+@section Keyboard-Driven Workflow
+
+@enumerate
+@item
+@samp{M-x beads-list} - Open list
+@item
+@samp{P} - Enable preview
+@item
+@samp{n=/=p} - Browse issues
+@item
+@samp{e} prefix - Quick edits
+@item
+@samp{?} - Help when stuck
+@end enumerate
+
+@node Finding Ready Work
+@section Finding Ready Work
+
+Press @samp{f} then select "Ready (no blockers)" to see only issues you
+can work on right now.
+
+@node Global Keybindings
+@section Global Keybindings
+
+@lisp
+(global-set-key (kbd "C-c b l") #'beads-list)
+(global-set-key (kbd "C-c b p") #'beads-project-list)
+@end lisp
+
+@node Quick Reference
+@chapter Quick Reference
+
+@cindex quick reference
+@cindex cheat sheet
+
+@menu
+* Global Commands::
+* List View::
+* Detail View: Detail View (1). 
+* Form Editor: Form Editor (1). 
+@end menu
+
+@node Global Commands
+@section Global Commands
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaa}
+@headitem Command
+@tab Description
+@item @samp{M-x beads-list}
+@tab Open issue list
+@item @samp{M-x beads}
+@tab Open issue list
+@end multitable
+
+@node List View
+@section List View
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Description
+@item @samp{RET}
+@tab View issue details
+@item @samp{E}
+@tab Open form editor
+@item @samp{g}
+@tab Refresh
+@item @samp{q}
+@tab Quit
+@item @samp{?}
+@tab Help menu
+@item @samp{e s}
+@tab Edit status
+@item @samp{e p}
+@tab Edit priority
+@item @samp{e t}
+@tab Edit title
+@item @samp{f}
+@tab Filter menu
+@item @samp{/}
+@tab Search
+@item @samp{s}
+@tab Toggle sort mode
+@item @samp{m}
+@tab Mark issue
+@item @samp{u}
+@tab Unmark issue
+@item @samp{U}
+@tab Unmark all
+@item @samp{x}
+@tab Close marked
+@item @samp{P}
+@tab Toggle preview
+@item @samp{H}
+@tab Show hierarchy
+@end multitable
+
+@node Detail View (1)
+@section Detail View
+
+@multitable {aaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Key
+@tab Description
+@item @samp{g}
+@tab Refresh
+@item @samp{q}
+@tab Quit
+@item @samp{E}
+@tab Open form editor
+@item @samp{e *}
+@tab Edit field (* = t/s/p/T/d/D/a/n)
+@item @samp{l a}
+@tab Add label
+@item @samp{l r}
+@tab Remove label
+@end multitable
+
+@node Form Editor (1)
+@section Form Editor
+
+@multitable {aaaaaaaaa} {aaaaaaaaaaaaaa}
+@headitem Key
+@tab Description
+@item @samp{TAB}
+@tab Next field
+@item @samp{C-c C-c}
+@tab Save and close
+@item @samp{C-c C-k}
+@tab Cancel
+@end multitable
+
+@node Index
+@chapter Index
+
+@printindex cp
+
+@bye

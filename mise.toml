@@ -22,3 +22,17 @@ depends = ["lint", "test"]
 description = "Launch Emacs with beads.el loaded for interactive testing"
 depends = ["build"]
 run = "emacs -nw --init-directory=dev"
+
+[tasks.docs]
+description = "Build Info manual from beads.org"
+run = """
+emacs --batch beads.org \
+  --eval "(require 'ox-texinfo)" \
+  -f org-texinfo-export-to-texinfo && \
+makeinfo --no-split beads.texi -o beads.info
+"""
+
+[tasks."docs:view"]
+description = "Build and view Info manual"
+depends = ["docs"]
+run = "info ./beads.info"
