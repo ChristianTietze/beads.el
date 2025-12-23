@@ -85,11 +85,12 @@ When `short', display 4-character abbreviations (bug, feat, task, epic, chor)."
   "Face for closed status.")
 
 (defface beads-list-priority-p0
-  '((t :foreground "red" :weight bold))
-  "Face for P0 priority.")
+  '((t :inherit error :inverse-video t))
+  "Face for P0 priority.
+Uses inverted error colors for maximum visibility.")
 
 (defface beads-list-priority-p1
-  '((t :foreground "orange"))
+  '((t :inherit error))
   "Face for P1 priority.")
 
 (defface beads-list-header-line
