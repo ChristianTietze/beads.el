@@ -29,6 +29,7 @@
 (require 'beads-filter)
 (require 'beads-preview)
 (require 'tabulated-list)
+(require 'seq)
 
 (declare-function beads-menu "beads-transient")
 (declare-function beads-show-hint "beads")
@@ -70,6 +71,17 @@ When `full', display full type names (bug, feature, task, epic, chore).
 When `short', display 4-character abbreviations (bug, feat, task, epic, chor)."
   :type '(choice (const :tag "Full names" full)
                  (const :tag "Short (4-char)" short))
+  :group 'beads-list)
+
+(defcustom beads-list-sort-mode 'sectioned
+  "How to sort issues in the list view.
+When `sectioned', group issues into three sections:
+  1. Unblocked (open/in_progress) - sorted by priority
+  2. Blocked - sorted by priority
+  3. Completed (closed) - sorted by completion date
+When `column', use standard tabulated-list column sorting."
+  :type '(choice (const :tag "Sectioned (unblocked/blocked/closed)" sectioned)
+                 (const :tag "Column-based" column))
   :group 'beads-list)
 
 (defface beads-list-status-open
@@ -171,6 +183,14 @@ Automatically prepends the mark indicator."
   "Current filter applied to issue list.
 Created via `beads-filter-make' functions.")
 
+(defvar-local beads-list--sort-mode-override nil
+  "Buffer-local override for `beads-list-sort-mode'.
+When non-nil, overrides the global setting for this buffer.")
+
+(defun beads-list--effective-sort-mode ()
+  "Return the effective sort mode for this buffer."
+  (or beads-list--sort-mode-override beads-list-sort-mode))
+
 (defvar-local beads-list--project-root nil
   "Project root for this beads list buffer.
 Used to ensure refresh uses the correct project context.")
@@ -221,6 +241,7 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "S") #'beads-stats)
     (define-key map (kbd "D") #'beads-delete-issue)
     (define-key map (kbd "R") #'beads-reopen-issue)
+    (define-key map (kbd "s") #'beads-list-toggle-sort-mode)
     (define-key map (kbd "o") #'beads-list-cycle-sort)
     (define-key map (kbd "O") #'beads-list-reverse-sort)
     (define-key map (kbd "m") #'beads-list-mark)
@@ -292,9 +313,15 @@ Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
                                    (seq-filter (lambda (issue)
                                                  (member (alist-get 'id issue) beads-list--marked))
                                                issues)
-                                 issues)))
+                                 issues))
+               (effective-sort-mode (beads-list--effective-sort-mode))
+               (sorted-issues (if (eq effective-sort-mode 'sectioned)
+                                  (beads-list--sectioned-sort display-issues)
+                                display-issues)))
           (setq beads-list--issues (append issues nil))
-          (setq tabulated-list-entries (beads-list-entries display-issues))
+          (when (eq effective-sort-mode 'sectioned)
+            (setq tabulated-list-sort-key nil))
+          (setq tabulated-list-entries (beads-list-entries sorted-issues))
           (tabulated-list-print t)
           (if saved-id
               (unless (beads-list-goto-id saved-id)
@@ -307,8 +334,11 @@ Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
           (unless silent
             (let ((filter-msg (if beads-list--filter
                                   (format " [%s]" (beads-filter-name beads-list--filter))
-                                "")))
-              (message "Refreshed %d issues%s" (length beads-list--issues) filter-msg))))
+                                ""))
+                  (sort-msg (if (eq effective-sort-mode 'sectioned)
+                                " (sectioned)"
+                              "")))
+              (message "Refreshed %d issues%s%s" (length beads-list--issues) filter-msg sort-msg))))
       (beads-rpc-error
        (message "Failed to fetch issues: %s" (error-message-string err))))))
 
@@ -349,6 +379,42 @@ Returns non-nil if A should come before B."
   (let ((date-a (aref (cadr a) 1))
         (date-b (aref (cadr b) 1)))
     (string< date-a date-b)))
+
+(defun beads-list--issue-section (issue)
+  "Return section number for ISSUE: 0=unblocked, 1=blocked, 2=closed."
+  (let ((status (alist-get 'status issue)))
+    (cond
+     ((string= status "closed") 2)
+     ((string= status "blocked") 1)
+     (t 0))))
+
+(defun beads-list--sectioned-sort (issues)
+  "Sort ISSUES into sections: unblocked, blocked, closed.
+ISSUES can be a list or vector.
+Within unblocked and blocked sections, sort by priority (ascending).
+Within closed section, sort by closed_at date (most recent first)."
+  (let ((unblocked nil)
+        (blocked nil)
+        (closed nil))
+    (seq-doseq (issue issues)
+      (pcase (beads-list--issue-section issue)
+        (0 (push issue unblocked))
+        (1 (push issue blocked))
+        (2 (push issue closed))))
+    (setq unblocked (sort unblocked
+                          (lambda (a b)
+                            (< (alist-get 'priority a 2)
+                               (alist-get 'priority b 2)))))
+    (setq blocked (sort blocked
+                        (lambda (a b)
+                          (< (alist-get 'priority a 2)
+                             (alist-get 'priority b 2)))))
+    (setq closed (sort closed
+                       (lambda (a b)
+                         (let ((date-a (or (alist-get 'closed_at a) ""))
+                               (date-b (or (alist-get 'closed_at b) "")))
+                           (string> date-a date-b)))))
+    (append unblocked blocked closed)))
 
 (defun beads--format-status (issue)
   "Format status column for ISSUE with face."
@@ -426,9 +492,25 @@ Returns the issue alist or nil if not found."
       (beads-preview-mode -1)
     (quit-window)))
 
-(defun beads-list-cycle-sort ()
-  "Cycle through sort columns."
+(defun beads-list-toggle-sort-mode ()
+  "Toggle between sectioned and column sort modes."
   (interactive)
+  (setq beads-list--sort-mode-override
+        (if (eq (beads-list--effective-sort-mode) 'sectioned)
+            'column
+          'sectioned))
+  (if (eq beads-list--sort-mode-override 'column)
+      (setq tabulated-list-sort-key (cons "Date" t)))
+  (beads-list-refresh t)
+  (message "Sort mode: %s" beads-list--sort-mode-override))
+
+(defun beads-list-cycle-sort ()
+  "Cycle through sort columns.
+If in sectioned mode, first switches to column mode."
+  (interactive)
+  (when (eq (beads-list--effective-sort-mode) 'sectioned)
+    (setq beads-list--sort-mode-override 'column)
+    (setq tabulated-list-sort-key (cons "Date" nil)))
   (let* ((columns (beads-list--column-names))
          (current (car tabulated-list-sort-key))
          (flip (cdr tabulated-list-sort-key))
@@ -441,8 +523,12 @@ Returns the issue alist or nil if not found."
     (message "Sorted by %s%s" next-col (if flip " (descending)" ""))))
 
 (defun beads-list-reverse-sort ()
-  "Reverse the current sort direction."
+  "Reverse the current sort direction.
+If in sectioned mode, first switches to column mode."
   (interactive)
+  (when (eq (beads-list--effective-sort-mode) 'sectioned)
+    (setq beads-list--sort-mode-override 'column)
+    (setq tabulated-list-sort-key (cons "Date" nil)))
   (let ((current (car tabulated-list-sort-key))
         (flip (cdr tabulated-list-sort-key)))
     (setq tabulated-list-sort-key (cons current (not flip)))
