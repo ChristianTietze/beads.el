@@ -26,13 +26,13 @@ run = "emacs -nw --init-directory=dev"
 [tasks.docs]
 description = "Build Info manual from beads.org"
 run = """
-emacs --batch beads.org \
+emacs --batch docs/beads.org \
   --eval "(require 'ox-texinfo)" \
   -f org-texinfo-export-to-texinfo && \
-makeinfo --no-split beads.texi -o beads.info
+makeinfo --no-split docs/beads.texi -o docs/beads.info
 """
 
 [tasks."docs:view"]
 description = "Build and view Info manual"
 depends = ["docs"]
-run = "info ./beads.info"
+run = "info ./docs/beads.info"
