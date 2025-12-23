@@ -84,6 +84,12 @@ When `column', use standard tabulated-list column sorting."
                  (const :tag "Column-based" column))
   :group 'beads-list)
 
+(defcustom beads-list-section-separators t
+  "Whether to show visual separators between sections.
+Only applies when `beads-list-sort-mode' is `sectioned'."
+  :type 'boolean
+  :group 'beads-list)
+
 (defface beads-list-status-open
   '((t :inherit default))
   "Face for open status.")
@@ -186,6 +192,9 @@ Created via `beads-filter-make' functions.")
 (defvar-local beads-list--sort-mode-override nil
   "Buffer-local override for `beads-list-sort-mode'.
 When non-nil, overrides the global setting for this buffer.")
+
+(defvar-local beads-list--section-overlays nil
+  "List of overlays used for section separators.")
 
 (defun beads-list--effective-sort-mode ()
   "Return the effective sort mode for this buffer."
@@ -323,6 +332,7 @@ Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
             (setq tabulated-list-sort-key nil))
           (setq tabulated-list-entries (beads-list-entries sorted-issues))
           (tabulated-list-print t)
+          (beads-list--add-section-separators)
           (if saved-id
               (unless (beads-list-goto-id saved-id)
                 (goto-char (point-min))
@@ -415,6 +425,39 @@ Within closed section, sort by closed_at date (most recent first)."
                                (date-b (or (alist-get 'closed_at b) "")))
                            (string> date-a date-b)))))
     (append unblocked blocked closed)))
+
+(defun beads-list--clear-section-overlays ()
+  "Remove all section separator overlays."
+  (mapc #'delete-overlay beads-list--section-overlays)
+  (setq beads-list--section-overlays nil))
+
+(defun beads-list--add-section-separators ()
+  "Add visual separators between sections after printing.
+Only adds separators when in sectioned sort mode and
+`beads-list-section-separators' is non-nil."
+  (beads-list--clear-section-overlays)
+  (when (and beads-list-section-separators
+             (eq (beads-list--effective-sort-mode) 'sectioned))
+    (save-excursion
+      (goto-char (point-min))
+      (let ((prev-section nil))
+        (while (not (eobp))
+          (when-let* ((id (tabulated-list-get-id))
+                      (issue (seq-find (lambda (i) (equal (alist-get 'id i) id))
+                                       beads-list--issues))
+                      (section (beads-list--issue-section issue)))
+            (when (and prev-section (> section prev-section))
+              (let* ((ov (make-overlay (line-beginning-position)
+                                       (line-beginning-position)))
+                     (label (pcase section
+                              (1 "Blocked")
+                              (2 "Completed")))
+                     (separator (propertize (format "\n  ── %s ──\n" label)
+                                            'face 'shadow)))
+                (overlay-put ov 'before-string separator)
+                (push ov beads-list--section-overlays)))
+            (setq prev-section section))
+          (forward-line 1))))))
 
 (defun beads--format-status (issue)
   "Format status column for ISSUE with face."
