@@ -1,9 +1,9 @@
 ;;; beads-detail.el --- Issue detail view for Beads -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Beads Contributors
+;; Copyright (C) 2025 Christian Tietze
 
-;; Author: Beads Contributors
-;; Keywords: tools
+;; Author: Christian Tietze
+;; Keywords: tools, ui
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

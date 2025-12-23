@@ -1,8 +1,8 @@
 ;;; beads-hierarchy.el --- Dependency tree view for Beads -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Beads Contributors
+;; Copyright (C) 2025 Christian Tietze
 
-;; Author: Beads Contributors
+;; Author: Christian Tietze
 ;; Keywords: tools
 
 ;; This program is free software; you can redistribute it and/or modify

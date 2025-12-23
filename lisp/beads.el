@@ -1,12 +1,12 @@
 ;;; beads.el --- Emacs client for Beads issue tracker -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025
+;; Copyright (C) 2025 Christian Tietze
 
-;; Author: Beads Contributors
+;; Author: Christian Tietze
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "28.1") (transient "0.4.0") (hierarchy "0.7.0"))
-;; Keywords: tools, project
-;; URL: https://github.com/ChristianTietze/beads.el
+;; Keywords: tools, project, ui, widget
+;; URL: https://codeberg.org/ctietze/beads.el
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -35,6 +35,16 @@
 ;; The client automatically discovers the Beads database by walking up from
 ;; `default-directory` looking for `.beads/beads.db`, then connects to the
 ;; daemon socket at `.beads/bd.sock`.
+;;
+;; You can use beads.el on multiple projects at the same time.
+;;
+;; Make sure to try:
+;;
+;; - Transient menu to discover all user-facing functions, including
+;;   the various ways to edit parts of an issue, or the whole issue
+;;   at once in a form.
+;; - Preview mode, where you can 'peek' at issue details as you move
+;;   point in the list.
 
 ;;; Code:
 
