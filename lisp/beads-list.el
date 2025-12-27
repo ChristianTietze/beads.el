@@ -44,9 +44,9 @@
   :group 'beads)
 
 (defcustom beads-list-show-header-stats t
-  "Whether to show statistics in the header line.
+  "Whether to show statistics in the mode line.
 When non-nil, displays issue counts (total, open, blocked, ready)
-in the header line of the list view."
+in the mode line of the list view."
   :type 'boolean
   :group 'beads-list)
 
@@ -307,16 +307,20 @@ Used to ensure refresh uses the correct project context.")
             (propertize (number-to-string blocked) 'face 'beads-list-header-count)
             (propertize (number-to-string ready) 'face 'beads-list-header-count))))
 
-(defun beads-list--update-header-line ()
-  "Update the header line with current stats.
+(defun beads-list--update-mode-line ()
+  "Update the mode line with current stats.
 Respects `beads-list-show-header-stats'."
   (if beads-list-show-header-stats
       (condition-case nil
           (let ((stats (beads-rpc-stats)))
-            (setq header-line-format (beads-list--format-header-line stats)))
+            (setq mode-line-format
+                  `(" "
+                    mode-line-buffer-identification
+                    "  "
+                    ,(beads-list--format-header-line stats))))
         (beads-rpc-error
-         (setq header-line-format nil)))
-    (setq header-line-format nil)))
+         (setq mode-line-format (default-value 'mode-line-format))))
+    (setq mode-line-format (default-value 'mode-line-format))))
 
 (define-derived-mode beads-list-mode tabulated-list-mode "Beads-List"
   "Major mode for displaying Beads issues in a table.
@@ -368,7 +372,7 @@ Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
             (goto-char (point-min)))
           (when-let ((win (get-buffer-window (current-buffer))))
             (set-window-start win (min saved-start (point-max))))
-          (beads-list--update-header-line)
+          (beads-list--update-mode-line)
           (unless silent
             (let ((filter-msg (if beads-list--filter
                                   (format " [%s]" (beads-filter-name beads-list--filter))
