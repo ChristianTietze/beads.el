@@ -90,6 +90,14 @@ Only applies when `beads-list-sort-mode' is `sectioned'."
   :type 'boolean
   :group 'beads-list)
 
+(defcustom beads-list-id-column-max-width 15
+  "Maximum width for the ID column in beads list view.
+When nil, the column width is unlimited and adjusts to the longest ID.
+When an integer, the column width will not exceed this value."
+  :type '(choice (const :tag "Unlimited" nil)
+                 (integer :tag "Maximum width"))
+  :group 'beads-list)
+
 (defface beads-list-status-open
   '((t :inherit default))
   "Face for open status.")
@@ -150,17 +158,34 @@ Each entry is (SYMBOL . (HEADER WIDTH SORTABLE FORMATTER)).")
 (defvar-local beads-list--show-only-marked nil
   "When non-nil, only show marked issues in the list.")
 
-(defun beads-list--build-format ()
+(defun beads-list--build-format (&optional id-width)
   "Build `tabulated-list-format' from `beads-list-columns'.
-Automatically prepends the mark column."
+Automatically prepends the mark column.
+When ID-WIDTH is provided, use it instead of the default for the id column."
   (vconcat
    (cons (list " " 1 nil)
          (mapcar (lambda (col)
                    (let ((def (alist-get col beads-list--column-defs)))
                      (if def
-                         (list (nth 0 def) (nth 1 def) (nth 2 def))
+                         (list (nth 0 def)
+                               (if (and id-width (eq col 'id))
+                                   id-width
+                                 (nth 1 def))
+                               (nth 2 def))
                        (error "Unknown column: %s" col))))
                  beads-list-columns))))
+
+(defun beads-list--max-id-width (issues)
+  "Return the ID column width for ISSUES.
+Computes the maximum ID length with a minimum of 5.
+Respects `beads-list-id-column-max-width' when set."
+  (let ((max-len (seq-reduce (lambda (acc issue)
+                               (max acc (length (alist-get 'id issue))))
+                             issues 0)))
+    (setq max-len (max 5 max-len))
+    (if beads-list-id-column-max-width
+        (min max-len beads-list-id-column-max-width)
+      max-len)))
 
 (defun beads-list--build-entry (issue)
   "Build entry vector for ISSUE based on `beads-list-columns'.
@@ -326,8 +351,11 @@ Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
                (effective-sort-mode (beads-list--effective-sort-mode))
                (sorted-issues (if (eq effective-sort-mode 'sectioned)
                                   (beads-list--sectioned-sort display-issues)
-                                display-issues)))
+                                display-issues))
+               (id-width (beads-list--max-id-width display-issues)))
           (setq beads-list--issues (append issues nil))
+          (setq tabulated-list-format (beads-list--build-format id-width))
+          (tabulated-list-init-header)
           (when (eq effective-sort-mode 'sectioned)
             (setq tabulated-list-sort-key nil))
           (setq tabulated-list-entries (beads-list-entries sorted-issues))
