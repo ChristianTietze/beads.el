@@ -92,55 +92,83 @@
   (let ((issue '((priority . 4))))
     (should (equal (beads--format-priority issue) "P4"))))
 
-(ert-deftest beads-list-test-format-type-bug ()
-  "Test that beads--format-type returns bug unabbreviated."
-  (let ((issue '((issue_type . "bug"))))
-    (should (equal (beads--format-type issue) "bug"))))
+(ert-deftest beads-list-test-format-type-full-style ()
+  "Test that beads--format-type returns full type names when style is full."
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph nil))
+    (should (equal (beads--format-type '((issue_type . "bug"))) "bug"))
+    (should (equal (beads--format-type '((issue_type . "feature"))) "feature"))
+    (should (equal (beads--format-type '((issue_type . "task"))) "task"))
+    (should (equal (beads--format-type '((issue_type . "epic"))) "epic"))
+    (should (equal (beads--format-type '((issue_type . "chore"))) "chore"))
+    (should (equal (beads--format-type '((issue_type . "gate"))) "gate"))
+    (should (equal (beads--format-type '((issue_type . "convoy"))) "convoy"))
+    (should (equal (beads--format-type '((issue_type . "agent"))) "agent"))
+    (should (equal (beads--format-type '((issue_type . "role"))) "role"))))
 
-(ert-deftest beads-list-test-format-type-feature ()
-  "Test that beads--format-type abbreviates feature to feat."
-  (let ((issue '((issue_type . "feature"))))
-    (should (equal (beads--format-type issue) "feat"))))
+(ert-deftest beads-list-test-format-type-short-style ()
+  "Test that beads--format-type abbreviates types when style is short."
+  (let ((beads-list-type-style 'short)
+        (beads-list-type-glyph nil))
+    (should (equal (beads--format-type '((issue_type . "bug"))) "bug"))
+    (should (equal (beads--format-type '((issue_type . "feature"))) "feat"))
+    (should (equal (beads--format-type '((issue_type . "task"))) "task"))
+    (should (equal (beads--format-type '((issue_type . "epic"))) "epic"))
+    (should (equal (beads--format-type '((issue_type . "chore"))) "chor"))
+    (should (equal (beads--format-type '((issue_type . "gate"))) "gate"))
+    (should (equal (beads--format-type '((issue_type . "convoy"))) "conv"))
+    (should (equal (beads--format-type '((issue_type . "agent"))) "agnt"))
+    (should (equal (beads--format-type '((issue_type . "role"))) "role"))))
 
-(ert-deftest beads-list-test-format-type-task ()
-  "Test that beads--format-type returns task unabbreviated."
-  (let ((issue '((issue_type . "task"))))
-    (should (equal (beads--format-type issue) "task"))))
+(ert-deftest beads-list-test-format-type-special-faces ()
+  "Test that special types get appropriate faces."
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph nil))
+    (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "gate"))))
+                'beads-list-type-gate))
+    (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "convoy"))))
+                'beads-list-type-convoy))
+    (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "agent"))))
+                'beads-list-type-agent))
+    (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "role"))))
+                'beads-list-type-role))))
 
-(ert-deftest beads-list-test-format-type-epic ()
-  "Test that beads--format-type returns epic unabbreviated."
-  (let ((issue '((issue_type . "epic"))))
-    (should (equal (beads--format-type issue) "epic"))))
+(ert-deftest beads-list-test-format-type-regular-no-face ()
+  "Test that regular types have no special face."
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph nil))
+    (should (null (get-text-property 0 'face (beads--format-type '((issue_type . "bug"))))))
+    (should (null (get-text-property 0 'face (beads--format-type '((issue_type . "feature"))))))
+    (should (null (get-text-property 0 'face (beads--format-type '((issue_type . "task"))))))))
 
-(ert-deftest beads-list-test-format-type-chore ()
-  "Test that beads--format-type abbreviates chore to chor."
-  (let ((issue '((issue_type . "chore"))))
-    (should (equal (beads--format-type issue) "chor"))))
+(ert-deftest beads-list-test-format-type-glyphs ()
+  "Test that glyphs are prepended when beads-list-type-glyph is non-nil."
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph t))
+    (should (string-prefix-p "■ " (beads--format-type '((issue_type . "gate")))))
+    (should (string-prefix-p "▶ " (beads--format-type '((issue_type . "convoy")))))
+    (should (string-prefix-p "◉ " (beads--format-type '((issue_type . "agent")))))
+    (should (string-prefix-p "● " (beads--format-type '((issue_type . "role")))))))
 
-(ert-deftest beads-list-test-format-type-gate ()
-  "Test that beads--format-type returns gate unabbreviated."
-  (let ((issue '((issue_type . "gate"))))
-    (should (equal (beads--format-type issue) "gate"))))
+(ert-deftest beads-list-test-format-type-no-glyph-regular ()
+  "Test that regular types have no glyph even when glyphs enabled."
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph t))
+    (should (equal (beads--format-type '((issue_type . "bug"))) "bug"))
+    (should (equal (beads--format-type '((issue_type . "task"))) "task"))))
 
-(ert-deftest beads-list-test-format-type-convoy ()
-  "Test that beads--format-type abbreviates convoy to conv."
-  (let ((issue '((issue_type . "convoy"))))
-    (should (equal (beads--format-type issue) "conv"))))
-
-(ert-deftest beads-list-test-format-type-agent ()
-  "Test that beads--format-type abbreviates agent to agnt."
-  (let ((issue '((issue_type . "agent"))))
-    (should (equal (beads--format-type issue) "agnt"))))
-
-(ert-deftest beads-list-test-format-type-role ()
-  "Test that beads--format-type returns role unabbreviated."
-  (let ((issue '((issue_type . "role"))))
-    (should (equal (beads--format-type issue) "role"))))
+(ert-deftest beads-list-test-format-type-glyph-with-short ()
+  "Test that glyphs work with short style."
+  (let ((beads-list-type-style 'short)
+        (beads-list-type-glyph t))
+    (should (equal (beads--format-type '((issue_type . "convoy"))) "▶ conv"))
+    (should (equal (beads--format-type '((issue_type . "agent"))) "◉ agnt"))))
 
 (ert-deftest beads-list-test-format-type-unknown ()
   "Test that beads--format-type returns unknown types unchanged."
-  (let ((issue '((issue_type . "unknown"))))
-    (should (equal (beads--format-type issue) "unknown"))))
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph nil))
+    (should (equal (beads--format-type '((issue_type . "unknown"))) "unknown"))))
 
 (ert-deftest beads-list-test-format-title-short ()
   "Test that beads--format-title returns short titles unchanged."
@@ -206,7 +234,9 @@
 
 (ert-deftest beads-list-test-entries-column-order ()
   "Test that beads-list-entries produces columns in correct order."
-  (let ((issues '(((id . "bd-test")
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph nil)
+        (issues '(((id . "bd-test")
                    (title . "Test")
                    (status . "closed")
                    (priority . 0)
@@ -217,7 +247,7 @@
       (should (equal (aref columns 0) "bd-test"))
       (should (equal (aref columns 1) "closed"))
       (should (equal (aref columns 2) "P0"))
-      (should (equal (aref columns 3) "feat"))
+      (should (equal (aref columns 3) "feature"))
       (should (equal (aref columns 4) "Test")))))
 
 (ert-deftest beads-list-test-entries-preserves-faces ()

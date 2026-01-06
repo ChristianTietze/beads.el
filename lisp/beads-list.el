@@ -73,6 +73,17 @@ When `short', display 4-character abbreviations (bug, feat, task, epic, chor)."
                  (const :tag "Short (4-char)" short))
   :group 'beads-list)
 
+(defcustom beads-list-type-glyph nil
+  "Whether to show glyphs for special issue types.
+When non-nil, display a unicode glyph prefix for gate, convoy,
+agent, and role types:
+  gate   → ■
+  convoy → ▶
+  agent  → ◉
+  role   → ●"
+  :type 'boolean
+  :group 'beads-list)
+
 (defcustom beads-list-sort-mode 'sectioned
   "How to sort issues in the list view.
 When `sectioned', group issues into three sections:
@@ -146,6 +157,22 @@ Uses inverted error colors for maximum visibility.")
 (defface beads-list-deps-child
   '((t :foreground "green"))
   "Face for has-children dependency indicator.")
+
+(defface beads-list-type-gate
+  '((t :foreground "orange red"))
+  "Face for gate type (checkpoint/approval gate).")
+
+(defface beads-list-type-convoy
+  '((t :foreground "deep sky blue"))
+  "Face for convoy type (grouped work items).")
+
+(defface beads-list-type-agent
+  '((t :foreground "medium purple"))
+  "Face for agent type (AI/automation tasks).")
+
+(defface beads-list-type-role
+  '((t :foreground "sea green"))
+  "Face for role type (people/responsibility definitions).")
 
 (defvar beads-list--column-defs
   '((id       . ("ID"       10 t              beads--format-id))
@@ -531,16 +558,35 @@ Only adds separators when in sectioned sort mode and
                         (_ 'default)))))
 
 (defun beads--format-type (issue)
-  "Format type column for ISSUE based on `beads-list-type-style'."
-  (let ((type (alist-get 'issue_type issue)))
-    (if (eq beads-list-type-style 'short)
-        (pcase type
-          ("feature" "feat")
-          ("chore" "chor")
-          ("convoy" "conv")
-          ("agent" "agnt")
-          (_ (or type "")))
-      (or type ""))))
+  "Format type column for ISSUE based on `beads-list-type-style'.
+Applies faces for special types (gate, convoy, agent, role).
+When `beads-list-type-glyph' is non-nil, prepends a unicode glyph."
+  (let* ((type (alist-get 'issue_type issue))
+         (display-type (if (eq beads-list-type-style 'short)
+                           (pcase type
+                             ("feature" "feat")
+                             ("chore" "chor")
+                             ("convoy" "conv")
+                             ("agent" "agnt")
+                             (_ (or type "")))
+                         (or type "")))
+         (face (pcase type
+                 ("gate" 'beads-list-type-gate)
+                 ("convoy" 'beads-list-type-convoy)
+                 ("agent" 'beads-list-type-agent)
+                 ("role" 'beads-list-type-role)
+                 (_ nil)))
+         (glyph (when beads-list-type-glyph
+                  (pcase type
+                    ("gate" "■ ")
+                    ("convoy" "▶ ")
+                    ("agent" "◉ ")
+                    ("role" "● ")
+                    (_ nil))))
+         (result (concat glyph display-type)))
+    (if face
+        (propertize result 'face face)
+      result)))
 
 (defun beads--format-title (issue)
   "Format title column for ISSUE, truncating if needed."
