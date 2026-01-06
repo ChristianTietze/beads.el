@@ -47,6 +47,20 @@
       (should (equal result "closed"))
       (should (eq (get-text-property 0 'face result) 'beads-list-status-closed)))))
 
+(ert-deftest beads-list-test-format-status-blocked ()
+  "Test that beads--format-status formats blocked status with face."
+  (let ((issue '((status . "blocked"))))
+    (let ((result (beads--format-status issue)))
+      (should (equal result "blocked"))
+      (should (eq (get-text-property 0 'face result) 'beads-list-status-blocked)))))
+
+(ert-deftest beads-list-test-format-status-hooked ()
+  "Test that beads--format-status formats hooked status with face."
+  (let ((issue '((status . "hooked"))))
+    (let ((result (beads--format-status issue)))
+      (should (equal result "hooked"))
+      (should (eq (get-text-property 0 'face result) 'beads-list-status-hooked)))))
+
 (ert-deftest beads-list-test-format-priority-p0 ()
   "Test that beads--format-priority formats P0 with bold red face."
   (let ((issue '((priority . 0))))

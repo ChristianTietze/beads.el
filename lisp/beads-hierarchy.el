@@ -103,6 +103,8 @@ Returns sorted list of positions for widgets and buttons."
   (pcase status
     ("closed" 'beads-list-status-closed)
     ("in_progress" 'beads-list-status-in-progress)
+    ("blocked" 'beads-list-status-blocked)
+    ("hooked" 'beads-list-status-hooked)
     (_ 'beads-list-status-open)))
 
 (defun beads-hierarchy--labelfn (issue indent)

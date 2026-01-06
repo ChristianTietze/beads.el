@@ -110,6 +110,14 @@ When an integer, the column width will not exceed this value."
   '((t :foreground "green"))
   "Face for closed status.")
 
+(defface beads-list-status-blocked
+  '((t :foreground "red"))
+  "Face for blocked status.")
+
+(defface beads-list-status-hooked
+  '((t :foreground "cyan"))
+  "Face for hooked status (hook-based work assignment).")
+
 (defface beads-list-priority-p0
   '((t :inherit error :inverse-video t))
   "Face for P0 priority.
@@ -508,6 +516,8 @@ Only adds separators when in sectioned sort mode and
                 'face (pcase status
                         ("closed" 'beads-list-status-closed)
                         ("in_progress" 'beads-list-status-in-progress)
+                        ("blocked" 'beads-list-status-blocked)
+                        ("hooked" 'beads-list-status-hooked)
                         (_ 'beads-list-status-open)))))
 
 (defun beads--format-priority (issue)
@@ -697,7 +707,7 @@ If in sectioned mode, first switches to column mode."
 (defun beads-list-bulk-status (status)
   "Set STATUS for all marked issues (or issue at point if none marked)."
   (interactive
-   (list (completing-read "Status: " '("open" "in_progress" "blocked" "closed") nil t)))
+   (list (completing-read "Status: " '("open" "in_progress" "blocked" "hooked" "closed") nil t)))
   (let ((ids (beads-list--get-marked-or-at-point)))
     (unless ids
       (user-error "No issues marked or at point"))
@@ -828,7 +838,7 @@ Prompts for confirmation."
         (require 'beads-edit)
         (when (beads-edit-field-completing
                id :status status "Status: "
-               '("open" "in_progress" "blocked" "closed"))
+               '("open" "in_progress" "blocked" "hooked" "closed"))
           (beads-list-refresh)))
     (message "No issue at point")))
 

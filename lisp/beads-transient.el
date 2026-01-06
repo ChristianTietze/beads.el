@@ -220,7 +220,7 @@ Select a status to filter, or \"all\" to clear the filter."
   (interactive)
   (unless (derived-mode-p 'beads-list-mode)
     (user-error "Not in beads list mode"))
-  (let* ((choices '("all" "open" "in_progress" "blocked" "closed"))
+  (let* ((choices '("all" "open" "in_progress" "blocked" "hooked" "closed"))
          (current (when beads-list--filter
                     (plist-get (plist-get beads-list--filter :config) :value)))
          (status (completing-read "Filter by status: " choices nil t

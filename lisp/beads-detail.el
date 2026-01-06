@@ -235,7 +235,7 @@ Uses a single reusable buffer in a side window without focusing."
          (status (alist-get 'status issue)))
     (when (beads-edit-field-completing
            id :status status "Status: "
-           '("open" "in_progress" "blocked" "closed"))
+           '("open" "in_progress" "blocked" "hooked" "closed"))
       (beads-detail-refresh))))
 
 (defun beads-detail-edit-priority ()

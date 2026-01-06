@@ -100,7 +100,7 @@
   (widget-insert "\n")
   (beads-form--add-field 'status "Status" 'menu-choice
                          (alist-get 'status issue "open")
-                         :choices '("open" "in_progress" "blocked" "closed"))
+                         :choices '("open" "in_progress" "blocked" "hooked" "closed"))
 
   (widget-insert "  ")
   (beads-form--add-field 'priority "Priority" 'menu-choice
