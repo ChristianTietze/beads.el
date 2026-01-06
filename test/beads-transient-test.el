@@ -180,6 +180,14 @@
   (should (commandp 'beads-filter-status))
   (should (commandp 'beads-filter-priority)))
 
+(ert-deftest beads-transient-test-orphans-defined ()
+  "Test that beads-orphans is defined."
+  (should (fboundp 'beads-orphans)))
+
+(ert-deftest beads-transient-test-orphans-interactive ()
+  "Test that beads-orphans is an interactive command."
+  (should (commandp 'beads-orphans)))
+
 (ert-deftest beads-transient-test-keybindings-dont-conflict ()
   "Test that ? keybinding doesn't conflict with other bindings in list mode."
   (with-temp-buffer
