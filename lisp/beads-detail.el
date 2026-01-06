@@ -99,6 +99,7 @@
     (define-key map (kbd "H") #'beads-hierarchy-show)
     (define-key map (kbd "P") #'beads-detail-goto-parent)
     (define-key map (kbd "C") #'beads-detail-view-children)
+    (define-key map (kbd "c") #'beads-detail-add-comment)
     (define-key map (kbd "D") #'beads-delete-issue)
     (define-key map (kbd "R") #'beads-reopen-issue)
     (define-key map (kbd "?") #'beads-menu)
@@ -217,6 +218,24 @@ Filters the issue list to show only issues whose parent is this issue."
                   (plist-put beads-list--filter-state :parent-filter id))
       (beads-list-refresh)
       (message "Showing children of %s" id))))
+
+(defun beads-detail-add-comment ()
+  "Add a comment to the current issue.
+Uses CLI fallback since RPC does not support comment_add."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue))
+         (text (read-string (format "Comment on %s: " id))))
+    (when (string-empty-p text)
+      (user-error "Comment text is required"))
+    (let* ((bd-program (or (executable-find "bd") "bd"))
+           (exit-code (call-process bd-program nil nil nil
+                                    "comments" "add" id text)))
+      (if (zerop exit-code)
+          (progn
+            (message "Added comment to %s" id)
+            (beads-detail-refresh))
+        (user-error "Failed to add comment")))))
 
 (defun beads-detail-edit-description ()
   "Edit the description of the current issue."

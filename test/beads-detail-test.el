@@ -425,6 +425,32 @@
                                         (issue_type . "task")))
     (should-error (beads-detail-goto-parent) :type 'user-error)))
 
+;;; Comment tests (no daemon)
+
+(ert-deftest beads-detail-test-add-comment-defined ()
+  "Test that beads-detail-add-comment is defined as a command."
+  (should (fboundp 'beads-detail-add-comment))
+  (should (commandp 'beads-detail-add-comment)))
+
+(ert-deftest beads-detail-test-keybinding-add-comment ()
+  "Test that c is bound to beads-detail-add-comment."
+  (with-temp-buffer
+    (beads-detail-mode)
+    (should (eq (lookup-key beads-detail-mode-map (kbd "c"))
+                #'beads-detail-add-comment))))
+
+(ert-deftest beads-detail-test-add-comment-empty-text ()
+  "Test that beads-detail-add-comment errors on empty text."
+  (with-temp-buffer
+    (beads-detail-mode)
+    (setq beads-detail--current-issue '((id . "bd-test")
+                                        (title . "Test")
+                                        (status . "open")
+                                        (priority . 2)
+                                        (issue_type . "task")))
+    (cl-letf (((symbol-function 'read-string) (lambda (_) "")))
+      (should-error (beads-detail-add-comment) :type 'user-error))))
+
 ;;; Mode tests (no daemon)
 
 (ert-deftest beads-detail-test-mode-derived-from-special ()
