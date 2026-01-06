@@ -540,6 +540,7 @@ Uses canonical order from `beads-list--column-order' for insertion."
   "Beads list mode menu."
   ["Navigation"
    ("g" "Refresh" beads-list-refresh)
+   ("RET" "View issue" beads-list-goto-issue)
    ("P" "Toggle preview" beads-preview-mode)
    ("H" "Dependency tree" beads-hierarchy-show)
    ("S" "Project stats" beads-stats)
@@ -566,6 +567,8 @@ Uses canonical order from `beads-list--column-order' for insertion."
   ["Navigation"
    ("l" "List issues" beads-list)
    ("g" "Refresh" beads-detail-refresh)
+   ("P" "Go to parent" beads-detail-goto-parent)
+   ("C" "View children" beads-detail-view-children)
    ("H" "Dependency tree" beads-hierarchy-show)
    ("S" "Project stats" beads-stats)]
   ["Edit"
@@ -575,6 +578,7 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("e p" "Priority" beads-detail-edit-priority)
    ("e t" "Title" beads-detail-edit-title)]
   ["Actions"
+   ("c" "Add comment" beads-detail-add-comment)
    ("x" "Close issue" beads-close-issue)
    ("R" "Reopen issue" beads-reopen-issue)
    ("D" "Delete issue" beads-delete-issue)]
