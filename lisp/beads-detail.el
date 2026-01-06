@@ -367,6 +367,7 @@ Uses a single reusable buffer in a side window without focusing."
         (priority (alist-get 'priority issue))
         (type (alist-get 'issue_type issue))
         (assignee (alist-get 'assignee issue))
+        (created-by (alist-get 'created_by issue))
         (created (alist-get 'created_at issue))
         (labels (alist-get 'labels issue)))
 
@@ -379,6 +380,9 @@ Uses a single reusable buffer in a side window without focusing."
 
     (when assignee
       (beads-detail--insert-field "Assignee" assignee)
+      (insert "  "))
+    (when created-by
+      (beads-detail--insert-field "Created by" created-by)
       (insert "  "))
     (when created
       (beads-detail--insert-field "Created" (beads-detail--format-timestamp created)))

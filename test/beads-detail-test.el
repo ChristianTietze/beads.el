@@ -82,6 +82,32 @@
         (should (string-match-p "1" buffer-content))
         (should (string-match-p "bug" buffer-content))))))
 
+(ert-deftest beads-detail-test-render-created-by-present ()
+  "Test that beads-detail--render shows created_by when present."
+  (with-temp-buffer
+    (let ((issue '((id . "bd-test")
+                   (title . "Test")
+                   (status . "open")
+                   (priority . 2)
+                   (issue_type . "task")
+                   (created_by . "alice"))))
+      (beads-detail--render issue)
+      (let ((buffer-content (buffer-string)))
+        (should (string-match-p "Created by:" buffer-content))
+        (should (string-match-p "alice" buffer-content))))))
+
+(ert-deftest beads-detail-test-render-created-by-absent ()
+  "Test that beads-detail--render handles missing created_by gracefully."
+  (with-temp-buffer
+    (let ((issue '((id . "bd-test")
+                   (title . "Test")
+                   (status . "open")
+                   (priority . 2)
+                   (issue_type . "task"))))
+      (beads-detail--render issue)
+      (let ((buffer-content (buffer-string)))
+        (should-not (string-match-p "Created by:" buffer-content))))))
+
 (ert-deftest beads-detail-test-render-description-present ()
   "Test that beads-detail--render shows description when present."
   (with-temp-buffer
