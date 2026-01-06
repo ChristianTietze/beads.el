@@ -362,6 +362,69 @@
         (should (string-match-p "frontend" buffer-content))
         (should (string-match-p "bd-dep1" buffer-content))))))
 
+(ert-deftest beads-detail-test-render-parent-present ()
+  "Test that beads-detail--render shows parent link when present."
+  (with-temp-buffer
+    (let ((issue '((id . "bd-child")
+                   (title . "Child Issue")
+                   (status . "open")
+                   (priority . 2)
+                   (issue_type . "task")
+                   (parent_id . "bd-parent"))))
+      (beads-detail--render issue)
+      (let ((buffer-content (buffer-string)))
+        (should (string-match-p "Parent:" buffer-content))
+        (should (string-match-p "bd-parent" buffer-content))))))
+
+(ert-deftest beads-detail-test-render-parent-absent ()
+  "Test that beads-detail--render handles missing parent gracefully."
+  (with-temp-buffer
+    (let ((issue '((id . "bd-test")
+                   (title . "Test")
+                   (status . "open")
+                   (priority . 2)
+                   (issue_type . "task"))))
+      (beads-detail--render issue)
+      (let ((buffer-content (buffer-string)))
+        (should-not (string-match-p "Parent:" buffer-content))))))
+
+;;; Parent navigation tests (no daemon)
+
+(ert-deftest beads-detail-test-goto-parent-defined ()
+  "Test that beads-detail-goto-parent is defined as a command."
+  (should (fboundp 'beads-detail-goto-parent))
+  (should (commandp 'beads-detail-goto-parent)))
+
+(ert-deftest beads-detail-test-view-children-defined ()
+  "Test that beads-detail-view-children is defined as a command."
+  (should (fboundp 'beads-detail-view-children))
+  (should (commandp 'beads-detail-view-children)))
+
+(ert-deftest beads-detail-test-keybinding-goto-parent ()
+  "Test that P is bound to beads-detail-goto-parent."
+  (with-temp-buffer
+    (beads-detail-mode)
+    (should (eq (lookup-key beads-detail-mode-map (kbd "P"))
+                #'beads-detail-goto-parent))))
+
+(ert-deftest beads-detail-test-keybinding-view-children ()
+  "Test that C is bound to beads-detail-view-children."
+  (with-temp-buffer
+    (beads-detail-mode)
+    (should (eq (lookup-key beads-detail-mode-map (kbd "C"))
+                #'beads-detail-view-children))))
+
+(ert-deftest beads-detail-test-goto-parent-no-parent ()
+  "Test that beads-detail-goto-parent errors when no parent."
+  (with-temp-buffer
+    (beads-detail-mode)
+    (setq beads-detail--current-issue '((id . "bd-test")
+                                        (title . "Test")
+                                        (status . "open")
+                                        (priority . 2)
+                                        (issue_type . "task")))
+    (should-error (beads-detail-goto-parent) :type 'user-error)))
+
 ;;; Mode tests (no daemon)
 
 (ert-deftest beads-detail-test-mode-derived-from-special ()

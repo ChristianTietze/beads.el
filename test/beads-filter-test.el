@@ -144,5 +144,16 @@
     (let ((result (beads-filter-apply filter beads-filter-test--issues)))
       (should (= (length result) 2)))))
 
+(ert-deftest beads-filter-test-from-state-parent ()
+  "Test building filter from state with parent filter."
+  (let* ((issues-with-parent
+          '(((id . "CHILD-1") (parent_id . "EPIC-1"))
+            ((id . "CHILD-2") (parent_id . "EPIC-1"))
+            ((id . "CHILD-3") (parent_id . "EPIC-2"))))
+         (filter (beads-filter-from-state '(:parent-filter "EPIC-1")))
+         (result (beads-filter-apply filter issues-with-parent)))
+    (should (= (length result) 2))
+    (should (string= (alist-get 'id (car result)) "CHILD-1"))))
+
 (provide 'beads-filter-test)
 ;;; beads-filter-test.el ends here

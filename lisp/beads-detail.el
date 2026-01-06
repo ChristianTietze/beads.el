@@ -31,6 +31,7 @@
 (declare-function beads-menu "beads-transient")
 (declare-function beads-delete-issue "beads-transient")
 (declare-function beads-reopen-issue "beads-transient")
+(declare-function beads-list "beads-list")
 (declare-function beads-list-refresh "beads-list")
 (declare-function beads-form-open "beads-form")
 (declare-function beads-show-hint "beads")
@@ -96,6 +97,8 @@
     (define-key map (kbd "e") beads-detail-edit-map)
     (define-key map (kbd "E") #'beads-detail-edit-form)
     (define-key map (kbd "H") #'beads-hierarchy-show)
+    (define-key map (kbd "P") #'beads-detail-goto-parent)
+    (define-key map (kbd "C") #'beads-detail-view-children)
     (define-key map (kbd "D") #'beads-delete-issue)
     (define-key map (kbd "R") #'beads-reopen-issue)
     (define-key map (kbd "?") #'beads-menu)
@@ -186,6 +189,34 @@ Uses a single reusable buffer in a side window without focusing."
   (unless beads-detail--current-issue
     (user-error "No issue in current buffer"))
   beads-detail--current-issue)
+
+(defun beads-detail-goto-parent ()
+  "Navigate to the parent issue of the current issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (parent-id (alist-get 'parent_id issue)))
+    (unless parent-id
+      (user-error "This issue has no parent"))
+    (condition-case err
+        (let ((parent-issue (beads-rpc-show parent-id)))
+          (beads-detail-open parent-issue))
+      (beads-rpc-error
+       (user-error "Failed to load parent issue: %s" (error-message-string err))))))
+
+(defun beads-detail-view-children ()
+  "View children of the current issue in a filtered list.
+Filters the issue list to show only issues whose parent is this issue."
+  (interactive)
+  (let* ((issue (beads-detail--require-issue))
+         (id (alist-get 'id issue)))
+    (require 'beads-list)
+    (require 'beads-filter)
+    (beads-list)
+    (with-current-buffer (get-buffer "*Beads Issues*")
+      (setq-local beads-list--filter-state
+                  (plist-put beads-list--filter-state :parent-filter id))
+      (beads-list-refresh)
+      (message "Showing children of %s" id))))
 
 (defun beads-detail-edit-description ()
   "Edit the description of the current issue."
@@ -374,7 +405,8 @@ Uses a single reusable buffer in a side window without focusing."
         (assignee (alist-get 'assignee issue))
         (created-by (alist-get 'created_by issue))
         (created (alist-get 'created_at issue))
-        (labels (alist-get 'labels issue)))
+        (labels (alist-get 'labels issue))
+        (parent-id (alist-get 'parent_id issue)))
 
     (beads-detail--insert-field "Status" status)
     (insert "     ")
@@ -393,6 +425,10 @@ Uses a single reusable buffer in a side window without focusing."
       (beads-detail--insert-field "Created" (beads-detail--format-timestamp created)))
     (insert "\n")
 
+    (when parent-id
+      (beads-detail--insert-parent-link parent-id)
+      (insert "\n"))
+
     (when (and labels (> (length labels) 0))
       (beads-detail--insert-field "Labels"
                                   (mapconcat #'identity (append labels nil) ", "))
@@ -402,6 +438,14 @@ Uses a single reusable buffer in a side window without focusing."
   "Insert a LABEL: VALUE pair."
   (insert (propertize (concat label ": ") 'face 'beads-detail-label-face))
   (insert (propertize (or value "") 'face 'beads-detail-value-face)))
+
+(defun beads-detail--insert-parent-link (parent-id)
+  "Insert clickable parent link for PARENT-ID."
+  (insert (propertize "Parent: " 'face 'beads-detail-label-face))
+  (insert-text-button parent-id
+                      'action (lambda (_) (beads-detail-goto-parent))
+                      'follow-link t
+                      'help-echo "Click to view parent issue"))
 
 (defun beads-detail--insert-section (title content)
   "Insert a section with TITLE and CONTENT."

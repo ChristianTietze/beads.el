@@ -192,6 +192,8 @@ Enables epic-scoped views by filtering to children of a specific issue."
       (push (beads-filter-by-priority priority) filters))
     (when-let ((assignee (plist-get state :assignee-filter)))
       (push (beads-filter-by-assignee assignee) filters))
+    (when-let ((parent (plist-get state :parent-filter)))
+      (push (beads-filter-by-parent parent) filters))
     (if filters
         (apply #'beads-filter-compose filters)
       (beads-filter-identity))))
