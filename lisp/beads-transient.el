@@ -217,6 +217,7 @@ Press `q' to close the stats window."
 
 (autoload 'beads-orphans "beads-orphans" nil t)
 (autoload 'beads-stale "beads-stale" nil t)
+(autoload 'beads-activity "beads-activity" nil t)
 
 (defun beads-filter-status ()
   "Filter issues by status.
@@ -546,7 +547,8 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("H" "Dependency tree" beads-hierarchy-show)
    ("S" "Project stats" beads-stats)
    ("O" "Orphaned issues" beads-orphans)
-   ("A" "Stale issues" beads-stale)]
+   ("A" "Stale issues" beads-stale)
+   ("a" "Activity feed" beads-activity)]
   ["Actions"
    ("c" "Create issue" beads-create-issue)
    ("E" "Edit issue" beads-list-edit-form)
