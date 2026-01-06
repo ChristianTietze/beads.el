@@ -303,7 +303,7 @@
     (beads-list-mode)
     (should (eq (lookup-key beads-list-mode-map (kbd "g")) #'beads-list-refresh))
     (should (eq (lookup-key beads-list-mode-map (kbd "RET")) #'beads-list-goto-issue))
-    (should (eq (lookup-key beads-list-mode-map (kbd "q")) #'quit-window))))
+    (should (eq (lookup-key beads-list-mode-map (kbd "q")) #'beads-list-quit))))
 
 (ert-deftest beads-list-test-mode-inherits-parent-keybindings ()
   "Test that beads-list-mode inherits tabulated-list-mode keybindings."
@@ -491,6 +491,62 @@
             (should (eq first-buffer (get-buffer buffer-name)))))
       (when (get-buffer buffer-name)
         (kill-buffer buffer-name)))))
+
+;;; Quit behavior tests
+
+(ert-deftest beads-list-test-has-active-filter-none ()
+  "Test that beads-list--has-active-filter returns nil with no filter."
+  (with-temp-buffer
+    (beads-list-mode)
+    (setq beads-list--filter nil)
+    (setq beads-list--show-only-marked nil)
+    (should-not (beads-list--has-active-filter))))
+
+(ert-deftest beads-list-test-has-active-filter-with-filter ()
+  "Test that beads-list--has-active-filter detects beads-list--filter."
+  (with-temp-buffer
+    (beads-list-mode)
+    (setq beads-list--filter '(:type :status :config (:value "open")))
+    (setq beads-list--show-only-marked nil)
+    (should (beads-list--has-active-filter))))
+
+(ert-deftest beads-list-test-has-active-filter-with-marked ()
+  "Test that beads-list--has-active-filter detects show-only-marked."
+  (with-temp-buffer
+    (beads-list-mode)
+    (setq beads-list--filter nil)
+    (setq beads-list--show-only-marked t)
+    (should (beads-list--has-active-filter))))
+
+(ert-deftest beads-list-test-quit-clears-filter ()
+  "Test that beads-list-quit clears filter instead of quitting."
+  (with-temp-buffer
+    (beads-list-mode)
+    (setq beads-list--filter '(:type :status :config (:value "open")))
+    (setq beads-list--issues '())
+    (cl-letf (((symbol-function 'beads-rpc-list) (lambda (&rest _) '()))
+              ((symbol-function 'beads-rpc-stats) (lambda () '())))
+      (beads-list-quit)
+      (should-not beads-list--filter)
+      (should-not beads-list--show-only-marked))))
+
+(ert-deftest beads-list-test-quit-clears-marked-filter ()
+  "Test that beads-list-quit clears show-only-marked filter."
+  (with-temp-buffer
+    (beads-list-mode)
+    (setq beads-list--filter nil)
+    (setq beads-list--show-only-marked t)
+    (setq beads-list--issues '())
+    (cl-letf (((symbol-function 'beads-rpc-list) (lambda (&rest _) '()))
+              ((symbol-function 'beads-rpc-stats) (lambda () '())))
+      (beads-list-quit)
+      (should-not beads-list--filter)
+      (should-not beads-list--show-only-marked))))
+
+(ert-deftest beads-list-test-quit-command-defined ()
+  "Test that beads-list-quit is a command."
+  (should (fboundp 'beads-list-quit))
+  (should (commandp 'beads-list-quit)))
 
 (provide 'beads-list-test)
 ;;; beads-list-test.el ends here

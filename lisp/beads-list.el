@@ -628,12 +628,24 @@ Returns the issue alist or nil if not found."
                 (string= (alist-get 'id issue) id))
               beads-list--issues)))
 
+(defun beads-list--has-active-filter ()
+  "Return non-nil if any filter is currently active."
+  (or beads-list--filter beads-list--show-only-marked))
+
 (defun beads-list-quit ()
-  "Quit beads list, closing preview first if active."
+  "Quit beads list, clearing filters progressively.
+First clears active filters, then closes preview, then quits window."
   (interactive)
-  (if beads-preview-mode
-      (beads-preview-mode -1)
-    (quit-window)))
+  (cond
+   ((beads-list--has-active-filter)
+    (setq beads-list--filter nil)
+    (setq beads-list--show-only-marked nil)
+    (beads-list-refresh t)
+    (message "Filter cleared"))
+   (beads-preview-mode
+    (beads-preview-mode -1))
+   (t
+    (quit-window))))
 
 (defun beads-list-toggle-sort-mode ()
   "Toggle between sectioned and column sort modes."
