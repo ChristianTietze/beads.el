@@ -215,46 +215,7 @@ Press `q' to close the stats window."
     (beads-rpc-error
      (message "Failed to fetch stats: %s" (error-message-string err)))))
 
-(defun beads-orphans ()
-  "Display orphaned issues - issues referenced in commits but not closed.
-Press `q' to close the orphans window."
-  (interactive)
-  (condition-case err
-      (let* ((bd-program (or (executable-find "bd") "bd"))
-             (output (with-temp-buffer
-                       (let ((exit-code (call-process bd-program nil t nil "orphans" "--json")))
-                         (unless (zerop exit-code)
-                           (signal 'error (list (format "bd orphans failed: %s" (buffer-string)))))
-                         (goto-char (point-min))
-                         (json-read))))
-             (orphans (if (vectorp output) (append output nil) output)))
-        (with-current-buffer (get-buffer-create "*Beads Orphans*")
-          (let ((inhibit-read-only t))
-            (erase-buffer)
-            (insert (propertize "Orphaned Issues\n" 'face 'bold))
-            (insert (propertize "Issues referenced in commits but not closed\n" 'face 'shadow))
-            (insert (make-string 50 ?=) "\n\n")
-            (if (null orphans)
-                (insert "No orphaned issues found.\n")
-              (dolist (orphan orphans)
-                (let ((id (alist-get 'issue_id orphan))
-                      (title (alist-get 'title orphan))
-                      (status (alist-get 'status orphan))
-                      (commit (alist-get 'latest_commit orphan))
-                      (msg (alist-get 'latest_commit_message orphan)))
-                  (insert (propertize id 'face 'beads-detail-id-face))
-                  (insert (format " [%s]\n" status))
-                  (insert (format "  %s\n" title))
-                  (insert (propertize (format "  Commit: %s\n" commit) 'face 'shadow))
-                  (insert (propertize (format "  Message: %s\n\n" msg) 'face 'shadow))))))
-          (special-mode)
-          (goto-char (point-min))
-          (pop-to-buffer (current-buffer)
-                         '((display-buffer-in-side-window)
-                           (side . bottom)
-                           (window-height . fit-window-to-buffer)))))
-    (error
-     (message "Failed to fetch orphans: %s" (error-message-string err)))))
+(autoload 'beads-orphans "beads-orphans" nil t)
 
 (defun beads-filter-status ()
   "Filter issues by status.
