@@ -26,6 +26,7 @@
 
 (require 'beads-rpc)
 (require 'beads-edit)
+(require 'seq)
 
 (declare-function beads-menu "beads-transient")
 (declare-function beads-delete-issue "beads-transient")
@@ -352,7 +353,11 @@ Uses a single reusable buffer in a side window without focusing."
 
   (when-let ((acceptance (alist-get 'acceptance_criteria issue)))
     (unless (string-empty-p acceptance)
-      (beads-detail--insert-section "Acceptance Criteria" acceptance))))
+      (beads-detail--insert-section "Acceptance Criteria" acceptance)))
+
+  (when-let ((comments (alist-get 'comments issue)))
+    (when (> (length comments) 0)
+      (beads-detail--insert-comments comments))))
 
 (defun beads-detail--insert-header (issue)
   "Insert ID and title for ISSUE."
@@ -406,6 +411,26 @@ Uses a single reusable buffer in a side window without focusing."
   (insert "\n")
   (insert content)
   (insert "\n\n"))
+
+(defun beads-detail--insert-comments (comments)
+  "Insert COMMENTS section.
+COMMENTS is a vector/list of comment objects with id, author, text, created_at."
+  (beads-detail--insert-separator ?─)
+  (insert "\n")
+  (insert (propertize (format "Comments (%d):\n" (length comments))
+                      'face 'beads-detail-header-face))
+  (insert "\n")
+  (seq-doseq (comment comments)
+    (let ((author (alist-get 'author comment "unknown"))
+          (text (alist-get 'text comment ""))
+          (created (alist-get 'created_at comment)))
+      (insert (propertize (format "[%s] " author) 'face 'beads-detail-label-face))
+      (when created
+        (insert (propertize (beads-detail--format-timestamp created)
+                            'face 'shadow)))
+      (insert "\n")
+      (insert text)
+      (insert "\n\n"))))
 
 (defun beads-detail--insert-separator (char)
   "Insert a separator line using CHAR."

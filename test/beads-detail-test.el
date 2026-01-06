@@ -108,6 +108,49 @@
       (let ((buffer-content (buffer-string)))
         (should-not (string-match-p "Created by:" buffer-content))))))
 
+(ert-deftest beads-detail-test-render-comments-present ()
+  "Test that beads-detail--render shows comments when present."
+  (with-temp-buffer
+    (let ((issue '((id . "bd-test")
+                   (title . "Test")
+                   (status . "open")
+                   (priority . 2)
+                   (issue_type . "task")
+                   (comments . [((id . 1)
+                                 (author . "alice")
+                                 (text . "This is a test comment")
+                                 (created_at . "2026-01-06T10:00:00Z"))]))))
+      (beads-detail--render issue)
+      (let ((buffer-content (buffer-string)))
+        (should (string-match-p "Comments (1):" buffer-content))
+        (should (string-match-p "\\[alice\\]" buffer-content))
+        (should (string-match-p "This is a test comment" buffer-content))))))
+
+(ert-deftest beads-detail-test-render-comments-absent ()
+  "Test that beads-detail--render handles missing comments gracefully."
+  (with-temp-buffer
+    (let ((issue '((id . "bd-test")
+                   (title . "Test")
+                   (status . "open")
+                   (priority . 2)
+                   (issue_type . "task"))))
+      (beads-detail--render issue)
+      (let ((buffer-content (buffer-string)))
+        (should-not (string-match-p "Comments" buffer-content))))))
+
+(ert-deftest beads-detail-test-render-comments-empty ()
+  "Test that beads-detail--render handles empty comments array gracefully."
+  (with-temp-buffer
+    (let ((issue '((id . "bd-test")
+                   (title . "Test")
+                   (status . "open")
+                   (priority . 2)
+                   (issue_type . "task")
+                   (comments . []))))
+      (beads-detail--render issue)
+      (let ((buffer-content (buffer-string)))
+        (should-not (string-match-p "Comments" buffer-content))))))
+
 (ert-deftest beads-detail-test-render-description-present ()
   "Test that beads-detail--render shows description when present."
   (with-temp-buffer
