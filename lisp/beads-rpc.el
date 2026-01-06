@@ -202,7 +202,7 @@ Returns t if healthy, signals error otherwise."
 (defun beads-rpc-list (&optional filters)
   "List issues with optional FILTERS.
 FILTERS is a plist with keys like :status, :priority, :issue-type, :assignee,
-:labels, :limit, :title-contains, etc.
+:labels, :limit, :title-contains, :parent (for epic-scoped views), etc.
 Returns array of issue objects."
   (let ((args (beads-rpc--plist-to-alist filters)))
     (beads-rpc-request "list" args)))
@@ -216,7 +216,8 @@ Returns issue object."
 
 (defun beads-rpc-ready (&optional filters)
   "Get unblocked issues with optional FILTERS.
-FILTERS is a plist with keys like :assignee, :priority, :limit, :sort-policy.
+FILTERS is a plist with keys like :assignee, :priority, :limit, :sort-policy,
+:parent (for epic-scoped views).
 Returns array of ready issue objects."
   (let ((args (beads-rpc--plist-to-alist filters)))
     (beads-rpc-request "ready" args)))

@@ -65,6 +65,20 @@
       (should (= (length result) 1))
       (should (string= (alist-get 'id (car result)) "TEST-3")))))
 
+(ert-deftest beads-filter-test-by-parent ()
+  "Test parent filter for epic-scoped views."
+  (let* ((issues-with-parent
+          '(((id . "CHILD-1") (title . "Child one") (parent_id . "EPIC-1"))
+            ((id . "CHILD-2") (title . "Child two") (parent_id . "EPIC-1"))
+            ((id . "CHILD-3") (title . "Child three") (parent_id . "EPIC-2"))
+            ((id . "ORPHAN") (title . "No parent") (parent_id . nil))))
+         (filter (beads-filter-by-parent "EPIC-1")))
+    (should (equal (beads-filter-name filter) "parent:EPIC-1"))
+    (let ((result (beads-filter-apply filter issues-with-parent)))
+      (should (= (length result) 2))
+      (should (string= (alist-get 'id (car result)) "CHILD-1"))
+      (should (string= (alist-get 'id (cadr result)) "CHILD-2")))))
+
 (ert-deftest beads-filter-test-not-closed ()
   "Test not-closed filter."
   (let ((filter (beads-filter-not-closed)))

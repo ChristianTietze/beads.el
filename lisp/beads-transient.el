@@ -43,6 +43,7 @@
 (declare-function beads-list-bulk-delete "beads-list")
 
 (declare-function beads-filter-by-label "beads-filter")
+(declare-function beads-filter-by-parent "beads-filter")
 (declare-function beads-filter-ready "beads-filter")
 (declare-function beads-filter-blocked "beads-filter")
 (declare-function beads-filter-by-search "beads-filter")
@@ -294,6 +295,30 @@ Select a priority to filter, or \"all\" to clear the filter."
             (beads-filter-by-label label)))
     (beads-list-refresh)))
 
+(defun beads-filter-parent ()
+  "Filter issues by parent (for epic-scoped views)."
+  (interactive)
+  (unless (derived-mode-p 'beads-list-mode)
+    (user-error "Not in beads list mode"))
+  (let* ((issues (beads-rpc-list '(:issue-type "epic")))
+         (epics (mapcar (lambda (i)
+                          (cons (format "%s: %s"
+                                        (alist-get 'id i)
+                                        (alist-get 'title i))
+                                (alist-get 'id i)))
+                        issues))
+         (choices (cons '("all" . nil) epics))
+         (selection (completing-read "Filter by parent epic: "
+                                     (mapcar #'car choices) nil t))
+         (parent-id (cdr (assoc selection choices))))
+    (setq beads-list--filter
+          (when parent-id
+            (beads-filter-by-parent parent-id)))
+    (beads-list-refresh)
+    (if parent-id
+        (message "Showing children of %s" parent-id)
+      (message "Showing all issues"))))
+
 (defun beads-filter-ready-issues ()
   "Filter to show only ready issues (no blockers)."
   (interactive)
@@ -499,7 +524,8 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("p" "Priority" beads-filter-priority)
    ("t" "Type" beads-filter-type)
    ("a" "Assignee" beads-filter-assignee)
-   ("l" "Label" beads-filter-label)]
+   ("l" "Label" beads-filter-label)
+   ("e" "Parent epic" beads-filter-parent)]
   ["Quick filters"
    ("r" "Ready (no blockers)" beads-filter-ready-issues)
    ("b" "Blocked" beads-filter-blocked-issues)]

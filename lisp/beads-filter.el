@@ -125,6 +125,15 @@ Search is case-insensitive."
              (string-match-p query-re (downcase description)))))
      (list :type 'search :value query))))
 
+(defun beads-filter-by-parent (parent-id)
+  "Create filter for issues with PARENT-ID as their parent.
+Enables epic-scoped views by filtering to children of a specific issue."
+  (beads-filter-make
+   (format "parent:%s" parent-id)
+   (lambda (issue)
+     (string= (alist-get 'parent_id issue) parent-id))
+   (list :type 'parent :value parent-id)))
+
 (defun beads-filter-not-closed ()
   "Create filter for non-closed issues (open, in_progress, blocked)."
   (beads-filter-make
