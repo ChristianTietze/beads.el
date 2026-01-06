@@ -205,7 +205,7 @@ Or with `package.el`:
 ## Requirements
 
 - Emacs 28.1+
-- Running Beads daemon (`bd daemon`)
+- [Beads](https://github.com/steveyegge/beads) CLI 0.44.0+ with running daemon (`bd daemon`)
 - `transient` package (for menus)
 - `markdown-mode` (optional, for editing long text fields)
 

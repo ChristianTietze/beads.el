@@ -12,6 +12,14 @@ This is **beads.el** - an Emacs Lisp client for the Beads issue tracking system.
 
 The canonical upstream is https://codeberg.org/ctietze/beads.el
 
+## Beads Version Compatibility
+
+Tested with **beads CLI 0.44.0**. Version info maintained in `.claude/skills/beads-compat/references/version-info.md`.
+
+- Changelog: https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
+- Run `/beads-compat` to check installed version
+- beads.el versioning mirrors beads CLI version (e.g., beads.el 0.44.0 = tested with beads 0.44.0)
+
 ## Architecture
 
 The client communicates with the Beads daemon via JSON-over-Unix-socket:

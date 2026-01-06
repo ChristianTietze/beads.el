@@ -1,5 +1,11 @@
 # Agent Instructions
 
+## Beads Version Compatibility
+
+This package is tested with **beads 0.44.0**. Check compatibility:
+- Changelog: https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
+- Run `/beads-compat` to check installed version
+
 ## Issue Tracking with bd (beads)
 
 **IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
