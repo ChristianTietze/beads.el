@@ -9,7 +9,7 @@ This skill helps track beads CLI version compatibility for beads.el.
 
 ## Version Checking
 
-Run `scripts/check-version.sh` to compare installed beads version against documented compatible version.
+Run `.claude/skills/beads-compat/scripts/check-version.sh` to compare installed beads version against documented compatible version.
 
 ## Upgrade Workflow
 
