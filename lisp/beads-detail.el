@@ -265,7 +265,7 @@ Uses a single reusable buffer in a side window without focusing."
          (type (alist-get 'issue_type issue)))
     (when (beads-edit-field-completing
            id :issue-type type "Type: "
-           '("bug" "feature" "task" "epic" "chore"))
+           '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role"))
       (beads-detail-refresh))))
 
 (defun beads-detail-edit-assignee ()

@@ -253,7 +253,7 @@ Select a priority to filter, or \"all\" to clear the filter."
   (interactive)
   (unless (derived-mode-p 'beads-list-mode)
     (user-error "Not in beads list mode"))
-  (let* ((choices '("all" "bug" "feature" "task" "epic" "chore"))
+  (let* ((choices '("all" "bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role"))
          (type (completing-read "Filter by type: " choices nil t)))
     (setq beads-list--filter
           (unless (string= type "all")

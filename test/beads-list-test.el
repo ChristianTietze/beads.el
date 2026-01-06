@@ -117,6 +117,26 @@
   (let ((issue '((issue_type . "chore"))))
     (should (equal (beads--format-type issue) "chor"))))
 
+(ert-deftest beads-list-test-format-type-gate ()
+  "Test that beads--format-type returns gate unabbreviated."
+  (let ((issue '((issue_type . "gate"))))
+    (should (equal (beads--format-type issue) "gate"))))
+
+(ert-deftest beads-list-test-format-type-convoy ()
+  "Test that beads--format-type abbreviates convoy to conv."
+  (let ((issue '((issue_type . "convoy"))))
+    (should (equal (beads--format-type issue) "conv"))))
+
+(ert-deftest beads-list-test-format-type-agent ()
+  "Test that beads--format-type abbreviates agent to agnt."
+  (let ((issue '((issue_type . "agent"))))
+    (should (equal (beads--format-type issue) "agnt"))))
+
+(ert-deftest beads-list-test-format-type-role ()
+  "Test that beads--format-type returns role unabbreviated."
+  (let ((issue '((issue_type . "role"))))
+    (should (equal (beads--format-type issue) "role"))))
+
 (ert-deftest beads-list-test-format-type-unknown ()
   "Test that beads--format-type returns unknown types unchanged."
   (let ((issue '((issue_type . "unknown"))))

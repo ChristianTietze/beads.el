@@ -110,7 +110,7 @@
   (widget-insert "  ")
   (beads-form--add-field 'issue_type "Type" 'menu-choice
                          (alist-get 'issue_type issue "task")
-                         :choices '("bug" "feature" "task" "epic" "chore"))
+                         :choices '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role"))
 
   (widget-insert "\n\n")
   (beads-form--add-field 'assignee "Assignee" 'editable-field

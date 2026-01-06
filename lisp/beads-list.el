@@ -537,6 +537,8 @@ Only adds separators when in sectioned sort mode and
         (pcase type
           ("feature" "feat")
           ("chore" "chor")
+          ("convoy" "conv")
+          ("agent" "agnt")
           (_ (or type "")))
       (or type ""))))
 
@@ -871,7 +873,7 @@ Prompts for confirmation."
         (require 'beads-edit)
         (when (beads-edit-field-completing
                id :issue-type type "Type: "
-               '("bug" "feature" "task" "epic" "chore"))
+               '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role"))
           (beads-list-refresh)))
     (message "No issue at point")))
 
