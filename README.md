@@ -84,6 +84,7 @@ Or with `package.el`:
 - `M-x beads-stale` - Show stale issues (not updated recently)
 - `M-x beads-orphans` - Show orphaned issues (referenced in commits but not closed)
 - `M-x beads-duplicates` - Find and merge duplicate issues
+- `M-x beads-lint` - Show issues missing required template sections
 
 ## Keybindings
 
@@ -214,6 +215,23 @@ and sources (duplicates to be closed).
 | `m` | `beads-duplicates-merge-at-point` | Merge issue at point into target |
 | `M` | `beads-duplicates-merge-group` | Merge all sources in group |
 | `g` | `beads-duplicates-refresh` | Refresh list |
+| `q` | `quit-window` | Quit |
+
+### Issue Lint Report (`beads-lint-mode`)
+
+<!-- TODO: Add screenshot for lint report (see bdel-4hp) -->
+
+Check issues for missing recommended template sections based on issue type.
+Bugs need Steps to Reproduce and Acceptance Criteria, tasks/features need
+Acceptance Criteria, epics need Success Criteria.
+
+| Key | Command | Description |
+|-----|---------|-------------|
+| `RET` | `beads-lint-goto-issue` | Open issue in detail view |
+| `f` | `beads-lint-filter-type` | Filter by issue type |
+| `n` | `beads-lint-next-issue` | Move to next issue |
+| `p` | `beads-lint-prev-issue` | Move to previous issue |
+| `g` | `beads-lint-refresh` | Refresh report |
 | `q` | `quit-window` | Quit |
 
 ## Customization

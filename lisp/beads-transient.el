@@ -219,6 +219,7 @@ Press `q' to close the stats window."
 (autoload 'beads-stale "beads-stale" nil t)
 (autoload 'beads-activity "beads-activity" nil t)
 (autoload 'beads-duplicates "beads-duplicates" nil t)
+(autoload 'beads-lint "beads-lint" nil t)
 
 (defun beads-filter-status ()
   "Filter issues by status.
@@ -550,7 +551,8 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("O" "Orphaned issues" beads-orphans)
    ("A" "Stale issues" beads-stale)
    ("a" "Activity feed" beads-activity)
-   ("d" "Duplicates" beads-duplicates)]
+   ("d" "Duplicates" beads-duplicates)
+   ("L" "Lint report" beads-lint)]
   ["Actions"
    ("c" "Create issue" beads-create-issue)
    ("E" "Edit issue" beads-list-edit-form)
