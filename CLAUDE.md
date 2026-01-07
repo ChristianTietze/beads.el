@@ -96,6 +96,20 @@ bd sync               # Sync with git
 4. **No reconstructed history** - Don't batch changes then create artificial commits from a working state. Commits must represent actual development order so checking out any commit yields a working state.
 5. **Branches and rollbacks are fine** - Use feature branches, rollback broken changes, experiment freely.
 
+## Documentation
+
+User-facing feature changes must be documented in README.md:
+- Add new commands to the Usage section
+- Add keybinding tables for new modes
+- Add customization options with examples
+
+For visual changes (new UI, modified display):
+1. Create a beads task to capture an appropriate screenshot
+2. Add an HTML comment in README.md where the screenshot should go:
+   ```markdown
+   <!-- TODO: Add screenshot for X (see bdel-xxx) -->
+   ```
+
 ## Session Completion
 
 Work is NOT complete until `git push` succeeds:

@@ -158,6 +158,8 @@ Or with `package.el`:
 
 ### Activity Feed (`beads-activity-mode`)
 
+<!-- TODO: Add screenshot for activity feed (see bdel-4hp) -->
+
 The activity feed shows real-time issue mutations (creates, updates, deletes, comments).
 
 | Key | Command | Description |
@@ -171,6 +173,8 @@ The activity feed shows real-time issue mutations (creates, updates, deletes, co
 
 ### Stale Issues (`beads-stale-mode`)
 
+<!-- TODO: Add screenshot for stale issues view (see bdel-4hp) -->
+
 Shows issues not updated within a configurable number of days.
 
 | Key | Command | Description |
@@ -183,6 +187,8 @@ Shows issues not updated within a configurable number of days.
 | `q` | `quit-window` | Quit |
 
 ### Orphaned Issues (`beads-orphans-mode`)
+
+<!-- TODO: Add screenshot for orphans view (see bdel-4hp) -->
 
 Shows issues referenced in git commits but not marked as closed.
 
