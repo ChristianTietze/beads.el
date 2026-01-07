@@ -83,6 +83,7 @@ Or with `package.el`:
 - `M-x beads-activity` - Open the activity feed
 - `M-x beads-stale` - Show stale issues (not updated recently)
 - `M-x beads-orphans` - Show orphaned issues (referenced in commits but not closed)
+- `M-x beads-duplicates` - Find and merge duplicate issues
 
 ## Keybindings
 
@@ -197,6 +198,22 @@ Shows issues referenced in git commits but not marked as closed.
 | `RET` | `beads-orphans-goto-issue` | Open issue in detail view |
 | `c` | `beads-orphans-close` | Close orphan with reason |
 | `g` | `beads-orphans-refresh` | Refresh list |
+| `q` | `quit-window` | Quit |
+
+### Duplicate Issues (`beads-duplicates-mode`)
+
+<!-- TODO: Add screenshot for duplicates view (see bdel-4hp) -->
+
+Find issues with identical content and merge them. Issues are grouped by content
+hash. Each group shows a suggested merge target (the issue with most references)
+and sources (duplicates to be closed).
+
+| Key | Command | Description |
+|-----|---------|-------------|
+| `RET` | `beads-duplicates-goto-issue` | Open issue in detail view |
+| `m` | `beads-duplicates-merge-at-point` | Merge issue at point into target |
+| `M` | `beads-duplicates-merge-group` | Merge all sources in group |
+| `g` | `beads-duplicates-refresh` | Refresh list |
 | `q` | `quit-window` | Quit |
 
 ## Customization
