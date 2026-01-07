@@ -281,6 +281,7 @@ Used to ensure refresh uses the correct project context.")
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "s") #'beads-list-bulk-status)
     (define-key map (kbd "p") #'beads-list-bulk-priority)
+    (define-key map (kbd "a") #'beads-list-quick-assign)
     (define-key map (kbd "c") #'beads-list-bulk-close)
     (define-key map (kbd "D") #'beads-list-bulk-delete)
     map)
@@ -322,6 +323,8 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "* *") #'beads-list-toggle-marked-filter)
     (define-key map (kbd "B") beads-list-bulk-map)
     (define-key map (kbd "x") #'beads-list-bulk-close)
+    (define-key map (kbd "a") #'beads-list-quick-assign)
+    (define-key map (kbd "A") #'beads-list-assign-to-me)
     (define-key map (kbd "q") #'beads-list-quit)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
@@ -852,6 +855,48 @@ Prompts for confirmation."
         (if (> errors 0)
             (message "Deleted %d issue(s), %d error(s)" count errors)
           (message "Deleted %d issue(s)" count))))))
+
+(defun beads-list--collect-assignees ()
+  "Collect unique assignees from current issue list."
+  (let ((assignees nil))
+    (dolist (issue beads-list--issues)
+      (when-let ((assignee (alist-get 'assignee issue)))
+        (unless (or (string-empty-p assignee)
+                    (member assignee assignees))
+          (push assignee assignees))))
+    (sort assignees #'string<)))
+
+(defun beads-list-quick-assign (assignee)
+  "Assign ASSIGNEE to marked issues or issue at point.
+With completion for known assignees from current issues."
+  (interactive
+   (let* ((known (beads-list--collect-assignees))
+          (user (or (getenv "USER") (getenv "USERNAME") "me"))
+          (choices (delete-dups (cons user known))))
+     (list (completing-read "Assign to: " choices nil nil))))
+  (let ((ids (beads-list--get-marked-or-at-point)))
+    (unless ids
+      (user-error "No issues marked or at point"))
+    (let ((count 0)
+          (errors 0))
+      (dolist (id ids)
+        (condition-case nil
+            (progn
+              (beads-rpc-update id :assignee assignee)
+              (setq count (1+ count)))
+          (beads-rpc-error
+           (setq errors (1+ errors)))))
+      (setq beads-list--marked nil)
+      (beads-list-refresh t)
+      (if (> errors 0)
+          (message "Assigned %d issue(s) to %s, %d error(s)" count assignee errors)
+        (message "Assigned %d issue(s) to %s" count assignee)))))
+
+(defun beads-list-assign-to-me ()
+  "Assign marked issues or issue at point to current user."
+  (interactive)
+  (let ((user (or (getenv "USER") (getenv "USERNAME") "me")))
+    (beads-list-quick-assign user)))
 
 (defun beads-list-goto-issue ()
   "Navigate to or display details for issue at point."

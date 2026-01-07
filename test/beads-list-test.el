@@ -548,5 +548,51 @@
   (should (fboundp 'beads-list-quit))
   (should (commandp 'beads-list-quit)))
 
+;;; Quick assign tests
+
+(ert-deftest beads-list-test-quick-assign-command-defined ()
+  "Test that beads-list-quick-assign is a command."
+  (should (fboundp 'beads-list-quick-assign))
+  (should (commandp 'beads-list-quick-assign)))
+
+(ert-deftest beads-list-test-assign-to-me-command-defined ()
+  "Test that beads-list-assign-to-me is a command."
+  (should (fboundp 'beads-list-assign-to-me))
+  (should (commandp 'beads-list-assign-to-me)))
+
+(ert-deftest beads-list-test-quick-assign-keybinding ()
+  "Test that 'a' is bound to beads-list-quick-assign."
+  (should (eq (lookup-key beads-list-mode-map (kbd "a"))
+              #'beads-list-quick-assign)))
+
+(ert-deftest beads-list-test-assign-to-me-keybinding ()
+  "Test that 'A' is bound to beads-list-assign-to-me."
+  (should (eq (lookup-key beads-list-mode-map (kbd "A"))
+              #'beads-list-assign-to-me)))
+
+(ert-deftest beads-list-test-bulk-assign-keybinding ()
+  "Test that 'B a' is bound to beads-list-quick-assign."
+  (should (eq (lookup-key beads-list-bulk-map (kbd "a"))
+              #'beads-list-quick-assign)))
+
+(ert-deftest beads-list-test-collect-assignees-empty ()
+  "Test collecting assignees from empty list."
+  (let ((beads-list--issues nil))
+    (should (null (beads-list--collect-assignees)))))
+
+(ert-deftest beads-list-test-collect-assignees-with-data ()
+  "Test collecting assignees from issues."
+  (let ((beads-list--issues '(((id . "bd-001") (assignee . "alice"))
+                               ((id . "bd-002") (assignee . "bob"))
+                               ((id . "bd-003") (assignee . "alice")))))
+    (should (equal (beads-list--collect-assignees) '("alice" "bob")))))
+
+(ert-deftest beads-list-test-collect-assignees-skips-empty ()
+  "Test that empty assignees are skipped."
+  (let ((beads-list--issues '(((id . "bd-001") (assignee . "alice"))
+                               ((id . "bd-002") (assignee . ""))
+                               ((id . "bd-003") (assignee . nil)))))
+    (should (equal (beads-list--collect-assignees) '("alice")))))
+
 (provide 'beads-list-test)
 ;;; beads-list-test.el ends here

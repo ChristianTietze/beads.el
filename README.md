@@ -99,6 +99,8 @@ Or with `package.el`:
 | `e p` | `beads-list-edit-priority` | Edit priority |
 | `e T` | `beads-list-edit-type` | Edit type |
 | `e d` | `beads-list-edit-description` | Edit description |
+| `a` | `beads-list-quick-assign` | Assign issue (with completion) |
+| `A` | `beads-list-assign-to-me` | Assign issue to self |
 | `/` | `beads-search` | Search issues by title/description |
 | `f` | `beads-filter-menu` | Open filter menu |
 | `f s` | `beads-filter-status` | Filter by status |

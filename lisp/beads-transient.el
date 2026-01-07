@@ -508,6 +508,8 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ["Bulk"
     ("s" "Set status" beads-list-bulk-status)
     ("p" "Set priority" beads-list-bulk-priority)
+    ("a" "Assign..." beads-list-quick-assign)
+    ("A" "Assign to me" beads-list-assign-to-me)
     ("x" "Close" beads-list-bulk-close)
     ("D" "Delete!" beads-list-bulk-delete)]]
   ["Navigation"
