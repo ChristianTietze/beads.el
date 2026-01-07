@@ -80,6 +80,9 @@ Or with `package.el`:
 
 - `M-x beads` or `M-x beads-list` - Open the issue list
 - `M-x beads-project-list` - Open issue list for current project
+- `M-x beads-activity` - Open the activity feed
+- `M-x beads-stale` - Show stale issues (not updated recently)
+- `M-x beads-orphans` - Show orphaned issues (referenced in commits but not closed)
 
 ## Keybindings
 
@@ -153,6 +156,43 @@ Or with `package.el`:
 | `C-c C-c` | `beads-edit-commit` | Save changes |
 | `C-c C-k` | `beads-edit-abort` | Discard changes |
 
+### Activity Feed (`beads-activity-mode`)
+
+The activity feed shows real-time issue mutations (creates, updates, deletes, comments).
+
+| Key | Command | Description |
+|-----|---------|-------------|
+| `RET` | `beads-activity-goto-issue` | Open issue in detail view |
+| `f` | `beads-activity-toggle-follow` | Toggle live updates (polling) |
+| `F` | `beads-activity-set-filter` | Filter by prefix or event type |
+| `g` | `beads-activity-refresh` | Refresh feed |
+| `l` | `beads-activity-set-limit` | Set number of events to show |
+| `q` | `beads-activity-quit` | Quit (stops follow mode) |
+
+### Stale Issues (`beads-stale-mode`)
+
+Shows issues not updated within a configurable number of days.
+
+| Key | Command | Description |
+|-----|---------|-------------|
+| `RET` | `beads-stale-goto-issue` | Open issue in detail view |
+| `c` | `beads-stale-claim` | Claim issue (set to in_progress) |
+| `d` | `beads-stale-set-days` | Change days threshold |
+| `f` | `beads-stale-set-filter` | Filter by status |
+| `g` | `beads-stale-refresh` | Refresh list |
+| `q` | `quit-window` | Quit |
+
+### Orphaned Issues (`beads-orphans-mode`)
+
+Shows issues referenced in git commits but not marked as closed.
+
+| Key | Command | Description |
+|-----|---------|-------------|
+| `RET` | `beads-orphans-goto-issue` | Open issue in detail view |
+| `c` | `beads-orphans-close` | Close orphan with reason |
+| `g` | `beads-orphans-refresh` | Refresh list |
+| `q` | `quit-window` | Quit |
+
 ## Customization
 
 ### General
@@ -201,6 +241,52 @@ Or with `package.el`:
 | `beads-project-per-project-buffers` | `t` | Create separate buffer per project |
 | `beads-project-add-switch-command` | `t` | Add to project-switch-commands |
 | `beads-project-buffer-name-function` | `beads-project-default-buffer-name` | Function to generate buffer name |
+
+### Activity Feed (`beads-activity`)
+
+```elisp
+;; Change default number of events shown
+(setq beads-activity-limit 100)
+
+;; Change polling interval for follow mode (seconds)
+(setq beads-activity-poll-interval 10)
+
+;; Use ASCII-only glyphs (for terminals without Unicode)
+(setq beads-activity-glyphs beads-activity-glyphs-ascii)
+
+;; Customize individual glyphs
+(setq beads-activity-glyphs
+      '((create . "+")
+        (update . "→")
+        (status-in_progress . "▶")
+        (status-closed . "✓")
+        (status-blocked . "✗")
+        (status-open . "○")
+        (delete . "⊘")
+        (comment . "#")))
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `beads-activity-limit` | `50` | Default number of events to show |
+| `beads-activity-poll-interval` | `5` | Seconds between polls in follow mode |
+| `beads-activity-glyphs` | Unicode alist | Event type → glyph mapping |
+| `beads-activity-glyphs-ascii` | ASCII alist | Alternative ASCII-only glyphs |
+
+### Stale Issues (`beads-stale`)
+
+```elisp
+;; Change staleness threshold (default: 30 days)
+(setq beads-stale-days 14)
+
+;; Default to showing only in_progress issues
+(setq beads-stale-status "in_progress")
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `beads-stale-days` | `30` | Days without update before issue is stale |
+| `beads-stale-status` | `nil` | Filter by status (nil = all statuses) |
 
 ## Requirements
 
