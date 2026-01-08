@@ -174,6 +174,10 @@ Uses inverted error colors for maximum visibility.")
   '((t :foreground "sea green"))
   "Face for role type (people/responsibility definitions).")
 
+(defface beads-list-type-rig
+  '((t :foreground "dark cyan"))
+  "Face for rig type (Gas Town rig identity tracking).")
+
 (defvar beads-list--column-defs
   '((id       . ("ID"       10 t              beads--format-id))
     (date     . ("Date"     10 beads-list--sort-by-date beads--format-date))
@@ -562,7 +566,7 @@ Only adds separators when in sectioned sort mode and
 
 (defun beads--format-type (issue)
   "Format type column for ISSUE based on `beads-list-type-style'.
-Applies faces for special types (gate, convoy, agent, role).
+Applies faces for special types (gate, convoy, agent, role, rig).
 When `beads-list-type-glyph' is non-nil, prepends a unicode glyph."
   (let* ((type (alist-get 'issue_type issue))
          (display-type (if (eq beads-list-type-style 'short)
@@ -578,6 +582,7 @@ When `beads-list-type-glyph' is non-nil, prepends a unicode glyph."
                  ("convoy" 'beads-list-type-convoy)
                  ("agent" 'beads-list-type-agent)
                  ("role" 'beads-list-type-role)
+                 ("rig" 'beads-list-type-rig)
                  (_ nil)))
          (glyph (when beads-list-type-glyph
                   (pcase type
@@ -585,6 +590,7 @@ When `beads-list-type-glyph' is non-nil, prepends a unicode glyph."
                     ("convoy" "▶ ")
                     ("agent" "◉ ")
                     ("role" "● ")
+                    ("rig" "⚙ ")
                     (_ nil))))
          (result (concat glyph display-type)))
     (if face

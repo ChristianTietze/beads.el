@@ -103,6 +103,7 @@
     (should (equal (beads--format-type '((issue_type . "chore"))) "chore"))
     (should (equal (beads--format-type '((issue_type . "gate"))) "gate"))
     (should (equal (beads--format-type '((issue_type . "convoy"))) "convoy"))
+    (should (equal (beads--format-type '((issue_type . "rig"))) "rig"))
     (should (equal (beads--format-type '((issue_type . "agent"))) "agent"))
     (should (equal (beads--format-type '((issue_type . "role"))) "role"))))
 
@@ -117,6 +118,7 @@
     (should (equal (beads--format-type '((issue_type . "chore"))) "chor"))
     (should (equal (beads--format-type '((issue_type . "gate"))) "gate"))
     (should (equal (beads--format-type '((issue_type . "convoy"))) "conv"))
+    (should (equal (beads--format-type '((issue_type . "rig"))) "rig"))
     (should (equal (beads--format-type '((issue_type . "agent"))) "agnt"))
     (should (equal (beads--format-type '((issue_type . "role"))) "role"))))
 
@@ -131,7 +133,9 @@
     (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "agent"))))
                 'beads-list-type-agent))
     (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "role"))))
-                'beads-list-type-role))))
+                'beads-list-type-role))
+    (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "rig"))))
+                'beads-list-type-rig))))
 
 (ert-deftest beads-list-test-format-type-regular-no-face ()
   "Test that regular types have no special face."
@@ -148,7 +152,8 @@
     (should (string-prefix-p "■ " (beads--format-type '((issue_type . "gate")))))
     (should (string-prefix-p "▶ " (beads--format-type '((issue_type . "convoy")))))
     (should (string-prefix-p "◉ " (beads--format-type '((issue_type . "agent")))))
-    (should (string-prefix-p "● " (beads--format-type '((issue_type . "role")))))))
+    (should (string-prefix-p "● " (beads--format-type '((issue_type . "role")))))
+    (should (string-prefix-p "⚙ " (beads--format-type '((issue_type . "rig")))))))
 
 (ert-deftest beads-list-test-format-type-no-glyph-regular ()
   "Test that regular types have no glyph even when glyphs enabled."
