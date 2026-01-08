@@ -1,6 +1,6 @@
 # Beads Version Compatibility
 
-Tested CLI version: 0.44.0
+Tested CLI version: 0.46.0
 Minimum DB version: 0.35.0
 
 ## Changelog
@@ -11,7 +11,17 @@ https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
 
 | beads.el | beads CLI | Notes |
 |----------|-----------|-------|
+| 0.46.0   | 0.46.0    | Custom types, rig type |
 | 0.44.0   | 0.44.0    | Initial version tracking |
+
+## New Features by Version
+
+### v0.46.0
+- Custom issue types (project-configurable beyond built-in types)
+
+### v0.45.0
+- New `rig` issue type for Gas Town rig tracking
+- `--filter-parent` alias for `--parent` in `bd list`
 
 ## Known Breaking Changes
 
