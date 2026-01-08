@@ -451,7 +451,10 @@ Uses CLI fallback since RPC does not support comment_add."
     (when (and labels (> (length labels) 0))
       (beads-detail--insert-field "Labels"
                                   (mapconcat #'identity (append labels nil) ", "))
-      (insert "\n"))))
+      (insert "\n"))
+
+    (beads-detail--insert-dependencies issue)
+    (beads-detail--insert-dependents issue)))
 
 (defun beads-detail--insert-field (label value)
   "Insert a LABEL: VALUE pair."
@@ -465,6 +468,47 @@ Uses CLI fallback since RPC does not support comment_add."
                       'action (lambda (_) (beads-detail-goto-parent))
                       'follow-link t
                       'help-echo "Click to view parent issue"))
+
+(defun beads-detail--insert-dep-link (dep)
+  "Insert clickable link for dependency/dependent DEP."
+  (let* ((id (alist-get 'id dep))
+         (title (alist-get 'title dep ""))
+         (status (alist-get 'status dep))
+         (type (alist-get 'dependency_type dep)))
+    (insert "  ")
+    (insert-text-button id
+                        'action (lambda (_button)
+                                  (condition-case err
+                                      (beads-detail-open (beads-rpc-show id))
+                                    (beads-rpc-error
+                                     (message "Failed to open %s: %s" id (error-message-string err)))))
+                        'follow-link t
+                        'help-echo (format "Click to view %s" id))
+    (insert " ")
+    (insert (truncate-string-to-width title 40 nil nil "…"))
+    (when status
+      (insert (format " [%s]" status)))
+    (when (and type (not (string= type "parent-child")))
+      (insert (format " (%s)" type)))
+    (insert "\n")))
+
+(defun beads-detail--insert-dependencies (issue)
+  "Insert dependencies section for ISSUE if any exist."
+  (when-let ((deps (alist-get 'dependencies issue)))
+    (when (> (length deps) 0)
+      (insert (propertize "Blocked by: " 'face 'beads-detail-label-face))
+      (insert "\n")
+      (seq-doseq (dep deps)
+        (beads-detail--insert-dep-link dep)))))
+
+(defun beads-detail--insert-dependents (issue)
+  "Insert dependents section for ISSUE if any exist."
+  (when-let ((deps (alist-get 'dependents issue)))
+    (when (> (length deps) 0)
+      (insert (propertize "Blocks: " 'face 'beads-detail-label-face))
+      (insert "\n")
+      (seq-doseq (dep deps)
+        (beads-detail--insert-dep-link dep)))))
 
 (defun beads-detail--insert-section (title content)
   "Insert a section with TITLE and CONTENT."
