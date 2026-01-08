@@ -109,6 +109,10 @@ When an integer, the column width will not exceed this value."
                  (integer :tag "Maximum width"))
   :group 'beads-list)
 
+(defconst beads-builtin-types
+  '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role" "rig")
+  "List of built-in issue types supported by beads.")
+
 (defface beads-list-status-open
   '((t :inherit default))
   "Face for open status.")
@@ -871,6 +875,22 @@ Prompts for confirmation."
                     (member assignee assignees))
           (push assignee assignees))))
     (sort assignees #'string<)))
+
+(defun beads-list--collect-types ()
+  "Collect unique issue types from current issue list."
+  (let ((types nil))
+    (dolist (issue beads-list--issues)
+      (when-let ((type (alist-get 'issue_type issue)))
+        (unless (or (string-empty-p type)
+                    (member type types))
+          (push type types))))
+    (sort types #'string<)))
+
+(defun beads-list-available-types ()
+  "Return list of available issue types.
+Combines built-in types with any custom types found in current issues."
+  (let ((custom-types (beads-list--collect-types)))
+    (sort (seq-uniq (append beads-builtin-types custom-types)) #'string<)))
 
 (defun beads-list-quick-assign (assignee)
   "Assign ASSIGNEE to marked issues or issue at point.

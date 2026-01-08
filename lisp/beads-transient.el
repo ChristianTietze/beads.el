@@ -53,6 +53,7 @@
 (declare-function beads-list-edit-form "beads-list")
 (declare-function beads-list--build-format "beads-list")
 (declare-function beads-list--column-names "beads-list")
+(declare-function beads-list-available-types "beads-list")
 (declare-function beads-preview-mode "beads-preview")
 (declare-function beads-detail-refresh "beads-detail")
 (declare-function beads-detail-edit-form "beads-detail")
@@ -256,11 +257,13 @@ Select a priority to filter, or \"all\" to clear the filter."
     (beads-list-refresh)))
 
 (defun beads-filter-type ()
-  "Filter issues by type."
+  "Filter issues by type.
+Includes built-in types and any custom types found in current issues."
   (interactive)
   (unless (derived-mode-p 'beads-list-mode)
     (user-error "Not in beads list mode"))
-  (let* ((choices '("all" "bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role"))
+  (let* ((types (beads-list-available-types))
+         (choices (cons "all" types))
          (type (completing-read "Filter by type: " choices nil t)))
     (setq beads-list--filter
           (unless (string= type "all")

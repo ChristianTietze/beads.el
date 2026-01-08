@@ -30,6 +30,8 @@
 
 (declare-function beads-show-hint "beads")
 
+(defvar beads-builtin-types)
+
 (defvar-local beads-form--issue-id nil
   "Issue ID being edited in this form buffer.")
 
@@ -108,9 +110,11 @@
                          :choices '("P0" "P1" "P2" "P3" "P4"))
 
   (widget-insert "  ")
-  (beads-form--add-field 'issue_type "Type" 'menu-choice
-                         (alist-get 'issue_type issue "task")
-                         :choices '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role"))
+  (let* ((current-type (alist-get 'issue_type issue "task"))
+         (type-choices (sort (seq-uniq (cons current-type beads-builtin-types)) #'string<)))
+    (beads-form--add-field 'issue_type "Type" 'menu-choice
+                           current-type
+                           :choices type-choices))
 
   (widget-insert "\n\n")
   (beads-form--add-field 'assignee "Assignee" 'editable-field

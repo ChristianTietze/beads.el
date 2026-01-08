@@ -599,5 +599,70 @@
                                ((id . "bd-003") (assignee . nil)))))
     (should (equal (beads-list--collect-assignees) '("alice")))))
 
+;;; Custom type support tests
+
+(ert-deftest beads-list-test-builtin-types-defined ()
+  "Test that beads-builtin-types is defined with expected types."
+  (should (listp beads-builtin-types))
+  (should (member "bug" beads-builtin-types))
+  (should (member "feature" beads-builtin-types))
+  (should (member "task" beads-builtin-types))
+  (should (member "epic" beads-builtin-types))
+  (should (member "rig" beads-builtin-types)))
+
+(ert-deftest beads-list-test-collect-types-empty ()
+  "Test collecting types from empty list."
+  (let ((beads-list--issues nil))
+    (should (null (beads-list--collect-types)))))
+
+(ert-deftest beads-list-test-collect-types-with-data ()
+  "Test collecting types from issues."
+  (let ((beads-list--issues '(((id . "bd-001") (issue_type . "bug"))
+                               ((id . "bd-002") (issue_type . "task"))
+                               ((id . "bd-003") (issue_type . "bug")))))
+    (should (equal (beads-list--collect-types) '("bug" "task")))))
+
+(ert-deftest beads-list-test-collect-types-with-custom ()
+  "Test collecting custom types from issues."
+  (let ((beads-list--issues '(((id . "bd-001") (issue_type . "custom-type"))
+                               ((id . "bd-002") (issue_type . "task")))))
+    (should (member "custom-type" (beads-list--collect-types)))))
+
+(ert-deftest beads-list-test-available-types-includes-builtin ()
+  "Test that available-types includes built-in types."
+  (let ((beads-list--issues nil))
+    (let ((types (beads-list-available-types)))
+      (should (member "bug" types))
+      (should (member "feature" types))
+      (should (member "rig" types)))))
+
+(ert-deftest beads-list-test-available-types-includes-custom ()
+  "Test that available-types includes custom types from issues."
+  (let ((beads-list--issues '(((id . "bd-001") (issue_type . "my-custom-type")))))
+    (let ((types (beads-list-available-types)))
+      (should (member "my-custom-type" types))
+      (should (member "bug" types)))))
+
+(ert-deftest beads-list-test-format-type-custom ()
+  "Test that custom types are formatted without error."
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph nil))
+    (should (equal (beads--format-type '((issue_type . "my-custom-type")))
+                   "my-custom-type"))))
+
+(ert-deftest beads-list-test-format-type-custom-no-glyph ()
+  "Test that custom types have no glyph even when glyphs enabled."
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph t))
+    (should (equal (beads--format-type '((issue_type . "my-custom-type")))
+                   "my-custom-type"))))
+
+(ert-deftest beads-list-test-format-type-custom-no-face ()
+  "Test that custom types have no special face."
+  (let ((beads-list-type-style 'full)
+        (beads-list-type-glyph nil))
+    (should (null (get-text-property 0 'face
+                    (beads--format-type '((issue_type . "my-custom-type"))))))))
+
 (provide 'beads-list-test)
 ;;; beads-list-test.el ends here
