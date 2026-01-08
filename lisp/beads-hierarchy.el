@@ -247,6 +247,12 @@ For ancestors, we look for issues that have this as beads--child-id."
           (widget-apply-action widget)))
       (forward-line 1))))
 
+(defun beads-hierarchy--goto-issue (issue-id)
+  "Move point to ISSUE-ID in the hierarchy buffer."
+  (goto-char (point-min))
+  (when (re-search-forward (regexp-quote issue-id) nil t)
+    (goto-char (match-beginning 0))))
+
 (defun beads-hierarchy-refresh ()
   "Refresh the dependency tree display."
   (interactive)
@@ -287,7 +293,7 @@ For ancestors, we look for issues that have this as beads--child-id."
         (setq beads-hierarchy--hierarchy h)
         (setq beads-hierarchy--by-id by-id)
         (beads-hierarchy--expand-all)
-        (goto-char (point-min)))
+        (beads-hierarchy--goto-issue issue-id))
       (let ((window (display-buffer buffer
                                     '((display-buffer-in-side-window)
                                       (side . right)
