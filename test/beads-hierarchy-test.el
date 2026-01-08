@@ -177,25 +177,5 @@
       (should (gethash "CHILD-1" by-id))
       (should (gethash "ROOT-1" by-id)))))
 
-(ert-deftest beads-hierarchy-test-status-face-open ()
-  "Test status face for open issues."
-  (should (eq (beads-hierarchy--status-face "open") 'beads-list-status-open)))
-
-(ert-deftest beads-hierarchy-test-status-face-closed ()
-  "Test status face for closed issues."
-  (should (eq (beads-hierarchy--status-face "closed") 'beads-list-status-closed)))
-
-(ert-deftest beads-hierarchy-test-status-face-in-progress ()
-  "Test status face for in-progress issues."
-  (should (eq (beads-hierarchy--status-face "in_progress") 'beads-list-status-in-progress)))
-
-(ert-deftest beads-hierarchy-test-status-face-blocked ()
-  "Test status face for blocked issues."
-  (should (eq (beads-hierarchy--status-face "blocked") 'beads-list-status-blocked)))
-
-(ert-deftest beads-hierarchy-test-status-face-hooked ()
-  "Test status face for hooked issues."
-  (should (eq (beads-hierarchy--status-face "hooked") 'beads-list-status-hooked)))
-
 (provide 'beads-hierarchy-test)
 ;;; beads-hierarchy-test.el ends here

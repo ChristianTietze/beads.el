@@ -28,6 +28,7 @@
 (require 'beads-detail)
 (require 'beads-filter)
 (require 'beads-preview)
+(require 'beads-faces)
 (require 'tabulated-list)
 (require 'seq)
 
@@ -65,24 +66,8 @@ Available: id, date, status, priority, type, title, assignee, labels, deps."
                          (const :tag "Dependencies" deps)))
   :group 'beads-list)
 
-(defcustom beads-list-type-style 'full
-  "How to display issue types in the list view.
-When `full', display full type names (bug, feature, task, epic, chore).
-When `short', display 4-character abbreviations (bug, feat, task, epic, chor)."
-  :type '(choice (const :tag "Full names" full)
-                 (const :tag "Short (4-char)" short))
-  :group 'beads-list)
-
-(defcustom beads-list-type-glyph nil
-  "Whether to show glyphs for special issue types.
-When non-nil, display a unicode glyph prefix for gate, convoy,
-agent, and role types:
-  gate   → ■
-  convoy → ▶
-  agent  → ◉
-  role   → ●"
-  :type 'boolean
-  :group 'beads-list)
+(define-obsolete-variable-alias 'beads-list-type-style 'beads-type-style "0.47")
+(define-obsolete-variable-alias 'beads-list-type-glyph 'beads-type-glyph "0.47")
 
 (defcustom beads-list-sort-mode 'sectioned
   "How to sort issues in the list view.
@@ -113,34 +98,13 @@ When an integer, the column width will not exceed this value."
   '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role" "rig")
   "List of built-in issue types supported by beads.")
 
-(defface beads-list-status-open
-  '((t :inherit default))
-  "Face for open status.")
-
-(defface beads-list-status-in-progress
-  '((t :foreground "yellow"))
-  "Face for in_progress status.")
-
-(defface beads-list-status-closed
-  '((t :foreground "green"))
-  "Face for closed status.")
-
-(defface beads-list-status-blocked
-  '((t :foreground "red"))
-  "Face for blocked status.")
-
-(defface beads-list-status-hooked
-  '((t :foreground "cyan"))
-  "Face for hooked status (hook-based work assignment).")
-
-(defface beads-list-priority-p0
-  '((t :inherit error :inverse-video t))
-  "Face for P0 priority.
-Uses inverted error colors for maximum visibility.")
-
-(defface beads-list-priority-p1
-  '((t :inherit error))
-  "Face for P1 priority.")
+(define-obsolete-face-alias 'beads-list-status-open 'beads-status-open "0.47")
+(define-obsolete-face-alias 'beads-list-status-in-progress 'beads-status-in-progress "0.47")
+(define-obsolete-face-alias 'beads-list-status-closed 'beads-status-closed "0.47")
+(define-obsolete-face-alias 'beads-list-status-blocked 'beads-status-blocked "0.47")
+(define-obsolete-face-alias 'beads-list-status-hooked 'beads-status-hooked "0.47")
+(define-obsolete-face-alias 'beads-list-priority-p0 'beads-priority-p0 "0.47")
+(define-obsolete-face-alias 'beads-list-priority-p1 'beads-priority-p1 "0.47")
 
 (defface beads-list-header-line
   '((t :inherit header-line))
@@ -162,25 +126,11 @@ Uses inverted error colors for maximum visibility.")
   '((t :foreground "green"))
   "Face for has-children dependency indicator.")
 
-(defface beads-list-type-gate
-  '((t :foreground "orange red"))
-  "Face for gate type (checkpoint/approval gate).")
-
-(defface beads-list-type-convoy
-  '((t :foreground "deep sky blue"))
-  "Face for convoy type (grouped work items).")
-
-(defface beads-list-type-agent
-  '((t :foreground "medium purple"))
-  "Face for agent type (AI/automation tasks).")
-
-(defface beads-list-type-role
-  '((t :foreground "sea green"))
-  "Face for role type (people/responsibility definitions).")
-
-(defface beads-list-type-rig
-  '((t :foreground "dark cyan"))
-  "Face for rig type (Gas Town rig identity tracking).")
+(define-obsolete-face-alias 'beads-list-type-gate 'beads-type-gate "0.47")
+(define-obsolete-face-alias 'beads-list-type-convoy 'beads-type-convoy "0.47")
+(define-obsolete-face-alias 'beads-list-type-agent 'beads-type-agent "0.47")
+(define-obsolete-face-alias 'beads-list-type-role 'beads-type-role "0.47")
+(define-obsolete-face-alias 'beads-list-type-rig 'beads-type-rig "0.47")
 
 (defvar beads-list--column-defs
   '((id       . ("ID"       10 t              beads--format-id))
@@ -546,60 +496,6 @@ Only adds separators when in sectioned sort mode and
                 (push ov beads-list--section-overlays)))
             (setq prev-section section))
           (forward-line 1))))))
-
-(defun beads--format-status (issue)
-  "Format status column for ISSUE with face."
-  (let ((status (alist-get 'status issue)))
-    (propertize status
-                'face (pcase status
-                        ("closed" 'beads-list-status-closed)
-                        ("in_progress" 'beads-list-status-in-progress)
-                        ("blocked" 'beads-list-status-blocked)
-                        ("hooked" 'beads-list-status-hooked)
-                        (_ 'beads-list-status-open)))))
-
-(defun beads--format-priority (issue)
-  "Format priority column for ISSUE as P0-P4 with face."
-  (let* ((priority (alist-get 'priority issue))
-         (priority-str (format "P%d" priority)))
-    (propertize priority-str
-                'face (pcase priority
-                        (0 'beads-list-priority-p0)
-                        (1 'beads-list-priority-p1)
-                        (_ 'default)))))
-
-(defun beads--format-type (issue)
-  "Format type column for ISSUE based on `beads-list-type-style'.
-Applies faces for special types (gate, convoy, agent, role, rig).
-When `beads-list-type-glyph' is non-nil, prepends a unicode glyph."
-  (let* ((type (alist-get 'issue_type issue))
-         (display-type (if (eq beads-list-type-style 'short)
-                           (pcase type
-                             ("feature" "feat")
-                             ("chore" "chor")
-                             ("convoy" "conv")
-                             ("agent" "agnt")
-                             (_ (or type "")))
-                         (or type "")))
-         (face (pcase type
-                 ("gate" 'beads-list-type-gate)
-                 ("convoy" 'beads-list-type-convoy)
-                 ("agent" 'beads-list-type-agent)
-                 ("role" 'beads-list-type-role)
-                 ("rig" 'beads-list-type-rig)
-                 (_ nil)))
-         (glyph (when beads-list-type-glyph
-                  (pcase type
-                    ("gate" "■ ")
-                    ("convoy" "▶ ")
-                    ("agent" "◉ ")
-                    ("role" "● ")
-                    ("rig" "⚙ ")
-                    (_ nil))))
-         (result (concat glyph display-type)))
-    (if face
-        (propertize result 'face face)
-      result)))
 
 (defun beads--format-title (issue)
   "Format title column for ISSUE, truncating if needed."

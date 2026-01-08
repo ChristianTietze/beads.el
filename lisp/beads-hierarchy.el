@@ -27,6 +27,7 @@
 (require 'hierarchy)
 (require 'wid-edit)
 (require 'beads-rpc)
+(require 'beads-faces)
 
 (declare-function beads-detail-open "beads-detail")
 
@@ -98,22 +99,15 @@ Returns sorted list of positions for widgets and buttons."
 
 \\{beads-hierarchy-mode-map}")
 
-(defun beads-hierarchy--status-face (status)
-  "Return face for STATUS."
-  (pcase status
-    ("closed" 'beads-list-status-closed)
-    ("in_progress" 'beads-list-status-in-progress)
-    ("blocked" 'beads-list-status-blocked)
-    ("hooked" 'beads-list-status-hooked)
-    (_ 'beads-list-status-open)))
-
 (defun beads-hierarchy--labelfn (issue indent)
-  "Insert formatted ISSUE at INDENT level."
+  "Insert formatted ISSUE at INDENT level.
+Format: ID [type] title [status]"
   (let* ((id (alist-get 'id issue))
          (title (alist-get 'title issue ""))
-         (status (alist-get 'status issue "open"))
+         (type-str (beads--format-type issue))
+         (status-str (beads--format-status issue))
          (tree-indent (* indent 3))
-         (fixed-width (+ (length id) (length status) 6))
+         (fixed-width (+ (length id) (length type-str) (length status-str) 8))
          (available (- (window-body-width) tree-indent fixed-width)))
     (insert " ")
     (insert-text-button id
@@ -122,10 +116,12 @@ Returns sorted list of positions for widgets and buttons."
                         'beads-issue issue
                         'follow-link t)
     (insert " ")
-    (insert (truncate-string-to-width title (max 10 available) nil nil "…"))
+    (insert type-str)
     (insert " ")
-    (insert (propertize (format "[%s]" status)
-                        'face (beads-hierarchy--status-face status)))))
+    (insert (truncate-string-to-width title (max 10 available) nil nil "…"))
+    (insert " [")
+    (insert status-str)
+    (insert "]")))
 
 (defun beads-hierarchy--button-action (button)
   "Handle activation of issue BUTTON."

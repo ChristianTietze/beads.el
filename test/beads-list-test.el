@@ -94,8 +94,8 @@
 
 (ert-deftest beads-list-test-format-type-full-style ()
   "Test that beads--format-type returns full type names when style is full."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph nil))
+  (let ((beads-type-style 'full)
+        (beads-type-glyph nil))
     (should (equal (beads--format-type '((issue_type . "bug"))) "bug"))
     (should (equal (beads--format-type '((issue_type . "feature"))) "feature"))
     (should (equal (beads--format-type '((issue_type . "task"))) "task"))
@@ -109,8 +109,8 @@
 
 (ert-deftest beads-list-test-format-type-short-style ()
   "Test that beads--format-type abbreviates types when style is short."
-  (let ((beads-list-type-style 'short)
-        (beads-list-type-glyph nil))
+  (let ((beads-type-style 'short)
+        (beads-type-glyph nil))
     (should (equal (beads--format-type '((issue_type . "bug"))) "bug"))
     (should (equal (beads--format-type '((issue_type . "feature"))) "feat"))
     (should (equal (beads--format-type '((issue_type . "task"))) "task"))
@@ -124,31 +124,31 @@
 
 (ert-deftest beads-list-test-format-type-special-faces ()
   "Test that special types get appropriate faces."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph nil))
+  (let ((beads-type-style 'full)
+        (beads-type-glyph nil))
     (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "gate"))))
-                'beads-list-type-gate))
+                'beads-type-gate))
     (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "convoy"))))
-                'beads-list-type-convoy))
+                'beads-type-convoy))
     (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "agent"))))
-                'beads-list-type-agent))
+                'beads-type-agent))
     (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "role"))))
-                'beads-list-type-role))
+                'beads-type-role))
     (should (eq (get-text-property 0 'face (beads--format-type '((issue_type . "rig"))))
-                'beads-list-type-rig))))
+                'beads-type-rig))))
 
 (ert-deftest beads-list-test-format-type-regular-no-face ()
   "Test that regular types have no special face."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph nil))
+  (let ((beads-type-style 'full)
+        (beads-type-glyph nil))
     (should (null (get-text-property 0 'face (beads--format-type '((issue_type . "bug"))))))
     (should (null (get-text-property 0 'face (beads--format-type '((issue_type . "feature"))))))
     (should (null (get-text-property 0 'face (beads--format-type '((issue_type . "task"))))))))
 
 (ert-deftest beads-list-test-format-type-glyphs ()
-  "Test that glyphs are prepended when beads-list-type-glyph is non-nil."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph t))
+  "Test that glyphs are prepended when beads-type-glyph is non-nil."
+  (let ((beads-type-style 'full)
+        (beads-type-glyph t))
     (should (string-prefix-p "■ " (beads--format-type '((issue_type . "gate")))))
     (should (string-prefix-p "▶ " (beads--format-type '((issue_type . "convoy")))))
     (should (string-prefix-p "◉ " (beads--format-type '((issue_type . "agent")))))
@@ -157,22 +157,22 @@
 
 (ert-deftest beads-list-test-format-type-no-glyph-regular ()
   "Test that regular types have no glyph even when glyphs enabled."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph t))
+  (let ((beads-type-style 'full)
+        (beads-type-glyph t))
     (should (equal (beads--format-type '((issue_type . "bug"))) "bug"))
     (should (equal (beads--format-type '((issue_type . "task"))) "task"))))
 
 (ert-deftest beads-list-test-format-type-glyph-with-short ()
   "Test that glyphs work with short style."
-  (let ((beads-list-type-style 'short)
-        (beads-list-type-glyph t))
+  (let ((beads-type-style 'short)
+        (beads-type-glyph t))
     (should (equal (beads--format-type '((issue_type . "convoy"))) "▶ conv"))
     (should (equal (beads--format-type '((issue_type . "agent"))) "◉ agnt"))))
 
 (ert-deftest beads-list-test-format-type-unknown ()
   "Test that beads--format-type returns unknown types unchanged."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph nil))
+  (let ((beads-type-style 'full)
+        (beads-type-glyph nil))
     (should (equal (beads--format-type '((issue_type . "unknown"))) "unknown"))))
 
 (ert-deftest beads-list-test-format-title-short ()
@@ -239,8 +239,8 @@
 
 (ert-deftest beads-list-test-entries-column-order ()
   "Test that beads-list-entries produces columns in correct order."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph nil)
+  (let ((beads-type-style 'full)
+        (beads-type-glyph nil)
         (issues '(((id . "bd-test")
                    (title . "Test")
                    (status . "closed")
@@ -645,22 +645,22 @@
 
 (ert-deftest beads-list-test-format-type-custom ()
   "Test that custom types are formatted without error."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph nil))
+  (let ((beads-type-style 'full)
+        (beads-type-glyph nil))
     (should (equal (beads--format-type '((issue_type . "my-custom-type")))
                    "my-custom-type"))))
 
 (ert-deftest beads-list-test-format-type-custom-no-glyph ()
   "Test that custom types have no glyph even when glyphs enabled."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph t))
+  (let ((beads-type-style 'full)
+        (beads-type-glyph t))
     (should (equal (beads--format-type '((issue_type . "my-custom-type")))
                    "my-custom-type"))))
 
 (ert-deftest beads-list-test-format-type-custom-no-face ()
   "Test that custom types have no special face."
-  (let ((beads-list-type-style 'full)
-        (beads-list-type-glyph nil))
+  (let ((beads-type-style 'full)
+        (beads-type-glyph nil))
     (should (null (get-text-property 0 'face
                     (beads--format-type '((issue_type . "my-custom-type"))))))))
 
