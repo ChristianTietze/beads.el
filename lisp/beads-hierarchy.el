@@ -27,6 +27,7 @@
 (require 'hierarchy)
 (require 'wid-edit)
 (require 'beads-rpc)
+(require 'json)
 
 (declare-function beads-detail-open "beads-detail")
 
@@ -138,18 +139,34 @@ Returns sorted list of positions for widgets and buttons."
         (beads-rpc-error
          (message "Failed to fetch issue: %s" (error-message-string err)))))))
 
+(defun beads-hierarchy--fetch-tree (issue-id)
+  "Fetch full bidirectional dependency tree for ISSUE-ID using CLI.
+Returns list of issues with depth and parent_id fields."
+  (let* ((bd-program (or (executable-find "bd") "bd"))
+         (output (with-temp-buffer
+                   (let ((exit-code (call-process bd-program nil t nil
+                                                  "dep" "tree" issue-id
+                                                  "--direction=both" "--json")))
+                     (unless (zerop exit-code)
+                       (signal 'beads-rpc-error
+                               (list (format "dep tree failed: %s"
+                                             (buffer-string)))))
+                     (goto-char (point-min))
+                     (json-read)))))
+    (append output nil)))
+
 (defun beads-hierarchy--build (issue-id)
-  "Build hierarchy for ISSUE-ID using show RPC.
+  "Build hierarchy for ISSUE-ID showing full bidirectional tree.
 Returns a cons of (hierarchy . by-id-hash).
-Shows the issue as root with its dependents as children."
+Uses `bd dep tree --direction=both` to show both blockers and dependents."
   (condition-case err
-      (let* ((root-issue (beads-rpc-show issue-id))
+      (let* ((tree-data (beads-hierarchy--fetch-tree issue-id))
              (h (hierarchy-new))
              (by-id (make-hash-table :test 'equal)))
 
-        (puthash (alist-get 'id root-issue) root-issue by-id)
-
-        (beads-hierarchy--collect-dependents root-issue by-id)
+        (dolist (issue tree-data)
+          (let ((id (alist-get 'id issue)))
+            (puthash id issue by-id)))
 
         (maphash (lambda (_id issue)
                    (hierarchy-add-tree h issue
@@ -162,28 +179,12 @@ Shows the issue as root with its dependents as children."
      (message "Failed to fetch dependency tree: %s" (error-message-string err))
      nil)))
 
-(defun beads-hierarchy--collect-dependents (issue by-id)
-  "Recursively collect dependents of ISSUE into BY-ID hash table."
-  (let ((dependents (alist-get 'dependents issue)))
-    (when (and dependents (> (length dependents) 0))
-      (seq-doseq (dep (append dependents nil))
-        (let ((dep-id (alist-get 'id dep)))
-          (unless (gethash dep-id by-id)
-            (let ((dep-with-parent (cons (cons 'beads--parent-id (alist-get 'id issue)) dep)))
-              (puthash dep-id dep-with-parent by-id))
-            (condition-case nil
-                (let ((full-dep (beads-rpc-show dep-id)))
-                  (puthash dep-id
-                           (cons (cons 'beads--parent-id (alist-get 'id issue)) full-dep)
-                           by-id)
-                  (beads-hierarchy--collect-dependents full-dep by-id))
-              (beads-rpc-error nil))))))))
-
 (defun beads-hierarchy--find-parent (issue by-id)
   "Find parent of ISSUE in BY-ID hash table.
 Returns the parent issue or nil if ISSUE is root."
-  (let ((parent-id (alist-get 'beads--parent-id issue)))
-    (when parent-id
+  (let* ((parent-id (alist-get 'parent_id issue))
+         (own-id (alist-get 'id issue)))
+    (when (and parent-id (not (equal parent-id own-id)))
       (gethash parent-id by-id))))
 
 (defun beads-hierarchy-goto-issue ()
