@@ -137,7 +137,10 @@ Or with `package.el`:
 | `e x` | `beads-detail-edit-external-ref` | Edit external reference |
 | `e l a` | `beads-detail-edit-label-add` | Add label |
 | `e l r` | `beads-detail-edit-label-remove` | Remove label |
+| `c` | `beads-detail-add-comment` | Add comment |
 | `H` | `beads-hierarchy-show` | Show dependency tree |
+| `P` | `beads-detail-goto-parent` | Navigate to parent issue |
+| `C` | `beads-detail-view-children` | View children in filtered list |
 | `D` | `beads-delete-issue` | Delete issue (with confirmation) |
 | `R` | `beads-reopen-issue` | Reopen closed issue |
 | `g` | `beads-detail-refresh` | Refresh detail view |
@@ -217,6 +220,19 @@ and sources (duplicates to be closed).
 | `m` | `beads-duplicates-merge-at-point` | Merge issue at point into target |
 | `M` | `beads-duplicates-merge-group` | Merge all sources in group |
 | `g` | `beads-duplicates-refresh` | Refresh list |
+| `q` | `quit-window` | Quit |
+
+### Hierarchy View (`beads-hierarchy-mode`)
+
+Show the full dependency tree for any issue, with ancestors above and descendants below.
+Press `H` from the list or detail view to open.
+
+| Key | Command | Description |
+|-----|---------|-------------|
+| `RET` | `beads-hierarchy-goto-issue` | Open issue in detail view |
+| `TAB` | `beads-hierarchy-next` | Move to next issue |
+| `S-TAB` | `beads-hierarchy-previous` | Move to previous issue |
+| `g` | `beads-hierarchy-refresh` | Refresh tree |
 | `q` | `quit-window` | Quit |
 
 ### Issue Lint Report (`beads-lint-mode`)
@@ -331,10 +347,26 @@ Acceptance Criteria, epics need Success Criteria.
 | `beads-stale-days` | `30` | Days without update before issue is stale |
 | `beads-stale-status` | `nil` | Filter by status (nil = all statuses) |
 
+### Issue Type Display (`beads-faces`)
+
+```elisp
+;; Use 4-character abbreviations (feat, task, epic, chor, conv, agnt)
+(setq beads-type-style 'short)
+
+;; Show glyphs for special types (gate ■, convoy ▶, agent ◉, role ●, rig ⚙)
+(setq beads-type-glyph t)
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `beads-type-style` | `'full` | `'full` for full names, `'short` for 4-char |
+| `beads-type-glyph` | `nil` | Show unicode glyphs for special types |
+
 ## Requirements
 
 - Emacs 28.1+
-- [Beads](https://github.com/steveyegge/beads) CLI 0.44.0+ with running daemon (`bd daemon`)
+- [Beads](https://github.com/steveyegge/beads) CLI 0.46.0+ with running daemon (`bd daemon`)
+- `hierarchy` package (for dependency tree view)
 - `transient` package (for menus)
 - `markdown-mode` (optional, for editing long text fields)
 
