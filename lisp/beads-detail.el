@@ -496,7 +496,7 @@ Uses CLI fallback since RPC does not support comment_add."
   "Insert dependencies section for ISSUE if any exist."
   (when-let ((deps (alist-get 'dependencies issue)))
     (when (> (length deps) 0)
-      (insert (propertize "Blocked by: " 'face 'beads-detail-label-face))
+      (insert (propertize "Depends on: " 'face 'beads-detail-label-face))
       (insert "\n")
       (seq-doseq (dep deps)
         (beads-detail--insert-dep-link dep)))))
@@ -505,7 +505,7 @@ Uses CLI fallback since RPC does not support comment_add."
   "Insert dependents section for ISSUE if any exist."
   (when-let ((deps (alist-get 'dependents issue)))
     (when (> (length deps) 0)
-      (insert (propertize "Blocks: " 'face 'beads-detail-label-face))
+      (insert (propertize "Dependents: " 'face 'beads-detail-label-face))
       (insert "\n")
       (seq-doseq (dep deps)
         (beads-detail--insert-dep-link dep)))))
