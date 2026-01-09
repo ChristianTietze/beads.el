@@ -11,7 +11,7 @@ https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
 
 | beads.el | beads CLI | Notes |
 |----------|-----------|-------|
-| 0.46.0   | 0.46.0    | Custom types, rig type |
+| 0.46.0   | 0.46.0    | Custom types, rig type, hierarchy view, dependencies in detail |
 | 0.44.0   | 0.44.0    | Initial version tracking |
 
 ## New Features by Version
