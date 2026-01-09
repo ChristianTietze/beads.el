@@ -362,6 +362,20 @@ Acceptance Criteria, epics need Success Criteria.
 | `beads-type-style` | `'full` | `'full` for full names, `'short` for 4-char |
 | `beads-type-glyph` | `nil` | Show unicode glyphs for special types |
 
+### P0 Priority Highlighting
+
+```elisp
+;; Disable whole-row highlighting for P0 issues
+(setq beads-list-highlight-p0-rows nil)
+
+;; Customize the P0 row background color
+(set-face-attribute 'beads-list-row-p0 nil :background "#ff0000")
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `beads-list-highlight-p0-rows` | `t` | Highlight entire row for P0 issues |
+
 ## Requirements
 
 - Emacs 28.1+

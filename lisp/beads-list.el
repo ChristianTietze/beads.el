@@ -132,6 +132,22 @@ When an integer, the column width will not exceed this value."
 (define-obsolete-face-alias 'beads-list-type-role 'beads-type-role "0.47")
 (define-obsolete-face-alias 'beads-list-type-rig 'beads-type-rig "0.47")
 
+(defface beads-list-row-p0
+  '((((class color) (background light))
+     :background "#ffe0e0" :extend t)
+    (((class color) (background dark))
+     :background "#4a1a1a" :extend t))
+  "Face for entire row of P0 priority issues.
+Uses `:extend t' to highlight to end of line."
+  :group 'beads-list)
+
+(defcustom beads-list-highlight-p0-rows t
+  "Whether to highlight entire rows for P0 priority issues.
+When non-nil, P0 issues get a distinctive background color
+across the entire row for maximum visibility."
+  :type 'boolean
+  :group 'beads-list)
+
 (defvar beads-list--column-defs
   '((id       . ("ID"       10 t              beads--format-id))
     (date     . ("Date"     10 beads-list--sort-by-date beads--format-date))
@@ -289,6 +305,21 @@ Used to ensure refresh uses the correct project context.")
     map)
   "Keymap for beads-list-mode.")
 
+(defun beads-list--row-face-for-id (id)
+  "Return row face for issue ID, or nil if no special styling needed."
+  (when beads-list-highlight-p0-rows
+    (when-let ((issue (seq-find (lambda (i) (equal (alist-get 'id i) id))
+                                beads-list--issues)))
+      (when (= 0 (alist-get 'priority issue 2))
+        'beads-list-row-p0))))
+
+(defun beads-list--print-entry (id cols)
+  "Print entry ID with COLS, applying row-level styling for P0 issues."
+  (let ((beg (point)))
+    (tabulated-list-print-entry id cols)
+    (when-let ((row-face (beads-list--row-face-for-id id)))
+      (font-lock-prepend-text-property beg (point) 'face row-face))))
+
 (defun beads-list--format-header-line (stats)
   "Format STATS for display in header line."
   (let ((total (alist-get 'total_issues stats 0))
@@ -325,6 +356,7 @@ Respects `beads-list-show-header-stats'."
   (setq tabulated-list-format (beads-list--build-format))
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key (cons "Date" t))
+  (setq tabulated-list-printer #'beads-list--print-entry)
   (add-hook 'tabulated-list-revert-hook #'beads-list-refresh nil t)
   (tabulated-list-init-header)
   (hl-line-mode 1)
