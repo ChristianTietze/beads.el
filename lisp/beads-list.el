@@ -302,6 +302,8 @@ Used to ensure refresh uses the correct project context.")
     (define-key map (kbd "q") #'beads-list-quit)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
+    (define-key map (kbd "M-n") #'beads-list-next-section)
+    (define-key map (kbd "M-p") #'beads-list-previous-section)
     map)
   "Keymap for beads-list-mode.")
 
@@ -528,6 +530,32 @@ Only adds separators when in sectioned sort mode and
                 (push ov beads-list--section-overlays)))
             (setq prev-section section))
           (forward-line 1))))))
+
+(defun beads-list--section-positions ()
+  "Return sorted list of section start positions.
+Includes `point-min' for the first section and overlay positions
+for subsequent sections."
+  (let ((positions (list (point-min))))
+    (dolist (ov beads-list--section-overlays)
+      (when (overlay-buffer ov)
+        (push (overlay-start ov) positions)))
+    (sort positions #'<)))
+
+(defun beads-list-next-section ()
+  "Move point to the next section in the beads list."
+  (interactive)
+  (let* ((positions (beads-list--section-positions))
+         (next (seq-find (lambda (pos) (> pos (point))) positions)))
+    (when next
+      (goto-char next))))
+
+(defun beads-list-previous-section ()
+  "Move point to the previous section in the beads list."
+  (interactive)
+  (let* ((positions (reverse (beads-list--section-positions)))
+         (prev (seq-find (lambda (pos) (< pos (point))) positions)))
+    (when prev
+      (goto-char prev))))
 
 (defun beads--format-title (issue)
   "Format title column for ISSUE, truncating if needed."
