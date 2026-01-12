@@ -104,6 +104,8 @@
     (define-key map (kbd "R") #'beads-reopen-issue)
     (define-key map (kbd "?") #'beads-menu)
     (define-key map (kbd "C-c m") #'beads-menu)
+    (define-key map (kbd "M-n") #'beads-detail-next-section)
+    (define-key map (kbd "M-p") #'beads-detail-previous-section)
     map)
   "Keymap for beads-detail-mode.")
 
@@ -551,6 +553,35 @@ COMMENTS is a vector/list of comment objects with id, author, text, created_at."
             (car parts)
           timestamp))
     (format "%s" timestamp)))
+
+(defun beads-detail--section-positions ()
+  "Return sorted list of section header positions.
+Finds all positions where `beads-detail-header-face' is used."
+  (let ((positions nil)
+        (pos (point-min)))
+    (while (< pos (point-max))
+      (when (eq (get-text-property pos 'face) 'beads-detail-header-face)
+        (push pos positions)
+        (setq pos (next-single-property-change pos 'face nil (point-max))))
+      (setq pos (or (next-single-property-change pos 'face nil (point-max))
+                    (point-max))))
+    (nreverse positions)))
+
+(defun beads-detail-next-section ()
+  "Move point to the next section header in the detail view."
+  (interactive)
+  (let* ((positions (beads-detail--section-positions))
+         (next (seq-find (lambda (pos) (> pos (point))) positions)))
+    (when next
+      (goto-char next))))
+
+(defun beads-detail-previous-section ()
+  "Move point to the previous section header in the detail view."
+  (interactive)
+  (let* ((positions (reverse (beads-detail--section-positions)))
+         (prev (seq-find (lambda (pos) (< pos (point))) positions)))
+    (when prev
+      (goto-char prev))))
 
 (provide 'beads-detail)
 ;;; beads-detail.el ends here
