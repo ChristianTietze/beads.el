@@ -117,6 +117,8 @@ Or with `package.el`:
 | `D` | `beads-delete-issue` | Delete issue (with confirmation) |
 | `R` | `beads-reopen-issue` | Reopen closed issue |
 | `g` | `beads-list-refresh` | Refresh issue list |
+| `M-n` | `beads-list-next-section` | Jump to next section |
+| `M-p` | `beads-list-previous-section` | Jump to previous section |
 | `?` | `beads-menu` | Show transient menu |
 | `q` | `beads-list-quit` | Quit |
 
@@ -144,6 +146,8 @@ Or with `package.el`:
 | `D` | `beads-delete-issue` | Delete issue (with confirmation) |
 | `R` | `beads-reopen-issue` | Reopen closed issue |
 | `g` | `beads-detail-refresh` | Refresh detail view |
+| `M-n` | `beads-detail-next-section` | Jump to next section |
+| `M-p` | `beads-detail-previous-section` | Jump to previous section |
 | `?` | `beads-menu` | Show transient menu |
 | `q` | `quit-window` | Quit |
 
