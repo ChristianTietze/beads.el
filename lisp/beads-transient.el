@@ -41,6 +41,8 @@
 (declare-function beads-list-bulk-priority "beads-list")
 (declare-function beads-list-bulk-close "beads-list")
 (declare-function beads-list-bulk-delete "beads-list")
+(declare-function beads-list-toggle-sort-mode "beads-list")
+(declare-function beads-list-reverse-sort "beads-list")
 
 (declare-function beads-filter-by-label "beads-filter")
 (declare-function beads-filter-by-parent "beads-filter")
@@ -634,6 +636,77 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("C-n" "Next" next-line :transient t)
    ("C-p" "Prev" previous-line :transient t)])
 
+(defvar-local beads-list--sort-mode-override nil)
+(defvar tabulated-list-sort-key)
+
+(defun beads-sort-by-column (column &optional descending)
+  "Sort list by COLUMN.  When DESCENDING is non-nil, reverse order."
+  (setq beads-list--sort-mode-override 'column)
+  (setq tabulated-list-sort-key (cons column descending))
+  (tabulated-list-init-header)
+  (tabulated-list-print t)
+  (message "Sorted by %s%s" column (if descending " (descending)" "")))
+
+(defun beads-sort-by-id ()
+  "Sort issues by ID."
+  (interactive)
+  (beads-sort-by-column "ID"))
+
+(defun beads-sort-by-date ()
+  "Sort issues by date (newest first)."
+  (interactive)
+  (beads-sort-by-column "Date" t))
+
+(defun beads-sort-by-status ()
+  "Sort issues by status."
+  (interactive)
+  (beads-sort-by-column "Status"))
+
+(defun beads-sort-by-priority ()
+  "Sort issues by priority (highest first)."
+  (interactive)
+  (beads-sort-by-column "Priority"))
+
+(defun beads-sort-by-type ()
+  "Sort issues by type."
+  (interactive)
+  (beads-sort-by-column "Type"))
+
+(defun beads-sort-by-title ()
+  "Sort issues by title."
+  (interactive)
+  (beads-sort-by-column "Title"))
+
+(defun beads-sort-sectioned ()
+  "Use sectioned sort (unblocked/blocked/closed groups)."
+  (interactive)
+  (setq beads-list--sort-mode-override 'sectioned)
+  (beads-list-refresh t)
+  (message "Sort mode: sectioned"))
+
+(defun beads--sort-menu-description ()
+  "Return description for sort menu showing current sort."
+  (if (eq beads-list--sort-mode-override 'sectioned)
+      "Sort: sectioned"
+    (let ((key (car tabulated-list-sort-key))
+          (desc (cdr tabulated-list-sort-key)))
+      (format "Sort: %s%s" (or key "default") (if desc " ↓" " ↑")))))
+
+(transient-define-prefix beads-sort-menu ()
+  "Beads sort menu."
+  ["Sort by Column"
+   ("i" "ID" beads-sort-by-id)
+   ("d" "Date" beads-sort-by-date)
+   ("s" "Status" beads-sort-by-status)
+   ("p" "Priority" beads-sort-by-priority)
+   ("t" "Type" beads-sort-by-type)
+   ("T" "Title" beads-sort-by-title)]
+  ["Sort Mode"
+   ("S" "Sectioned (default)" beads-sort-sectioned)
+   ("r" "Reverse direction" beads-list-reverse-sort)]
+  ["Navigation"
+   ("q" "Back" transient-quit-one)])
+
 (transient-define-prefix beads-filter-menu ()
   "Beads filter menu."
   ["Filter by"
@@ -676,7 +749,9 @@ Uses canonical order from `beads-list--column-order' for insertion."
     :description beads--mark-menu-description)]
   ["Search & Filter"
    ("/" "Search..." beads-search)
-   ("f" "Filter menu..." beads-filter-menu)]
+   ("f" "Filter menu..." beads-filter-menu)
+   ("o" "Sort menu..." beads-sort-menu
+    :description beads--sort-menu-description)]
   ["Configuration"
    ("C" "Configure..." beads-config-menu)]
   ["Help"

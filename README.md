@@ -113,6 +113,9 @@ Or with `package.el`:
 | `f r` | `beads-filter-ready-issues` | Show ready issues only |
 | `f b` | `beads-filter-blocked-issues` | Show blocked issues only |
 | `f c` | `beads-filter-clear` | Clear all filters |
+| `s` | `beads-list-toggle-sort-mode` | Toggle sectioned/column sort |
+| `o` | `beads-list-cycle-sort` | Cycle through sort columns |
+| `O` | `beads-list-reverse-sort` | Reverse sort direction |
 | `H` | `beads-hierarchy-show` | Show dependency tree |
 | `P` | `beads-preview-mode` | Toggle preview mode |
 | `S` | `beads-stats` | Show project statistics |
