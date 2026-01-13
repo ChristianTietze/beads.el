@@ -694,93 +694,92 @@ Uses canonical order from `beads-list--column-order' for insertion."
 
 (transient-define-prefix beads-sort-menu ()
   "Beads sort menu."
-  ["Sort by Column"
-   ("i" "ID" beads-sort-by-id)
-   ("d" "Date" beads-sort-by-date)
-   ("s" "Status" beads-sort-by-status)
-   ("p" "Priority" beads-sort-by-priority)
-   ("t" "Type" beads-sort-by-type)
-   ("T" "Title" beads-sort-by-title)]
-  ["Sort Mode"
-   ("S" "Sectioned (default)" beads-sort-sectioned)
-   ("r" "Reverse direction" beads-list-reverse-sort)]
-  ["Navigation"
-   ("q" "Back" transient-quit-one)])
+  [["Sort by Column"
+    ("i" "ID" beads-sort-by-id)
+    ("d" "Date" beads-sort-by-date)
+    ("s" "Status" beads-sort-by-status)
+    ("p" "Priority" beads-sort-by-priority)
+    ("t" "Type" beads-sort-by-type)
+    ("T" "Title" beads-sort-by-title)]
+   ["Sort Mode"
+    ("S" "Sectioned (default)" beads-sort-sectioned)
+    ("r" "Reverse direction" beads-list-reverse-sort)
+    ""
+    ("q" "Back" transient-quit-one)]])
 
 (transient-define-prefix beads-filter-menu ()
   "Beads filter menu."
-  ["Filter by"
-   ("s" "Status" beads-filter-status)
-   ("p" "Priority" beads-filter-priority)
-   ("t" "Type" beads-filter-type)
-   ("a" "Assignee" beads-filter-assignee)
-   ("l" "Label" beads-filter-label)
-   ("e" "Parent epic" beads-filter-parent)]
-  ["Quick filters"
-   ("r" "Ready (no blockers)" beads-filter-ready-issues)
-   ("b" "Blocked" beads-filter-blocked-issues)]
-  ["Clear"
-   ("c" "Clear all filters" beads-filter-clear)]
-  ["Navigation"
-   ("q" "Back" transient-quit-one)])
+  [["Filter by"
+    ("s" "Status" beads-filter-status)
+    ("p" "Priority" beads-filter-priority)
+    ("t" "Type" beads-filter-type)
+    ("a" "Assignee" beads-filter-assignee)
+    ("l" "Label" beads-filter-label)
+    ("e" "Parent epic" beads-filter-parent)]
+   ["Quick Filters"
+    ("r" "Ready (no blockers)" beads-filter-ready-issues)
+    ("b" "Blocked" beads-filter-blocked-issues)
+    ""
+    ("c" "Clear all filters" beads-filter-clear)
+    ""
+    ("q" "Back" transient-quit-one)]])
 
 (transient-define-prefix beads-list-menu ()
   "Beads list mode menu."
-  ["Navigation"
-   ("g" "Refresh" beads-list-refresh)
-   ("RET" "View issue" beads-list-goto-issue)
-   ("P" "Toggle preview" beads-preview-mode)
-   ("H" "Dependency tree" beads-hierarchy-show)
-   ("S" "Project stats" beads-stats)
-   ("O" "Orphaned issues" beads-orphans)
-   ("A" "Stale issues" beads-stale)
-   ("a" "Activity feed" beads-activity)
-   ("d" "Duplicates" beads-duplicates)
-   ("L" "Lint report" beads-lint)]
-  ["Actions"
-   ("c" "Create issue" beads-create-issue)
-   ("C" "Create with preview" beads-create-issue-preview)
-   ("E" "Edit issue" beads-list-edit-form)
-   ("x" "Close issue" beads-close-issue)
-   ("R" "Reopen issue" beads-reopen-issue)
-   ("D" "Delete issue" beads-delete-issue)
-   ("X" "Resolve conflicts" beads-conflicts)
-   ("m" "Mark & Bulk..." beads-mark-menu
-    :description beads--mark-menu-description)]
-  ["Search & Filter"
-   ("/" "Search..." beads-search)
-   ("f" "Filter menu..." beads-filter-menu)
-   ("o" "Sort menu..." beads-sort-menu
-    :description beads--sort-menu-description)]
-  ["Configuration"
-   ("C" "Configure..." beads-config-menu)]
-  ["Help"
-   ("?" "Describe mode" describe-mode)
-   ("q" "Quit" transient-quit-one)])
+  [["Navigation"
+    ("g" "Refresh" beads-list-refresh)
+    ("RET" "View issue" beads-list-goto-issue)
+    ("P" "Toggle preview" beads-preview-mode)
+    ("H" "Dependency tree" beads-hierarchy-show)
+    ("S" "Project stats" beads-stats)]
+   ["Actions"
+    ("c" "Create issue" beads-create-issue)
+    ("C" "Create with preview" beads-create-issue-preview)
+    ("E" "Edit issue" beads-list-edit-form)
+    ("x" "Close issue" beads-close-issue)
+    ("R" "Reopen issue" beads-reopen-issue)
+    ("D" "Delete issue" beads-delete-issue)]
+   ["Search & Filter"
+    ("/" "Search..." beads-search)
+    ("f" "Filter menu..." beads-filter-menu)
+    ("o" "Sort menu..." beads-sort-menu
+     :description beads--sort-menu-description)
+    ("m" "Mark & Bulk..." beads-mark-menu
+     :description beads--mark-menu-description)]]
+  [["Views"
+    ("O" "Orphaned issues" beads-orphans)
+    ("A" "Stale issues" beads-stale)
+    ("a" "Activity feed" beads-activity)
+    ("d" "Duplicates" beads-duplicates)
+    ("L" "Lint report" beads-lint)
+    ("X" "Resolve conflicts" beads-conflicts)]
+   [""
+    ("?" "Describe mode" describe-mode)
+    ("q" "Quit" transient-quit-one)]])
 
 (transient-define-prefix beads-detail-menu ()
   "Beads detail mode menu."
-  ["Navigation"
-   ("l" "List issues" beads-list)
-   ("g" "Refresh" beads-detail-refresh)
-   ("P" "Go to parent" beads-detail-goto-parent)
-   ("C" "View children" beads-detail-view-children)
-   ("H" "Dependency tree" beads-hierarchy-show)
-   ("S" "Project stats" beads-stats)]
-  ["Edit"
-   ("E" "Edit form" beads-detail-edit-form)
-   ("e d" "Description" beads-detail-edit-description)
-   ("e s" "Status" beads-detail-edit-status)
-   ("e p" "Priority" beads-detail-edit-priority)
-   ("e t" "Title" beads-detail-edit-title)]
-  ["Actions"
-   ("c" "Add comment" beads-detail-add-comment)
-   ("x" "Close issue" beads-close-issue)
-   ("R" "Reopen issue" beads-reopen-issue)
-   ("D" "Delete issue" beads-delete-issue)]
-  ["Help"
-   ("?" "Describe mode" describe-mode)
-   ("q" "Quit" transient-quit-one)])
+  [["Navigation"
+    ("l" "List issues" beads-list)
+    ("g" "Refresh" beads-detail-refresh)
+    ("P" "Go to parent" beads-detail-goto-parent)
+    ("C" "View children" beads-detail-view-children)
+    ("H" "Dependency tree" beads-hierarchy-show)
+    ("S" "Project stats" beads-stats)]
+   ["Edit"
+    ("E" "Edit form" beads-detail-edit-form)
+    ("e d" "Description" beads-detail-edit-description)
+    ("e s" "Status" beads-detail-edit-status)
+    ("e p" "Priority" beads-detail-edit-priority)
+    ("e t" "Title" beads-detail-edit-title)]
+   ["Actions"
+    ("c" "Add comment" beads-detail-add-comment)
+    ("x" "Close issue" beads-close-issue)
+    ("R" "Reopen issue" beads-reopen-issue)
+    ("D" "Delete issue" beads-delete-issue)
+    ""
+    ("?" "Describe mode" describe-mode)
+    ("q" "Quit" transient-quit-one)]])
 
 (defun beads-menu ()
   "Show context-appropriate Beads menu."
