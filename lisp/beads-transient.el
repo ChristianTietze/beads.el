@@ -100,6 +100,108 @@ Prompts for title (required), type, and priority."
         (beads-rpc-error
          (message "Failed to create issue: %s" (error-message-string err)))))))
 
+(defvar-local beads-create-preview--params nil
+  "Parameters for issue creation in preview buffer.")
+
+(defvar beads-create-preview-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-c") #'beads-create-preview-confirm)
+    (define-key map (kbd "C-c C-k") #'beads-create-preview-cancel)
+    (define-key map (kbd "q") #'beads-create-preview-cancel)
+    map)
+  "Keymap for beads-create-preview-mode.")
+
+(define-derived-mode beads-create-preview-mode special-mode "Beads-Preview"
+  "Mode for previewing issue creation.
+
+\\{beads-create-preview-mode-map}")
+
+(defun beads-create-issue-preview ()
+  "Preview a new issue before creating it.
+Shows what the issue will look like, then press C-c C-c to create."
+  (interactive)
+  (let* ((title (read-string "Title: "))
+         (type (completing-read "Type: "
+                                '("task" "bug" "feature" "epic" "chore")
+                                nil t "task"))
+         (priority-str (completing-read "Priority: "
+                                         '("P0" "P1" "P2" "P3" "P4")
+                                         nil t "P2"))
+         (priority (string-to-number (substring priority-str 1))))
+    (if (string-empty-p title)
+        (message "Title is required")
+      (condition-case err
+          (let ((preview (beads-rpc-create title
+                                           :issue-type type
+                                           :priority priority
+                                           :dry-run t)))
+            (beads-create-preview--show preview
+                                        (list :title title
+                                              :issue-type type
+                                              :priority priority)))
+        (beads-rpc-error
+         (message "Failed to preview issue: %s" (error-message-string err)))))))
+
+(defun beads-create-preview--show (preview params)
+  "Show PREVIEW issue in buffer with PARAMS for creation."
+  (let ((buffer (get-buffer-create "*Beads Create Preview*")))
+    (with-current-buffer buffer
+      (beads-create-preview-mode)
+      (setq beads-create-preview--params params)
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert (propertize "Issue Preview\n" 'face 'bold))
+        (insert (make-string 40 ?─) "\n\n")
+        (insert (propertize "Title: " 'face 'bold)
+                (alist-get 'title preview "") "\n")
+        (insert (propertize "Type:  " 'face 'bold)
+                (alist-get 'issue_type preview "") "\n")
+        (insert (propertize "Priority: " 'face 'bold)
+                (format "P%d" (alist-get 'priority preview 2)) "\n")
+        (insert (propertize "Status: " 'face 'bold)
+                (alist-get 'status preview "open") "\n")
+        (insert "\n" (make-string 40 ?─) "\n")
+        (insert (propertize "C-c C-c" 'face 'help-key-binding)
+                " to create, "
+                (propertize "C-c C-k" 'face 'help-key-binding)
+                " or "
+                (propertize "q" 'face 'help-key-binding)
+                " to cancel\n")
+        (goto-char (point-min))))
+    (pop-to-buffer buffer)))
+
+(defun beads-create-preview-confirm ()
+  "Create the previewed issue."
+  (interactive)
+  (let ((params beads-create-preview--params))
+    (unless params
+      (user-error "No issue to create"))
+    (condition-case err
+        (let ((issue (apply #'beads-rpc-create
+                            (plist-get params :title)
+                            (beads--plist-remove params :title))))
+          (quit-window t)
+          (message "Created issue %s" (alist-get 'id issue))
+          (when (derived-mode-p 'beads-list-mode)
+            (beads-list-refresh)))
+      (beads-rpc-error
+       (message "Failed to create issue: %s" (error-message-string err))))))
+
+(defun beads-create-preview-cancel ()
+  "Cancel issue creation preview."
+  (interactive)
+  (quit-window t)
+  (message "Cancelled"))
+
+(defun beads--plist-remove (plist key)
+  "Return PLIST with KEY removed."
+  (let ((result nil))
+    (while plist
+      (unless (eq (car plist) key)
+        (setq result (cons (car plist) (cons (cadr plist) result))))
+      (setq plist (cddr plist)))
+    (nreverse result)))
+
 (defun beads-close-issue ()
   "Close the issue at point or in current detail buffer.
 Prompts for an optional close reason."
@@ -123,7 +225,10 @@ Prompts for an optional close reason."
                ((derived-mode-p 'beads-detail-mode)
                 (beads-detail-refresh))))
           (beads-rpc-error
-           (message "Failed to close issue: %s" (error-message-string err))))))))
+           (let ((err-msg (error-message-string err)))
+             (if (string-match-p "\\(blocker\\|blocked\\|open depend\\)" err-msg)
+                 (message "Cannot close %s: has open blockers. Press H to view dependency tree." id)
+               (message "Failed to close %s: %s" id err-msg)))))))))
 
 (defun beads-delete-issue ()
   "Permanently delete the issue at point.
@@ -220,6 +325,7 @@ Press `q' to close the stats window."
 (autoload 'beads-stale "beads-stale" nil t)
 (autoload 'beads-activity "beads-activity" nil t)
 (autoload 'beads-duplicates "beads-duplicates" nil t)
+(autoload 'beads-conflicts "beads-conflicts" nil t)
 (autoload 'beads-lint "beads-lint" nil t)
 
 (defun beads-filter-status ()
@@ -560,10 +666,12 @@ Uses canonical order from `beads-list--column-order' for insertion."
    ("L" "Lint report" beads-lint)]
   ["Actions"
    ("c" "Create issue" beads-create-issue)
+   ("C" "Create with preview" beads-create-issue-preview)
    ("E" "Edit issue" beads-list-edit-form)
    ("x" "Close issue" beads-close-issue)
    ("R" "Reopen issue" beads-reopen-issue)
    ("D" "Delete issue" beads-delete-issue)
+   ("X" "Resolve conflicts" beads-conflicts)
    ("m" "Mark & Bulk..." beads-mark-menu
     :description beads--mark-menu-description)]
   ["Search & Filter"

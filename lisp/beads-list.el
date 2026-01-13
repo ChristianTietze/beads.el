@@ -785,19 +785,28 @@ If in sectioned mode, first switches to column mode."
     (when (or (= (length ids) 1)
               (yes-or-no-p (format "Close %d issues? " (length ids))))
       (let ((count 0)
-            (errors 0))
+            (errors 0)
+            (blocked-ids nil))
         (dolist (id ids)
-          (condition-case nil
+          (condition-case err
               (progn
                 (beads-rpc-close id)
                 (setq count (1+ count)))
             (beads-rpc-error
-             (setq errors (1+ errors)))))
+             (setq errors (1+ errors))
+             (when (string-match-p "\\(blocker\\|blocked\\|open depend\\)"
+                                   (error-message-string err))
+               (push id blocked-ids)))))
         (setq beads-list--marked nil)
         (beads-list-refresh t)
-        (if (> errors 0)
-            (message "Closed %d issue(s), %d error(s)" count errors)
-          (message "Closed %d issue(s)" count))))))
+        (cond
+         (blocked-ids
+          (message "Closed %d issue(s), %d blocked (press H on issue to view blockers)"
+                   count (length blocked-ids)))
+         ((> errors 0)
+          (message "Closed %d issue(s), %d error(s)" count errors))
+         (t
+          (message "Closed %d issue(s)" count)))))))
 
 (defun beads-list-bulk-delete ()
   "Delete all marked issues (or issue at point if none marked).

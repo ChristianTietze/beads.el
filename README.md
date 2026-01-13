@@ -84,7 +84,9 @@ Or with `package.el`:
 - `M-x beads-stale` - Show stale issues (not updated recently)
 - `M-x beads-orphans` - Show orphaned issues (referenced in commits but not closed)
 - `M-x beads-duplicates` - Find and merge duplicate issues
+- `M-x beads-conflicts` - View and resolve JSONL merge conflicts
 - `M-x beads-lint` - Show issues missing required template sections
+- `M-x beads-create-issue-preview` - Create issue with preview
 
 ## Keybindings
 
@@ -167,6 +169,17 @@ Or with `package.el`:
 | `C-c C-c` | `beads-edit-commit` | Save changes |
 | `C-c C-k` | `beads-edit-abort` | Discard changes |
 
+### Create Preview (`beads-create-preview-mode`)
+
+Preview an issue before creating it. Shows what the issue will look like,
+then confirm to actually create it.
+
+| Key | Command | Description |
+|-----|---------|-------------|
+| `C-c C-c` | `beads-create-preview-confirm` | Create the issue |
+| `C-c C-k` | `beads-create-preview-cancel` | Cancel without creating |
+| `q` | `beads-create-preview-cancel` | Cancel without creating |
+
 ### Activity Feed (`beads-activity-mode`)
 
 <!-- TODO: Add screenshot for activity feed (see bdel-4hp) -->
@@ -224,6 +237,18 @@ and sources (duplicates to be closed).
 | `m` | `beads-duplicates-merge-at-point` | Merge issue at point into target |
 | `M` | `beads-duplicates-merge-group` | Merge all sources in group |
 | `g` | `beads-duplicates-refresh` | Refresh list |
+| `q` | `quit-window` | Quit |
+
+### Merge Conflicts (`beads-conflicts-mode`)
+
+View and resolve JSONL merge conflict markers. When git merges fail to
+auto-resolve, JSONL files can have conflict markers. This mode detects
+such conflicts and resolves them using beads' mechanical merge rules.
+
+| Key | Command | Description |
+|-----|---------|-------------|
+| `r` | `beads-conflicts-resolve-all` | Resolve all conflicts |
+| `g` | `beads-conflicts-refresh` | Refresh conflict status |
 | `q` | `quit-window` | Quit |
 
 ### Hierarchy View (`beads-hierarchy-mode`)
@@ -383,7 +408,7 @@ Acceptance Criteria, epics need Success Criteria.
 ## Requirements
 
 - Emacs 28.1+
-- [Beads](https://github.com/steveyegge/beads) CLI 0.46.0+ with running daemon (`bd daemon`)
+- [Beads](https://github.com/steveyegge/beads) CLI 0.47.1+ with running daemon (`bd daemon`)
 - `hierarchy` package (for dependency tree view)
 - `transient` package (for menus)
 - `markdown-mode` (optional, for editing long text fields)

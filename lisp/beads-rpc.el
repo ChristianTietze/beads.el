@@ -225,8 +225,9 @@ Returns array of ready issue objects."
 (defun beads-rpc-create (title &rest args)
   "Create new issue with TITLE and additional ARGS.
 ARGS is a plist with keys like :description, :issue-type, :priority,
-:assignee, :labels, :design, :acceptance-criteria, :dependencies, :parent.
-Returns created issue object."
+:assignee, :labels, :design, :acceptance-criteria, :dependencies, :parent,
+and :dry-run.  When :dry-run is non-nil, returns a preview without creating.
+Returns created (or previewed) issue object."
   (unless title
     (signal 'beads-rpc-error (list "Title required")))
   (let ((request-args (beads-rpc--plist-to-alist
