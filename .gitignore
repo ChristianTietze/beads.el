@@ -4,6 +4,7 @@
 .DS_Store
 dev/transient/
 dev/eln-cache/
+dev/elpa/
 
 # Generated docs (beads.texi is tracked for MELPA)
 docs/beads.info

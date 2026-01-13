@@ -730,5 +730,68 @@
         (when (get-buffer buffer-name)
           (kill-buffer buffer-name))))))
 
+;;; Markdown fontification tests
+
+(ert-deftest beads-detail-test-fontify-markdown-defined ()
+  "Test that beads-detail--fontify-markdown is defined."
+  (should (fboundp 'beads-detail--fontify-markdown)))
+
+(ert-deftest beads-detail-test-fontify-markdown-returns-string ()
+  "Test that beads-detail--fontify-markdown returns a string."
+  (let ((result (beads-detail--fontify-markdown "test text")))
+    (should (stringp result))
+    (should (string= result "test text"))))
+
+(ert-deftest beads-detail-test-fontify-markdown-preserves-content ()
+  "Test that beads-detail--fontify-markdown preserves text content."
+  (let ((text "# Heading\n\n**bold** and *italic*\n\n`code`"))
+    (let ((result (beads-detail--fontify-markdown text)))
+      (should (string-match-p "Heading" result))
+      (should (string-match-p "bold" result))
+      (should (string-match-p "italic" result))
+      (should (string-match-p "code" result)))))
+
+(ert-deftest beads-detail-test-fontify-markdown-disabled ()
+  "Test that beads-detail--fontify-markdown respects the disable flag."
+  (let ((beads-detail-render-markdown nil)
+        (text "**bold** text"))
+    (let ((result (beads-detail--fontify-markdown text)))
+      (should (string= result text)))))
+
+(ert-deftest beads-detail-test-render-markdown-customizable ()
+  "Test that beads-detail-render-markdown is a customizable option."
+  (should (custom-variable-p 'beads-detail-render-markdown)))
+
+(ert-deftest beads-detail-test-render-description-with-markdown ()
+  "Test that description is rendered through markdown fontification."
+  (let ((beads-detail-render-markdown nil))
+    (with-temp-buffer
+      (let ((issue '((id . "bd-test")
+                     (title . "Test")
+                     (status . "open")
+                     (priority . 2)
+                     (issue_type . "task")
+                     (description . "**bold** description"))))
+        (beads-detail--render issue)
+        (let ((buffer-content (buffer-string)))
+          (should (string-match-p "\\*\\*bold\\*\\* description" buffer-content)))))))
+
+(ert-deftest beads-detail-test-render-comments-with-markdown ()
+  "Test that comments are rendered through markdown fontification."
+  (let ((beads-detail-render-markdown nil))
+    (with-temp-buffer
+      (let ((issue '((id . "bd-test")
+                     (title . "Test")
+                     (status . "open")
+                     (priority . 2)
+                     (issue_type . "task")
+                     (comments . [((id . 1)
+                                   (author . "alice")
+                                   (text . "**bold** comment")
+                                   (created_at . "2026-01-06T10:00:00Z"))]))))
+        (beads-detail--render issue)
+        (let ((buffer-content (buffer-string)))
+          (should (string-match-p "\\*\\*bold\\*\\* comment" buffer-content)))))))
+
 (provide 'beads-detail-test)
 ;;; beads-detail-test.el ends here

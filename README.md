@@ -408,6 +408,20 @@ Acceptance Criteria, epics need Success Criteria.
 |----------|---------|-------------|
 | `beads-list-highlight-p0-rows` | `t` | Highlight entire row for P0 issues |
 
+### Markdown Rendering (`beads-detail`)
+
+When `markdown-mode` is installed, the detail view renders descriptions, design
+notes, acceptance criteria, and comments with markdown syntax highlighting.
+
+```elisp
+;; Disable markdown rendering in detail view
+(setq beads-detail-render-markdown nil)
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `beads-detail-render-markdown` | `t` | Enable markdown syntax highlighting |
+
 ## Requirements
 
 - Emacs 28.1+

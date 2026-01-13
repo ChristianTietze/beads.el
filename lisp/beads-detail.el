@@ -41,6 +41,13 @@
   "Issue detail display for Beads."
   :group 'beads)
 
+(defcustom beads-detail-render-markdown t
+  "Whether to render markdown syntax highlighting in detail view.
+When non-nil and `markdown-mode' is available, descriptions, design notes,
+acceptance criteria, and comments will be fontified with markdown highlighting."
+  :type 'boolean
+  :group 'beads-detail)
+
 (defface beads-detail-id-face
   '((t :weight bold))
   "Face for issue ID in detail view.")
@@ -512,13 +519,27 @@ Uses CLI fallback since RPC does not support comment_add."
       (seq-doseq (dep deps)
         (beads-detail--insert-dep-link dep)))))
 
+(defun beads-detail--fontify-markdown (text)
+  "Fontify TEXT with markdown-mode if available and enabled.
+Returns the fontified string with text properties, or the original text
+if markdown rendering is disabled or markdown-mode is unavailable."
+  (if (and beads-detail-render-markdown
+           (fboundp 'markdown-mode))
+      (with-temp-buffer
+        (insert text)
+        (delay-mode-hooks (markdown-mode))
+        (font-lock-mode 1)
+        (font-lock-ensure)
+        (buffer-string))
+    text))
+
 (defun beads-detail--insert-section (title content)
   "Insert a section with TITLE and CONTENT."
   (beads-detail--insert-separator ?─)
   (insert "\n")
   (insert (propertize (concat title ":\n") 'face 'beads-detail-header-face))
   (insert "\n")
-  (insert content)
+  (insert (beads-detail--fontify-markdown content))
   (insert "\n\n"))
 
 (defun beads-detail--insert-comments (comments)
@@ -538,7 +559,7 @@ COMMENTS is a vector/list of comment objects with id, author, text, created_at."
         (insert (propertize (beads-detail--format-timestamp created)
                             'face 'shadow)))
       (insert "\n")
-      (insert text)
+      (insert (beads-detail--fontify-markdown text))
       (insert "\n\n"))))
 
 (defun beads-detail--insert-separator (char)
