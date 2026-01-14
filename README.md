@@ -428,6 +428,7 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 - [Beads](https://github.com/steveyegge/beads) CLI 0.47.1+ with running daemon (`bd daemon`)
 - `hierarchy` package (for dependency tree view)
 - `transient` package (for menus)
+- `vui` package (for declarative UI components)
 - `markdown-mode` (optional, for editing long text fields)
 
 ## Development
