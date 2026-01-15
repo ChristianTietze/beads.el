@@ -16,7 +16,8 @@
 (let ((project-root (file-name-directory
                      (directory-file-name
                       (file-name-directory load-file-name)))))
-  (add-to-list 'load-path (expand-file-name "lisp" project-root)))
+  (add-to-list 'load-path (expand-file-name "lisp" project-root))
+  (add-to-list 'load-path (expand-file-name "vendor/vui.el" project-root)))
 
 (require 'beads)
 (require 'markdown-mode)
@@ -26,7 +27,7 @@
     beads-list beads-preview beads-detail beads-hierarchy
     beads-form beads-edit beads-filter beads-faces beads-rpc
     beads-state beads-orphans beads-stale beads-activity
-    beads-duplicates beads-lint)
+    beads-duplicates beads-lint beads-vui)
   "Beads features in reverse dependency order for unloading.")
 
 (defun beads-reload ()
