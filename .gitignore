@@ -5,6 +5,7 @@
 dev/transient/
 dev/eln-cache/
 dev/elpa/
+vendor/
 
 # Generated docs (beads.texi is tracked for MELPA)
 docs/beads.info

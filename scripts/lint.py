@@ -40,14 +40,28 @@ def check_parens(el_file):
     return result.returncode == 0, result.stderr + result.stdout
 
 
+def find_vendor_paths(root_dir):
+    """Find all vendor package directories."""
+    vendor_dir = root_dir / "vendor"
+    if not vendor_dir.exists():
+        return []
+    paths = []
+    for item in vendor_dir.iterdir():
+        if item.is_dir():
+            paths.append(str(item))
+    return paths
+
+
 def byte_compile(el_file, root_dir):
     """Byte-compile the file to catch warnings and errors."""
     lisp_dir = root_dir / "lisp"
+    load_paths = ["-L", str(root_dir), "-L", str(lisp_dir)]
+    for vendor_path in find_vendor_paths(root_dir):
+        load_paths.extend(["-L", vendor_path])
+
     result = subprocess.run(
-        ["emacs", "-Q", "--batch",
-         "-L", str(root_dir),
-         "-L", str(lisp_dir),
-         "-f", "batch-byte-compile", str(el_file)],
+        ["emacs", "-Q", "--batch"] + load_paths +
+        ["-f", "batch-byte-compile", str(el_file)],
         capture_output=True,
         text=True
     )

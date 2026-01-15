@@ -17,6 +17,18 @@ def find_el_files(root_dir):
     ]
 
 
+def find_vendor_paths(root_dir):
+    """Find all vendor package directories."""
+    vendor_dir = root_dir / "vendor"
+    if not vendor_dir.exists():
+        return []
+    paths = []
+    for item in vendor_dir.iterdir():
+        if item.is_dir():
+            paths.append(str(item))
+    return paths
+
+
 def byte_compile_files(el_files):
     """Byte-compile all .el files."""
     if not el_files:
@@ -31,6 +43,9 @@ def byte_compile_files(el_files):
     load_path_args = []
     for el_file in el_files:
         load_path_args.extend(["-L", str(el_file.parent)])
+
+    for vendor_path in find_vendor_paths(root_dir):
+        load_path_args.extend(["-L", vendor_path])
 
     load_path_args = list(dict.fromkeys(load_path_args))
 
