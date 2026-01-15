@@ -408,7 +408,7 @@ Acceptance Criteria, epics need Success Criteria.
 |----------|---------|-------------|
 | `beads-list-highlight-p0-rows` | `t` | Highlight entire row for P0 issues |
 
-### Markdown Rendering (`beads-detail`)
+### Detail View Rendering (`beads-detail`)
 
 When `markdown-mode` is installed, the detail view renders descriptions, design
 notes, acceptance criteria, and comments with markdown syntax highlighting.
@@ -416,11 +416,15 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 ```elisp
 ;; Disable markdown rendering in detail view
 (setq beads-detail-render-markdown nil)
+
+;; Use vui.el declarative components for detail view (experimental)
+(setq beads-detail-use-vui t)
 ```
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `beads-detail-render-markdown` | `t` | Enable markdown syntax highlighting |
+| `beads-detail-use-vui` | `nil` | Use vui.el declarative components |
 
 ## Requirements
 

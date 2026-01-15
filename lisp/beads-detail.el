@@ -28,6 +28,10 @@
 (require 'beads-edit)
 (require 'seq)
 
+(declare-function vui-mount "vui")
+(declare-function vui-component "vui")
+(declare-function beads-vui-detail-view "beads-vui")
+
 (declare-function beads-menu "beads-transient")
 (declare-function beads-delete-issue "beads-transient")
 (declare-function beads-reopen-issue "beads-transient")
@@ -45,6 +49,13 @@
   "Whether to render markdown syntax highlighting in detail view.
 When non-nil and `markdown-mode' is available, descriptions, design notes,
 acceptance criteria, and comments will be fontified with markdown highlighting."
+  :type 'boolean
+  :group 'beads-detail)
+
+(defcustom beads-detail-use-vui nil
+  "Whether to use vui.el for rendering the detail view.
+When non-nil, uses declarative vui components for layout.
+When nil, uses traditional text insertion with properties."
   :type 'boolean
   :group 'beads-detail)
 
@@ -131,14 +142,16 @@ Creates a unique buffer per issue and focuses it."
          (buffer-name (format "*Beads Detail: %s*" id))
          (buffer (get-buffer-create buffer-name)))
     (with-current-buffer buffer
-      (unless (eq major-mode 'beads-detail-mode)
-        (beads-detail-mode))
       (setq beads-detail--current-issue-id id)
       (setq beads-detail--current-issue issue)
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (beads-detail--render issue)
-        (goto-char (point-min))))
+      (if beads-detail-use-vui
+          (beads-detail--render-vui buffer issue)
+        (unless (eq major-mode 'beads-detail-mode)
+          (beads-detail-mode))
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (beads-detail--render issue)
+          (goto-char (point-min)))))
     (let ((window (display-buffer buffer
                                   '((display-buffer-reuse-mode-window
                                      display-buffer-below-selected)
@@ -153,14 +166,16 @@ Uses a single reusable buffer in a side window without focusing."
   (let* ((id (alist-get 'id issue))
          (buffer (get-buffer-create "*Beads Preview*")))
     (with-current-buffer buffer
-      (unless (eq major-mode 'beads-detail-mode)
-        (beads-detail-mode))
       (setq beads-detail--current-issue-id id)
       (setq beads-detail--current-issue issue)
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (beads-detail--render issue)
-        (goto-char (point-min))))
+      (if beads-detail-use-vui
+          (beads-detail--render-vui buffer issue)
+        (unless (eq major-mode 'beads-detail-mode)
+          (beads-detail-mode))
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (beads-detail--render issue)
+          (goto-char (point-min)))))
     (display-buffer buffer '((display-buffer-in-side-window)
                              (side . right)
                              (window-width . 0.4)))))
@@ -390,6 +405,20 @@ Uses CLI fallback since RPC does not support comment_add."
   (let ((issue (beads-detail--require-issue)))
     (require 'beads-form)
     (beads-form-open issue)))
+
+(defun beads-detail--render-vui (buffer issue)
+  "Render ISSUE into BUFFER using vui.el components."
+  (require 'beads-vui)
+  (let ((refresh-fn (lambda ()
+                      (beads-detail-refresh)))
+        (navigate-fn (lambda (id)
+                       (when-let ((target (beads-rpc-show id)))
+                         (beads-detail-open target)))))
+    (vui-mount (vui-component 'beads-vui-detail-view
+                              :issue issue
+                              :on-refresh refresh-fn
+                              :on-navigate navigate-fn)
+               buffer)))
 
 (defun beads-detail--render (issue)
   "Insert formatted ISSUE content into current buffer."
