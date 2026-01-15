@@ -426,6 +426,17 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 | `beads-detail-render-markdown` | `t` | Enable markdown syntax highlighting |
 | `beads-detail-use-vui` | `nil` | Use vui.el declarative components |
 
+### Form Editor (`beads-form`)
+
+```elisp
+;; Use vui.el declarative components for form editor (experimental)
+(setq beads-form-use-vui t)
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `beads-form-use-vui` | `nil` | Use vui.el declarative components |
+
 ## Requirements
 
 - Emacs 28.1+
