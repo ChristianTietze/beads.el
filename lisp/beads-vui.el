@@ -193,8 +193,21 @@ ON-CLICK is called when clicked, defaults to navigation."
 
 ;;; Detail view components
 
-(vui-defcomponent beads-vui-metadata-row (issue)
-  "Display metadata row for ISSUE with status, priority, type, etc."
+(vui-defcomponent beads-vui-editable-field (label value &key face on-edit)
+  "Display a LABEL: VALUE pair with optional edit button.
+FACE applies to value, ON-EDIT called when edit button clicked."
+  :render
+  (vui-hstack
+   (vui-text (concat label ": ") :face 'bold)
+   (vui-text (or value "") :face (or face 'default))
+   (when on-edit
+     (vui-fragment
+      (vui-text " ")
+      (vui-button "[edit]" :on-click on-edit :face 'link)))))
+
+(vui-defcomponent beads-vui-metadata-row (issue &key editable on-refresh)
+  "Display metadata row for ISSUE with status, priority, type, etc.
+When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
   :render
   (let ((status (alist-get 'status issue))
         (priority (alist-get 'priority issue))
@@ -206,22 +219,30 @@ ON-CLICK is called when clicked, defaults to navigation."
     (vui-vstack
      (vui-hstack
       :spacing 5
-      (vui-component 'beads-vui-labeled-value
+      (vui-component 'beads-vui-editable-field
                      :label "Status"
                      :value status
-                     :face (beads-vui-status-face status))
-      (vui-component 'beads-vui-labeled-value
+                     :face (beads-vui-status-face status)
+                     :on-edit (when editable
+                                (beads-vui-make-edit-handler issue 'status on-refresh)))
+      (vui-component 'beads-vui-editable-field
                      :label "Priority"
                      :value (format "P%d" priority)
-                     :face (beads-vui-priority-face priority))
-      (vui-component 'beads-vui-labeled-value
+                     :face (beads-vui-priority-face priority)
+                     :on-edit (when editable
+                                (beads-vui-make-edit-handler issue 'priority on-refresh)))
+      (vui-component 'beads-vui-editable-field
                      :label "Type"
-                     :value (beads--format-type issue)))
+                     :value (beads--format-type issue)
+                     :on-edit (when editable
+                                (beads-vui-make-edit-handler issue 'issue_type on-refresh))))
      (vui-hstack
       :spacing 2
-      (when assignee
-        (vui-component 'beads-vui-labeled-value
-                       :label "Assignee" :value assignee))
+      (vui-component 'beads-vui-editable-field
+                     :label "Assignee"
+                     :value (or assignee "(none)")
+                     :on-edit (when editable
+                                (beads-vui-make-edit-handler issue 'assignee on-refresh)))
       (when created-by
         (vui-component 'beads-vui-labeled-value
                        :label "Created by" :value created-by))
@@ -238,28 +259,44 @@ ON-CLICK is called when clicked, defaults to navigation."
                       :label "Labels"
                       :value (mapconcat #'identity (append labels nil) ", "))))))
 
-(vui-defcomponent beads-vui-content-section (title content)
-  "Display a content section with TITLE and markdown CONTENT."
+(vui-defcomponent beads-vui-content-section (title content &key on-edit)
+  "Display a content section with TITLE and markdown CONTENT.
+ON-EDIT called when edit button clicked (if provided)."
   :render
-  (when (and content (not (string-empty-p content)))
-    (vui-vstack
-     (vui-component 'beads-vui-section-header :title title)
-     (vui-text (beads-vui-fontify-markdown content))
-     (vui-newline))))
+  (vui-vstack
+   (vui-hstack
+    (vui-text (make-string 60 ?─))
+    (when on-edit
+      (vui-fragment
+       (vui-text " ")
+       (vui-button "[edit]" :on-click on-edit :face 'link))))
+   (vui-text (concat title ":") :face '(:weight bold :underline t))
+   (vui-newline)
+   (if (and content (not (string-empty-p content)))
+       (vui-text (beads-vui-fontify-markdown content))
+     (vui-text "(empty)" :face 'shadow))
+   (vui-newline)))
 
-(vui-defcomponent beads-vui-content-sections (issue)
-  "Display all content sections (description, design, acceptance) for ISSUE."
+(vui-defcomponent beads-vui-content-sections (issue &key editable on-refresh)
+  "Display all content sections (description, design, acceptance) for ISSUE.
+When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
   :render
   (vui-fragment
    (vui-component 'beads-vui-content-section
                   :title "Description"
-                  :content (alist-get 'description issue))
+                  :content (alist-get 'description issue)
+                  :on-edit (when editable
+                             (beads-vui-make-edit-handler issue 'description on-refresh)))
    (vui-component 'beads-vui-content-section
                   :title "Design Notes"
-                  :content (alist-get 'design issue))
+                  :content (alist-get 'design issue)
+                  :on-edit (when editable
+                             (beads-vui-make-edit-handler issue 'design on-refresh)))
    (vui-component 'beads-vui-content-section
                   :title "Acceptance Criteria"
-                  :content (alist-get 'acceptance_criteria issue))))
+                  :content (alist-get 'acceptance_criteria issue)
+                  :on-edit (when editable
+                             (beads-vui-make-edit-handler issue 'acceptance_criteria on-refresh)))))
 
 (vui-defcomponent beads-vui-dep-link (dep)
   "Display a single dependency/dependent DEP as clickable link."
@@ -329,9 +366,10 @@ ON-CLICK is called when clicked, defaults to navigation."
 
 ;;; Main detail view component
 
-(vui-defcomponent beads-vui-detail-view (issue &key on-refresh on-navigate)
+(vui-defcomponent beads-vui-detail-view (issue &key on-refresh on-navigate editable)
   "Complete detail view for ISSUE.
-ON-REFRESH is called after edits, ON-NAVIGATE for issue navigation."
+ON-REFRESH is called after edits, ON-NAVIGATE for issue navigation.
+When EDITABLE is non-nil, show inline edit buttons."
   :render
   (let ((id (alist-get 'id issue))
         (title (alist-get 'title issue "")))
@@ -342,16 +380,28 @@ ON-REFRESH is called after edits, ON-NAVIGATE for issue navigation."
       (vui-vstack
        (vui-hstack
         (vui-text (format "[%s] " id) :face 'bold)
-        (vui-text title :face '(:height 1.2 :weight bold)))
+        (vui-text title :face '(:height 1.2 :weight bold))
+        (when editable
+          (vui-fragment
+           (vui-text " ")
+           (vui-button "[edit title]"
+                       :on-click (beads-vui-make-edit-handler issue 'title on-refresh)
+                       :face 'link))))
        (vui-newline)
        (vui-text (make-string 60 ?═))
        (vui-newline)
-       (vui-component 'beads-vui-metadata-row :issue issue)
+       (vui-component 'beads-vui-metadata-row
+                      :issue issue
+                      :editable editable
+                      :on-refresh on-refresh)
        (vui-newline)
        (vui-text (make-string 60 ?─))
        (vui-newline)
        (vui-newline)
-       (vui-component 'beads-vui-content-sections :issue issue)
+       (vui-component 'beads-vui-content-sections
+                      :issue issue
+                      :editable editable
+                      :on-refresh on-refresh)
        (vui-component 'beads-vui-relationships :issue issue)
        (vui-component 'beads-vui-comments :issue issue))))))
 

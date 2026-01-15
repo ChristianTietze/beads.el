@@ -425,6 +425,7 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 |----------|---------|-------------|
 | `beads-detail-render-markdown` | `t` | Enable markdown syntax highlighting |
 | `beads-detail-use-vui` | `nil` | Use vui.el declarative components |
+| `beads-detail-vui-editable` | `t` | Show inline edit buttons in vui mode |
 
 ### Form Editor (`beads-form`)
 

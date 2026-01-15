@@ -59,6 +59,12 @@ When nil, uses traditional text insertion with properties."
   :type 'boolean
   :group 'beads-detail)
 
+(defcustom beads-detail-vui-editable t
+  "Whether to show inline edit buttons in vui detail view.
+Only applies when `beads-detail-use-vui' is non-nil."
+  :type 'boolean
+  :group 'beads-detail)
+
 (defface beads-detail-id-face
   '((t :weight bold))
   "Face for issue ID in detail view.")
@@ -417,7 +423,8 @@ Uses CLI fallback since RPC does not support comment_add."
     (vui-mount (vui-component 'beads-vui-detail-view
                               :issue issue
                               :on-refresh refresh-fn
-                              :on-navigate navigate-fn)
+                              :on-navigate navigate-fn
+                              :editable beads-detail-vui-editable)
                buffer)))
 
 (defun beads-detail--render (issue)
