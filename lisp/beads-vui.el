@@ -355,5 +355,154 @@ ON-REFRESH is called after edits, ON-NAVIGATE for issue navigation."
        (vui-component 'beads-vui-relationships :issue issue)
        (vui-component 'beads-vui-comments :issue issue))))))
 
+;;; Form components
+
+(vui-defcomponent beads-vui-form-field (label value &key on-change size)
+  "Single-line text input field with LABEL and VALUE.
+ON-CHANGE called with new value. SIZE defaults to 40."
+  :render
+  (vui-hstack
+   (vui-text (concat label ": ") :face 'bold)
+   (vui-field :value (or value "")
+              :size (or size 40)
+              :on-change on-change)))
+
+(vui-defcomponent beads-vui-form-select (label value choices &key on-change)
+  "Dropdown selection field with LABEL, current VALUE, and CHOICES list.
+ON-CHANGE called with selected value."
+  :render
+  (vui-hstack
+   (vui-text (concat label ": ") :face 'bold)
+   (vui-select choices
+               :value value
+               :on-change on-change)))
+
+(vui-defcomponent beads-vui-form-text-area (label value &key on-change)
+  "Multi-line text area with LABEL and VALUE.
+ON-CHANGE called with new value."
+  :render
+  (vui-vstack
+   (vui-text (concat label ":") :face 'bold)
+   (vui-field :value (or value "")
+              :multiline t
+              :on-change on-change)))
+
+(vui-defcomponent beads-vui-form-buttons (on-save on-cancel)
+  "Form action buttons with ON-SAVE and ON-CANCEL callbacks."
+  :render
+  (vui-hstack
+   :spacing 2
+   (vui-button "Save Changes" :on-click on-save)
+   (vui-button "Cancel" :on-click on-cancel)))
+
+;;; Complete form view component
+
+(vui-defcomponent beads-vui-form-view (issue &key on-save on-cancel)
+  "Form editor for ISSUE with all editable fields.
+ON-SAVE called with changed fields plist, ON-CANCEL to abort."
+  :state ((title (alist-get 'title issue ""))
+          (status (alist-get 'status issue "open"))
+          (priority (format "P%d" (alist-get 'priority issue 2)))
+          (issue-type (alist-get 'issue_type issue "task"))
+          (assignee (or (alist-get 'assignee issue) ""))
+          (external-ref (or (alist-get 'external_ref issue) ""))
+          (description (or (alist-get 'description issue) ""))
+          (design (or (alist-get 'design issue) ""))
+          (acceptance (or (alist-get 'acceptance_criteria issue) ""))
+          (notes (or (alist-get 'notes issue) "")))
+  :render
+  (let* ((id (alist-get 'id issue))
+         (collect-changes
+          (lambda ()
+            (let ((changes nil))
+              (unless (equal title (alist-get 'title issue ""))
+                (setq changes (plist-put changes :title title)))
+              (unless (equal status (alist-get 'status issue "open"))
+                (setq changes (plist-put changes :status status)))
+              (let ((new-pri (string-to-number (substring priority 1))))
+                (unless (equal new-pri (alist-get 'priority issue 2))
+                  (setq changes (plist-put changes :priority new-pri))))
+              (unless (equal issue-type (alist-get 'issue_type issue "task"))
+                (setq changes (plist-put changes :issue-type issue-type)))
+              (let ((new-assignee (if (string-empty-p assignee) nil assignee)))
+                (unless (equal new-assignee (alist-get 'assignee issue))
+                  (setq changes (plist-put changes :assignee new-assignee))))
+              (let ((new-ref (if (string-empty-p external-ref) nil external-ref)))
+                (unless (equal new-ref (alist-get 'external_ref issue))
+                  (setq changes (plist-put changes :external-ref new-ref))))
+              (unless (equal description (or (alist-get 'description issue) ""))
+                (setq changes (plist-put changes :description description)))
+              (unless (equal design (or (alist-get 'design issue) ""))
+                (setq changes (plist-put changes :design design)))
+              (unless (equal acceptance (or (alist-get 'acceptance_criteria issue) ""))
+                (setq changes (plist-put changes :acceptance-criteria acceptance)))
+              (unless (equal notes (or (alist-get 'notes issue) ""))
+                (setq changes (plist-put changes :notes notes)))
+              changes))))
+    (vui-vstack
+     (vui-text (format "Edit Issue: %s" id) :face 'bold)
+     (vui-text "C-c C-c to save, C-c C-k to cancel" :face 'shadow)
+     (vui-newline)
+     (vui-component 'beads-vui-form-field
+                    :label "Title"
+                    :value title
+                    :on-change (lambda (v) (vui-set-state :title v)))
+     (vui-newline)
+     (vui-hstack
+      :spacing 2
+      (vui-component 'beads-vui-form-select
+                     :label "Status"
+                     :value status
+                     :choices '("open" "in_progress" "blocked" "hooked" "closed")
+                     :on-change (lambda (v) (vui-set-state :status v)))
+      (vui-component 'beads-vui-form-select
+                     :label "Priority"
+                     :value priority
+                     :choices '("P0" "P1" "P2" "P3" "P4")
+                     :on-change (lambda (v) (vui-set-state :priority v)))
+      (vui-component 'beads-vui-form-select
+                     :label "Type"
+                     :value issue-type
+                     :choices '("bug" "feature" "task" "epic" "chore"
+                                "gate" "convoy" "agent" "role")
+                     :on-change (lambda (v) (vui-set-state :issue-type v))))
+     (vui-newline)
+     (vui-component 'beads-vui-form-field
+                    :label "Assignee"
+                    :value assignee
+                    :on-change (lambda (v) (vui-set-state :assignee v)))
+     (vui-newline)
+     (vui-component 'beads-vui-form-field
+                    :label "External Ref"
+                    :value external-ref
+                    :on-change (lambda (v) (vui-set-state :external-ref v)))
+     (vui-newline)
+     (vui-component 'beads-vui-form-text-area
+                    :label "Description"
+                    :value description
+                    :on-change (lambda (v) (vui-set-state :description v)))
+     (vui-newline)
+     (vui-component 'beads-vui-form-text-area
+                    :label "Design Notes"
+                    :value design
+                    :on-change (lambda (v) (vui-set-state :design v)))
+     (vui-newline)
+     (vui-component 'beads-vui-form-text-area
+                    :label "Acceptance Criteria"
+                    :value acceptance
+                    :on-change (lambda (v) (vui-set-state :acceptance v)))
+     (vui-newline)
+     (vui-component 'beads-vui-form-text-area
+                    :label "Notes"
+                    :value notes
+                    :on-change (lambda (v) (vui-set-state :notes v)))
+     (vui-newline)
+     (vui-newline)
+     (vui-component 'beads-vui-form-buttons
+                    :on-save (lambda ()
+                               (when on-save
+                                 (funcall on-save (funcall collect-changes))))
+                    :on-cancel on-cancel))))
+
 (provide 'beads-vui)
 ;;; beads-vui.el ends here
