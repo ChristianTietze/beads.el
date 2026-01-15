@@ -191,5 +191,169 @@ ON-CLICK is called when clicked, defaults to navigation."
                             (lambda ()
                               (beads-vui-navigate-to-issue issue-id)))))
 
+;;; Detail view components
+
+(vui-defcomponent beads-vui-metadata-row (issue)
+  "Display metadata row for ISSUE with status, priority, type, etc."
+  :render
+  (let ((status (alist-get 'status issue))
+        (priority (alist-get 'priority issue))
+        (assignee (alist-get 'assignee issue))
+        (created-by (alist-get 'created_by issue))
+        (created (alist-get 'created_at issue))
+        (labels (alist-get 'labels issue))
+        (parent-id (alist-get 'parent_id issue)))
+    (vui-vstack
+     (vui-hstack
+      :spacing 5
+      (vui-component 'beads-vui-labeled-value
+                     :label "Status"
+                     :value status
+                     :face (beads-vui-status-face status))
+      (vui-component 'beads-vui-labeled-value
+                     :label "Priority"
+                     :value (format "P%d" priority)
+                     :face (beads-vui-priority-face priority))
+      (vui-component 'beads-vui-labeled-value
+                     :label "Type"
+                     :value (beads--format-type issue)))
+     (vui-hstack
+      :spacing 2
+      (when assignee
+        (vui-component 'beads-vui-labeled-value
+                       :label "Assignee" :value assignee))
+      (when created-by
+        (vui-component 'beads-vui-labeled-value
+                       :label "Created by" :value created-by))
+      (when created
+        (vui-component 'beads-vui-labeled-value
+                       :label "Created"
+                       :value (beads-vui-format-timestamp created))))
+     (when parent-id
+       (vui-hstack
+        (vui-text "Parent: " :face 'bold)
+        (vui-component 'beads-vui-clickable-id :issue-id parent-id)))
+     (when (and labels (> (length labels) 0))
+       (vui-component 'beads-vui-labeled-value
+                      :label "Labels"
+                      :value (mapconcat #'identity (append labels nil) ", "))))))
+
+(vui-defcomponent beads-vui-content-section (title content)
+  "Display a content section with TITLE and markdown CONTENT."
+  :render
+  (when (and content (not (string-empty-p content)))
+    (vui-vstack
+     (vui-component 'beads-vui-section-header :title title)
+     (vui-text (beads-vui-fontify-markdown content))
+     (vui-newline))))
+
+(vui-defcomponent beads-vui-content-sections (issue)
+  "Display all content sections (description, design, acceptance) for ISSUE."
+  :render
+  (vui-fragment
+   (vui-component 'beads-vui-content-section
+                  :title "Description"
+                  :content (alist-get 'description issue))
+   (vui-component 'beads-vui-content-section
+                  :title "Design Notes"
+                  :content (alist-get 'design issue))
+   (vui-component 'beads-vui-content-section
+                  :title "Acceptance Criteria"
+                  :content (alist-get 'acceptance_criteria issue))))
+
+(vui-defcomponent beads-vui-dep-link (dep)
+  "Display a single dependency/dependent DEP as clickable link."
+  :render
+  (let ((id (alist-get 'id dep))
+        (title (alist-get 'title dep ""))
+        (status (alist-get 'status dep))
+        (dep-type (alist-get 'dependency_type dep)))
+    (vui-hstack
+     (vui-text "  ")
+     (vui-component 'beads-vui-clickable-id :issue-id id)
+     (vui-text " ")
+     (vui-text (truncate-string-to-width title 40 nil nil "…"))
+     (when status
+       (vui-text (format " [%s]" status) :face (beads-vui-status-face status)))
+     (when (and dep-type (not (string= dep-type "parent-child")))
+       (vui-text (format " (%s)" dep-type) :face 'shadow)))))
+
+(vui-defcomponent beads-vui-relationships (issue)
+  "Display dependencies and dependents for ISSUE."
+  :render
+  (let ((deps (alist-get 'dependencies issue))
+        (dependents (alist-get 'dependents issue)))
+    (vui-fragment
+     (when (and deps (> (length deps) 0))
+       (vui-vstack
+        (vui-text "Depends on:" :face 'bold)
+        (vui-list deps
+                  :key-fn (lambda (d) (alist-get 'id d))
+                  :render-fn (lambda (d)
+                               (vui-component 'beads-vui-dep-link :dep d)))))
+     (when (and dependents (> (length dependents) 0))
+       (vui-vstack
+        (vui-text "Dependents:" :face 'bold)
+        (vui-list dependents
+                  :key-fn (lambda (d) (alist-get 'id d))
+                  :render-fn (lambda (d)
+                               (vui-component 'beads-vui-dep-link :dep d))))))))
+
+(vui-defcomponent beads-vui-comment (comment)
+  "Display a single COMMENT with author, timestamp, and text."
+  :render
+  (let ((author (alist-get 'author comment "unknown"))
+        (text (alist-get 'text comment ""))
+        (created (alist-get 'created_at comment)))
+    (vui-vstack
+     (vui-hstack
+      (vui-text (format "[%s] " author) :face 'bold)
+      (when created
+        (vui-text (beads-vui-format-timestamp created) :face 'shadow)))
+     (vui-text (beads-vui-fontify-markdown text))
+     (vui-newline))))
+
+(vui-defcomponent beads-vui-comments (issue)
+  "Display comments section for ISSUE."
+  :render
+  (let ((comments (alist-get 'comments issue)))
+    (when (and comments (> (length comments) 0))
+      (vui-vstack
+       (vui-component 'beads-vui-section-header
+                      :title (format "Comments (%d)" (length comments)))
+       (vui-list comments
+                 :key-fn (lambda (c) (or (alist-get 'id c)
+                                         (alist-get 'created_at c)))
+                 :render-fn (lambda (c)
+                              (vui-component 'beads-vui-comment :comment c)))))))
+
+;;; Main detail view component
+
+(vui-defcomponent beads-vui-detail-view (issue &key on-refresh on-navigate)
+  "Complete detail view for ISSUE.
+ON-REFRESH is called after edits, ON-NAVIGATE for issue navigation."
+  :render
+  (let ((id (alist-get 'id issue))
+        (title (alist-get 'title issue "")))
+    (beads-callbacks-provider
+     (list :on-refresh on-refresh :on-navigate on-navigate)
+     (beads-issue-provider
+      issue
+      (vui-vstack
+       (vui-hstack
+        (vui-text (format "[%s] " id) :face 'bold)
+        (vui-text title :face '(:height 1.2 :weight bold)))
+       (vui-newline)
+       (vui-text (make-string 60 ?═))
+       (vui-newline)
+       (vui-component 'beads-vui-metadata-row :issue issue)
+       (vui-newline)
+       (vui-text (make-string 60 ?─))
+       (vui-newline)
+       (vui-newline)
+       (vui-component 'beads-vui-content-sections :issue issue)
+       (vui-component 'beads-vui-relationships :issue issue)
+       (vui-component 'beads-vui-comments :issue issue))))))
+
 (provide 'beads-vui)
 ;;; beads-vui.el ends here
