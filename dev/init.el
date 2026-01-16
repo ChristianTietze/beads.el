@@ -22,6 +22,11 @@
 (require 'beads)
 (require 'markdown-mode)
 
+;; Enable vui.el rendering for testing
+(setq beads-detail-use-vui t)
+(setq beads-detail-vui-editable t)
+(setq beads-form-use-vui t)
+
 (defvar beads-reload--features
   '(beads beads-transient beads-autoupdate beads-project
     beads-list beads-preview beads-detail beads-hierarchy
