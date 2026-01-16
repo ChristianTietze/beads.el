@@ -325,16 +325,14 @@ When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
        (vui-vstack
         (vui-text "Depends on:" :face 'bold)
         (vui-list deps
-                  :key-fn (lambda (d) (alist-get 'id d))
-                  :render-fn (lambda (d)
-                               (vui-component 'beads-vui-dep-link :dep d)))))
+                  (lambda (d) (vui-component 'beads-vui-dep-link :dep d))
+                  (lambda (d) (alist-get 'id d)))))
      (when (and dependents (> (length dependents) 0))
        (vui-vstack
         (vui-text "Dependents:" :face 'bold)
         (vui-list dependents
-                  :key-fn (lambda (d) (alist-get 'id d))
-                  :render-fn (lambda (d)
-                               (vui-component 'beads-vui-dep-link :dep d))))))))
+                  (lambda (d) (vui-component 'beads-vui-dep-link :dep d))
+                  (lambda (d) (alist-get 'id d))))))))
 
 (vui-defcomponent beads-vui-comment (comment)
   "Display a single COMMENT with author, timestamp, and text."
@@ -359,10 +357,9 @@ When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
        (vui-component 'beads-vui-section-header
                       :title (format "Comments (%d)" (length comments)))
        (vui-list comments
-                 :key-fn (lambda (c) (or (alist-get 'id c)
-                                         (alist-get 'created_at c)))
-                 :render-fn (lambda (c)
-                              (vui-component 'beads-vui-comment :comment c)))))))
+                 (lambda (c) (vui-component 'beads-vui-comment :comment c))
+                 (lambda (c) (or (alist-get 'id c)
+                                 (alist-get 'created_at c))))))))
 
 ;;; Main detail view component
 
@@ -407,40 +404,54 @@ When EDITABLE is non-nil, show inline edit buttons."
 
 ;;; Form components
 
-(vui-defcomponent beads-vui-form-field (label value &key on-change size)
+(vui-defcomponent beads-vui-form-field (label value &key on-change size label-width)
   "Single-line text input field with LABEL and VALUE.
-ON-CHANGE called with new value. SIZE defaults to 40."
+ON-CHANGE called with new value. SIZE defaults to 40.
+LABEL-WIDTH for aligned forms (right-aligned label in fixed box)."
   :render
   (vui-hstack
-   (vui-text (concat label ": ") :face 'bold)
+   (if label-width
+       (vui-box (vui-text (concat label ":") :face 'bold)
+                :width label-width :align :right)
+     (vui-text (concat label ": ") :face 'bold))
+   (vui-text " ")
    (vui-field :value (or value "")
               :size (or size 40)
               :on-change on-change)))
 
-(vui-defcomponent beads-vui-form-select (label value choices &key on-change)
+(vui-defcomponent beads-vui-form-select (label value choices &key on-change label-width)
   "Dropdown selection field with LABEL, current VALUE, and CHOICES list.
-ON-CHANGE called with selected value."
+ON-CHANGE called with selected value.
+LABEL-WIDTH for aligned forms (right-aligned label in fixed box)."
   :render
   (vui-hstack
-   (vui-text (concat label ": ") :face 'bold)
+   (if label-width
+       (vui-box (vui-text (concat label ":") :face 'bold)
+                :width label-width :align :right)
+     (vui-text (concat label ": ") :face 'bold))
+   (vui-text " ")
    (vui-select choices
                :value value
                :on-change on-change)))
 
-(vui-defcomponent beads-vui-form-text-display (label value &key on-edit)
+(vui-defcomponent beads-vui-form-text-display (label value &key on-edit label-width)
   "Display multi-line text with LABEL, VALUE preview, and edit button.
-ON-EDIT called when edit button clicked (opens dedicated edit buffer)."
+ON-EDIT called when edit button clicked (opens dedicated edit buffer).
+LABEL-WIDTH for aligned forms (right-aligned label in fixed box)."
   :render
-  (vui-vstack
-   (vui-hstack
-    (vui-text (concat label ":") :face 'bold)
-    (when on-edit
-      (vui-fragment
-       (vui-text " ")
-       (vui-button "[edit]" :on-click on-edit :face 'link))))
+  (vui-hstack
+   (if label-width
+       (vui-box (vui-text (concat label ":") :face 'bold)
+                :width label-width :align :right)
+     (vui-text (concat label ":") :face 'bold))
+   (vui-text " ")
    (if (and value (not (string-empty-p value)))
-       (vui-text (truncate-string-to-width value 60 nil nil "…") :face 'shadow)
-     (vui-text "(empty)" :face 'shadow))))
+       (vui-text (truncate-string-to-width value 50 nil nil "…") :face 'shadow)
+     (vui-text "(empty)" :face 'shadow))
+   (when on-edit
+     (vui-fragment
+      (vui-text " ")
+      (vui-button "[edit]" :on-click on-edit :face 'link)))))
 
 (vui-defcomponent beads-vui-form-buttons (on-save on-cancel)
   "Form action buttons with ON-SAVE and ON-CANCEL callbacks."
@@ -490,6 +501,7 @@ edit buffers and save directly - they are not part of the form save."
      (vui-newline)
      (vui-component 'beads-vui-form-field
                     :label "Title"
+                    :label-width 14
                     :value title
                     :on-change (lambda (v) (vui-set-state :title v)))
      (vui-newline)
@@ -514,11 +526,12 @@ edit buffers and save directly - they are not part of the form save."
      (vui-newline)
      (vui-component 'beads-vui-form-field
                     :label "Assignee"
+                    :label-width 14
                     :value assignee
                     :on-change (lambda (v) (vui-set-state :assignee v)))
-     (vui-newline)
      (vui-component 'beads-vui-form-field
                     :label "External Ref"
+                    :label-width 14
                     :value external-ref
                     :on-change (lambda (v) (vui-set-state :external-ref v)))
      (vui-newline)
@@ -526,21 +539,22 @@ edit buffers and save directly - they are not part of the form save."
      (vui-newline)
      (vui-component 'beads-vui-form-text-display
                     :label "Description"
+                    :label-width 20
                     :value (alist-get 'description issue)
                     :on-edit (beads-vui-make-edit-handler issue 'description nil))
-     (vui-newline)
      (vui-component 'beads-vui-form-text-display
                     :label "Design Notes"
+                    :label-width 20
                     :value (alist-get 'design issue)
                     :on-edit (beads-vui-make-edit-handler issue 'design nil))
-     (vui-newline)
      (vui-component 'beads-vui-form-text-display
                     :label "Acceptance Criteria"
+                    :label-width 20
                     :value (alist-get 'acceptance_criteria issue)
                     :on-edit (beads-vui-make-edit-handler issue 'acceptance_criteria nil))
-     (vui-newline)
      (vui-component 'beads-vui-form-text-display
                     :label "Notes"
+                    :label-width 20
                     :value (alist-get 'notes issue)
                     :on-edit (beads-vui-make-edit-handler issue 'notes nil))
      (vui-newline)
