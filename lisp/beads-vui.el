@@ -427,15 +427,20 @@ ON-CHANGE called with selected value."
                :value value
                :on-change on-change)))
 
-(vui-defcomponent beads-vui-form-text-area (label value &key on-change)
-  "Multi-line text area with LABEL and VALUE.
-ON-CHANGE called with new value."
+(vui-defcomponent beads-vui-form-text-display (label value &key on-edit)
+  "Display multi-line text with LABEL, VALUE preview, and edit button.
+ON-EDIT called when edit button clicked (opens dedicated edit buffer)."
   :render
   (vui-vstack
-   (vui-text (concat label ":") :face 'bold)
-   (vui-field :value (or value "")
-              :multiline t
-              :on-change on-change)))
+   (vui-hstack
+    (vui-text (concat label ":") :face 'bold)
+    (when on-edit
+      (vui-fragment
+       (vui-text " ")
+       (vui-button "[edit]" :on-click on-edit :face 'link))))
+   (if (and value (not (string-empty-p value)))
+       (vui-text (truncate-string-to-width value 60 nil nil "…") :face 'shadow)
+     (vui-text "(empty)" :face 'shadow))))
 
 (vui-defcomponent beads-vui-form-buttons (on-save on-cancel)
   "Form action buttons with ON-SAVE and ON-CANCEL callbacks."
@@ -449,17 +454,15 @@ ON-CHANGE called with new value."
 
 (vui-defcomponent beads-vui-form-view (issue &key on-save on-cancel)
   "Form editor for ISSUE with all editable fields.
-ON-SAVE called with changed fields plist, ON-CANCEL to abort."
+ON-SAVE called with changed fields plist, ON-CANCEL to abort.
+Markdown fields (description, design, acceptance, notes) use dedicated
+edit buffers and save directly - they are not part of the form save."
   :state ((title (alist-get 'title issue ""))
           (status (alist-get 'status issue "open"))
           (priority (format "P%d" (alist-get 'priority issue 2)))
           (issue-type (alist-get 'issue_type issue "task"))
           (assignee (or (alist-get 'assignee issue) ""))
-          (external-ref (or (alist-get 'external_ref issue) ""))
-          (description (or (alist-get 'description issue) ""))
-          (design (or (alist-get 'design issue) ""))
-          (acceptance (or (alist-get 'acceptance_criteria issue) ""))
-          (notes (or (alist-get 'notes issue) "")))
+          (external-ref (or (alist-get 'external_ref issue) "")))
   :render
   (let* ((id (alist-get 'id issue))
          (collect-changes
@@ -480,14 +483,6 @@ ON-SAVE called with changed fields plist, ON-CANCEL to abort."
               (let ((new-ref (if (string-empty-p external-ref) nil external-ref)))
                 (unless (equal new-ref (alist-get 'external_ref issue))
                   (setq changes (plist-put changes :external-ref new-ref))))
-              (unless (equal description (or (alist-get 'description issue) ""))
-                (setq changes (plist-put changes :description description)))
-              (unless (equal design (or (alist-get 'design issue) ""))
-                (setq changes (plist-put changes :design design)))
-              (unless (equal acceptance (or (alist-get 'acceptance_criteria issue) ""))
-                (setq changes (plist-put changes :acceptance-criteria acceptance)))
-              (unless (equal notes (or (alist-get 'notes issue) ""))
-                (setq changes (plist-put changes :notes notes)))
               changes))))
     (vui-vstack
      (vui-text (format "Edit Issue: %s" id) :face 'bold)
@@ -527,25 +522,27 @@ ON-SAVE called with changed fields plist, ON-CANCEL to abort."
                     :value external-ref
                     :on-change (lambda (v) (vui-set-state :external-ref v)))
      (vui-newline)
-     (vui-component 'beads-vui-form-text-area
+     (vui-text "Markdown fields (click [edit] to open editor):" :face 'shadow)
+     (vui-newline)
+     (vui-component 'beads-vui-form-text-display
                     :label "Description"
-                    :value description
-                    :on-change (lambda (v) (vui-set-state :description v)))
+                    :value (alist-get 'description issue)
+                    :on-edit (beads-vui-make-edit-handler issue 'description nil))
      (vui-newline)
-     (vui-component 'beads-vui-form-text-area
+     (vui-component 'beads-vui-form-text-display
                     :label "Design Notes"
-                    :value design
-                    :on-change (lambda (v) (vui-set-state :design v)))
+                    :value (alist-get 'design issue)
+                    :on-edit (beads-vui-make-edit-handler issue 'design nil))
      (vui-newline)
-     (vui-component 'beads-vui-form-text-area
+     (vui-component 'beads-vui-form-text-display
                     :label "Acceptance Criteria"
-                    :value acceptance
-                    :on-change (lambda (v) (vui-set-state :acceptance v)))
+                    :value (alist-get 'acceptance_criteria issue)
+                    :on-edit (beads-vui-make-edit-handler issue 'acceptance_criteria nil))
      (vui-newline)
-     (vui-component 'beads-vui-form-text-area
+     (vui-component 'beads-vui-form-text-display
                     :label "Notes"
-                    :value notes
-                    :on-change (lambda (v) (vui-set-state :notes v)))
+                    :value (alist-get 'notes issue)
+                    :on-edit (beads-vui-make-edit-handler issue 'notes nil))
      (vui-newline)
      (vui-newline)
      (vui-component 'beads-vui-form-buttons
