@@ -42,14 +42,14 @@ def check_parens(el_file):
 
 
 def find_vendor_paths(root_dir):
-    """Find all vendor package directories."""
+    """Find all vendor package directories (absolute paths)."""
     vendor_dir = root_dir / "vendor"
     if not vendor_dir.exists():
         return []
     paths = []
     for item in vendor_dir.iterdir():
         if item.is_dir():
-            paths.append(str(item))
+            paths.append(str(item.absolute()))
     return paths
 
 

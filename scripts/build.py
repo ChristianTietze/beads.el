@@ -8,25 +8,26 @@ from pathlib import Path
 
 
 def find_el_files(root_dir):
-    """Find all .el files in the project, excluding test and vendor files."""
+    """Find all .el files in the project, excluding test, vendor, and dev files."""
     root = Path(root_dir)
     return [
         f for f in root.rglob("*.el")
         if not any(part.startswith('.') for part in f.parts)
         and not f.name.endswith("-test.el")
         and 'vendor' not in f.parts
+        and 'dev' not in f.parts
     ]
 
 
 def find_vendor_paths(root_dir):
-    """Find all vendor package directories."""
+    """Find all vendor package directories (absolute paths)."""
     vendor_dir = root_dir / "vendor"
     if not vendor_dir.exists():
         return []
     paths = []
     for item in vendor_dir.iterdir():
         if item.is_dir():
-            paths.append(str(item))
+            paths.append(str(item.absolute()))
     return paths
 
 
@@ -41,14 +42,19 @@ def byte_compile_files(el_files):
 
     root_dir = Path(__file__).parent.parent
 
-    load_path_args = []
+    # Collect unique directories
+    load_dirs = set()
     for el_file in el_files:
-        load_path_args.extend(["-L", str(el_file.parent)])
+        load_dirs.add(str(el_file.parent.absolute()))
 
+    # Add vendor paths
     for vendor_path in find_vendor_paths(root_dir):
-        load_path_args.extend(["-L", vendor_path])
+        load_dirs.add(vendor_path)
 
-    load_path_args = list(dict.fromkeys(load_path_args))
+    # Build load path args
+    load_path_args = []
+    for d in sorted(load_dirs):
+        load_path_args.extend(["-L", d])
 
     all_passed = True
 
