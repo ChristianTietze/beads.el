@@ -420,12 +420,13 @@ Uses CLI fallback since RPC does not support comment_add."
         (navigate-fn (lambda (id)
                        (when-let ((target (beads-rpc-show id)))
                          (beads-detail-open target)))))
-    (vui-mount (vui-component 'beads-vui-detail-view
-                              :issue issue
-                              :on-refresh refresh-fn
-                              :on-navigate navigate-fn
-                              :editable beads-detail-vui-editable)
-               (buffer-name buffer))))
+    (save-window-excursion
+      (vui-mount (vui-component 'beads-vui-detail-view
+                                :issue issue
+                                :on-refresh refresh-fn
+                                :on-navigate navigate-fn
+                                :editable beads-detail-vui-editable)
+                 (buffer-name buffer)))))
 
 (defun beads-detail--render (issue)
   "Insert formatted ISSUE content into current buffer."

@@ -109,26 +109,27 @@ When nil, uses traditional widget.el forms."
   "Render form for ISSUE into BUFFER using vui.el components."
   (require 'beads-vui)
   (let ((issue-id (alist-get 'id issue)))
-    (vui-mount (vui-component 'beads-vui-form-view
-                              :issue issue
-                              :on-save (lambda (changes)
-                                         (if (null changes)
-                                             (progn
-                                               (message "No changes to save")
-                                               (beads-form--close))
-                                           (condition-case err
+    (save-window-excursion
+      (vui-mount (vui-component 'beads-vui-form-view
+                                :issue issue
+                                :on-save (lambda (changes)
+                                           (if (null changes)
                                                (progn
-                                                 (apply #'beads-rpc-update issue-id changes)
-                                                 (message "Updated %s" issue-id)
-                                                 (beads-form--close)
-                                                 (beads-form--refresh-views issue-id))
-                                             (beads-rpc-error
-                                              (message "Failed to update: %s"
-                                                       (error-message-string err))))))
-                              :on-cancel (lambda ()
-                                           (beads-form--close)
-                                           (message "Cancelled")))
-               (buffer-name buffer))))
+                                                 (message "No changes to save")
+                                                 (beads-form--close))
+                                             (condition-case err
+                                                 (progn
+                                                   (apply #'beads-rpc-update issue-id changes)
+                                                   (message "Updated %s" issue-id)
+                                                   (beads-form--close)
+                                                   (beads-form--refresh-views issue-id))
+                                               (beads-rpc-error
+                                                (message "Failed to update: %s"
+                                                         (error-message-string err))))))
+                                :on-cancel (lambda ()
+                                             (beads-form--close)
+                                             (message "Cancelled")))
+                 (buffer-name buffer)))))
 
 (defun beads-form--render (issue)
   "Render form widgets for ISSUE."
