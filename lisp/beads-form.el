@@ -128,7 +128,7 @@ When nil, uses traditional widget.el forms."
                               :on-cancel (lambda ()
                                            (beads-form--close)
                                            (message "Cancelled")))
-               buffer)))
+               (buffer-name buffer))))
 
 (defun beads-form--render (issue)
   "Render form widgets for ISSUE."

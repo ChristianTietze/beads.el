@@ -425,7 +425,7 @@ Uses CLI fallback since RPC does not support comment_add."
                               :on-refresh refresh-fn
                               :on-navigate navigate-fn
                               :editable beads-detail-vui-editable)
-               buffer)))
+               (buffer-name buffer))))
 
 (defun beads-detail--render (issue)
   "Insert formatted ISSUE content into current buffer."
