@@ -331,8 +331,8 @@ When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
 (vui-defcomponent beads-vui-relationships (issue)
   "Display dependencies and dependents for ISSUE."
   :render
-  (let ((deps (alist-get 'dependencies issue))
-        (dependents (alist-get 'dependents issue)))
+  (let ((deps (append (alist-get 'dependencies issue) nil))
+        (dependents (append (alist-get 'dependents issue) nil)))
     (vui-fragment
      (when (and deps (> (length deps) 0))
        (vui-vstack
@@ -364,7 +364,7 @@ When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
 (vui-defcomponent beads-vui-comments (issue)
   "Display comments section for ISSUE."
   :render
-  (let ((comments (alist-get 'comments issue)))
+  (let ((comments (append (alist-get 'comments issue) nil)))
     (when (and comments (> (length comments) 0))
       (vui-vstack
        (vui-component 'beads-vui-section-header
