@@ -216,7 +216,7 @@ FACE applies to value, ON-EDIT called when edit button clicked."
    (when on-edit
      (vui-fragment
       (vui-text " ")
-      (vui-button "[edit]" :on-click on-edit :face 'link)))))
+      (vui-button "edit" :on-click on-edit :face 'link)))))
 
 (vui-defcomponent beads-vui-metadata-row (issue &key editable on-refresh)
   "Display metadata row for ISSUE with status, priority, type, etc.
@@ -282,7 +282,7 @@ ON-EDIT called when edit button clicked (if provided)."
     (when on-edit
       (vui-fragment
        (vui-text " ")
-       (vui-button "[edit]" :on-click on-edit :face 'link))))
+       (vui-button "edit" :on-click on-edit :face 'link))))
    (vui-text (concat title ":") :face '(:weight bold :underline t))
    (vui-newline)
    (if (and content (not (string-empty-p content)))
@@ -394,7 +394,7 @@ When EDITABLE is non-nil, show inline edit buttons."
         (when editable
           (vui-fragment
            (vui-text " ")
-           (vui-button "[edit title]"
+           (vui-button "edit title"
                        :on-click (beads-vui-make-edit-handler issue 'title on-refresh)
                        :face 'link))))
        (vui-newline)
@@ -457,7 +457,7 @@ ON-EDIT called when edit button clicked (opens dedicated edit buffer)."
     (when on-edit
       (vui-fragment
        (vui-text " ")
-       (vui-button "[edit]" :on-click on-edit :face 'link))))
+       (vui-button "edit" :on-click on-edit :face 'link))))
    (vui-vstack
     :indent 2
     (if (and value (not (string-empty-p value)))
