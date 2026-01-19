@@ -32,12 +32,28 @@
 
 (define-error 'beads-rpc-error "Beads RPC error")
 
-(defcustom beads-rpc-cli-fallback t
-  "When non-nil, fall back to CLI when daemon is unavailable.
-This provides a working experience even without the daemon running,
-though operations may be slower."
-  :type 'boolean
+(defcustom beads-rpc-connection-strategy 'auto
+  "Strategy for connecting to the Beads daemon.
+- `auto': Try daemon, auto-start if not running, fall back to CLI if that fails.
+- `daemon': Only use daemon (no auto-start), fail if not available.
+- `managed': Start and manage daemon from Emacs, fall back to CLI if that fails.
+- `cli': Only use CLI commands (for environments where daemon doesn't work)."
+  :type '(choice (const :tag "Auto (start daemon, fallback to CLI)" auto)
+                 (const :tag "Daemon only (no auto-start)" daemon)
+                 (const :tag "Managed daemon (Emacs controls lifecycle)" managed)
+                 (const :tag "CLI only" cli))
   :group 'beads)
+
+(defcustom beads-rpc-daemon-startup-timeout 10
+  "Seconds to wait for daemon to become ready after starting."
+  :type 'integer
+  :group 'beads)
+
+(defvar beads-rpc--project-daemons (make-hash-table :test 'equal)
+  "Hash table mapping project root paths to daemon processes.")
+
+(defvar beads-rpc--daemon-start-in-progress (make-hash-table :test 'equal)
+  "Hash table tracking which projects have daemon start in progress.")
 
 (defvar beads-rpc--cached-db-path nil)
 (defvar beads-rpc--cache-time nil)
@@ -115,6 +131,135 @@ Checks BEADS_DIR env, BEADS_DB env, then walks up from default-directory."
       (signal 'beads-rpc-error '("No Beads database found")))
     (expand-file-name "bd.sock" (file-name-directory db-path))))
 
+(defun beads-rpc--project-root ()
+  "Get the project root directory for the current Beads workspace.
+This is the parent directory of .beads/."
+  (when-let ((db-path (beads-rpc--find-database)))
+    (file-name-directory
+     (directory-file-name
+      (file-name-directory db-path)))))
+
+(defun beads-rpc--get-managed-daemon ()
+  "Get the managed daemon process for the current project, if any."
+  (when-let ((root (beads-rpc--project-root)))
+    (let ((proc (gethash root beads-rpc--project-daemons)))
+      (when (and proc (process-live-p proc))
+        proc))))
+
+(defun beads-rpc--daemon-sentinel (proc event)
+  "Handle daemon PROC status change EVENT."
+  (let ((root (process-get proc 'beads-project-root)))
+    (when (and root (memq (process-status proc) '(exit signal)))
+      (remhash root beads-rpc--project-daemons)
+      (message "Beads daemon for %s terminated: %s"
+               (abbreviate-file-name root)
+               (string-trim event)))))
+
+(defun beads-rpc--start-managed-daemon ()
+  "Start a managed daemon for the current project.
+Returns the process, or nil if starting fails."
+  (let* ((root (beads-rpc--project-root))
+         (bd-program (executable-find "bd")))
+    (unless root
+      (signal 'beads-rpc-error '("No Beads project found")))
+    (unless bd-program
+      (signal 'beads-rpc-error '("bd executable not found")))
+    (when (gethash root beads-rpc--daemon-start-in-progress)
+      (signal 'beads-rpc-error '("Daemon start already in progress")))
+    (when-let ((existing (gethash root beads-rpc--project-daemons)))
+      (when (process-live-p existing)
+        (cl-return-from beads-rpc--start-managed-daemon existing)))
+    (puthash root t beads-rpc--daemon-start-in-progress)
+    (unwind-protect
+        (let* ((default-directory root)
+               (buf-name (format " *beads-daemon:%s*"
+                                 (file-name-nondirectory
+                                  (directory-file-name root))))
+               (proc (make-process
+                      :name "beads-daemon"
+                      :buffer (get-buffer-create buf-name)
+                      :command (list bd-program "daemon" "start" "--foreground")
+                      :sentinel #'beads-rpc--daemon-sentinel
+                      :noquery t)))
+          (process-put proc 'beads-project-root root)
+          (set-process-query-on-exit-flag proc nil)
+          (puthash root proc beads-rpc--project-daemons)
+          (message "Starting beads daemon for %s..." (abbreviate-file-name root))
+          proc)
+      (remhash root beads-rpc--daemon-start-in-progress))))
+
+(defun beads-rpc--wait-for-socket (timeout)
+  "Wait up to TIMEOUT seconds for the daemon socket to become available.
+Returns non-nil if socket is ready, nil if timeout."
+  (let ((socket-path (beads-rpc--socket-path))
+        (start-time (float-time)))
+    (while (and (< (- (float-time) start-time) timeout)
+                (not (file-exists-p socket-path)))
+      (sleep-for 0.1))
+    (file-exists-p socket-path)))
+
+(defun beads-rpc--ensure-daemon ()
+  "Ensure the daemon is running, starting it if necessary.
+Returns non-nil if daemon is available, nil otherwise."
+  (let ((socket-path (beads-rpc--socket-path)))
+    (cond
+     ((file-exists-p socket-path)
+      t)
+     ((memq beads-rpc-connection-strategy '(auto managed))
+      (beads-rpc--start-managed-daemon)
+      (beads-rpc--wait-for-socket beads-rpc-daemon-startup-timeout))
+     (t
+      nil))))
+
+(defun beads-rpc-start-daemon ()
+  "Start the beads daemon for the current project.
+Interactive command to manually start the daemon."
+  (interactive)
+  (if (beads-rpc--get-managed-daemon)
+      (message "Beads daemon already running for this project")
+    (beads-rpc--start-managed-daemon)
+    (if (beads-rpc--wait-for-socket beads-rpc-daemon-startup-timeout)
+        (message "Beads daemon started successfully")
+      (message "Beads daemon started but socket not yet available"))))
+
+(defun beads-rpc-stop-daemon ()
+  "Stop the managed beads daemon for the current project."
+  (interactive)
+  (if-let ((proc (beads-rpc--get-managed-daemon)))
+      (progn
+        (delete-process proc)
+        (message "Beads daemon stopped"))
+    (message "No managed beads daemon running for this project")))
+
+(defun beads-rpc-daemon-status ()
+  "Show the status of the beads daemon for the current project."
+  (interactive)
+  (let ((socket-path (condition-case nil
+                         (beads-rpc--socket-path)
+                       (beads-rpc-error nil)))
+        (managed-proc (beads-rpc--get-managed-daemon)))
+    (cond
+     ((and managed-proc (file-exists-p socket-path))
+      (message "Beads daemon: running (managed by Emacs, PID %d)"
+               (process-id managed-proc)))
+     ((file-exists-p socket-path)
+      (message "Beads daemon: running (external)"))
+     (managed-proc
+      (message "Beads daemon: starting (PID %d, socket not ready)"
+               (process-id managed-proc)))
+     (t
+      (message "Beads daemon: not running")))))
+
+(defun beads-rpc--cleanup-project-daemons ()
+  "Stop all managed daemons.  Called on Emacs exit."
+  (maphash (lambda (_root proc)
+             (when (process-live-p proc)
+               (delete-process proc)))
+           beads-rpc--project-daemons)
+  (clrhash beads-rpc--project-daemons))
+
+(add-hook 'kill-emacs-hook #'beads-rpc--cleanup-project-daemons)
+
 (defun beads-rpc--make-request-alist (operation args)
   "Build request alist for OPERATION with ARGS."
   (let ((db-path (beads-rpc--find-database)))
@@ -127,16 +272,26 @@ Checks BEADS_DIR env, BEADS_DB env, then walks up from default-directory."
 (defun beads-rpc-request (operation args)
   "Send RPC request with OPERATION and ARGS to Beads daemon.
 Returns the data field on success, signals beads-rpc-error on failure.
-When `beads-rpc-cli-fallback' is non-nil and the daemon is unavailable,
-falls back to CLI execution."
-  (condition-case err
-      (beads-rpc--request-socket operation args)
-    (beads-rpc-error
-     (let ((err-msg (cadr err)))
-       (if (and beads-rpc-cli-fallback
-                (beads-rpc--connection-error-p err-msg))
-           (beads-rpc--cli-fallback operation args)
-         (signal 'beads-rpc-error (cdr err)))))))
+
+Connection behavior depends on `beads-rpc-connection-strategy':
+- `auto'/`managed': Try daemon, auto-start if needed, fall back to CLI.
+- `daemon': Only use daemon, no auto-start.
+- `cli': Only use CLI commands."
+  (pcase beads-rpc-connection-strategy
+    ('cli
+     (beads-rpc--cli-fallback operation args))
+    ('daemon
+     (beads-rpc--request-socket operation args))
+    ((or 'auto 'managed)
+     (condition-case err
+         (progn
+           (beads-rpc--ensure-daemon)
+           (beads-rpc--request-socket operation args))
+       (beads-rpc-error
+        (let ((err-msg (cadr err)))
+          (if (beads-rpc--connection-error-p err-msg)
+              (beads-rpc--cli-fallback operation args)
+            (signal 'beads-rpc-error (cdr err)))))))))
 
 (defun beads-rpc--connection-error-p (err-msg)
   "Return non-nil if ERR-MSG indicates a connection problem.
