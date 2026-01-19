@@ -26,10 +26,18 @@
 
 (require 'json)
 (require 'cl-lib)
+(require 'seq)
 
 (defconst beads-rpc-client-version "0.1.0")
 
 (define-error 'beads-rpc-error "Beads RPC error")
+
+(defcustom beads-rpc-cli-fallback t
+  "When non-nil, fall back to CLI when daemon is unavailable.
+This provides a working experience even without the daemon running,
+though operations may be slower."
+  :type 'boolean
+  :group 'beads)
 
 (defvar beads-rpc--cached-db-path nil)
 (defvar beads-rpc--cache-time nil)
@@ -118,7 +126,31 @@ Checks BEADS_DIR env, BEADS_DB env, then walks up from default-directory."
 
 (defun beads-rpc-request (operation args)
   "Send RPC request with OPERATION and ARGS to Beads daemon.
-Returns the data field on success, signals beads-rpc-error on failure."
+Returns the data field on success, signals beads-rpc-error on failure.
+When `beads-rpc-cli-fallback' is non-nil and the daemon is unavailable,
+falls back to CLI execution."
+  (condition-case err
+      (beads-rpc--request-socket operation args)
+    (beads-rpc-error
+     (let ((err-msg (cadr err)))
+       (if (and beads-rpc-cli-fallback
+                (beads-rpc--connection-error-p err-msg))
+           (beads-rpc--cli-fallback operation args)
+         (signal 'beads-rpc-error (cdr err)))))))
+
+(defun beads-rpc--connection-error-p (err-msg)
+  "Return non-nil if ERR-MSG indicates a connection problem.
+These are errors where CLI fallback is appropriate."
+  (and (stringp err-msg)
+       (or (string-match-p "Socket not found" err-msg)
+           (string-match-p "Failed to connect" err-msg)
+           (string-match-p "Connection refused" err-msg)
+           (string-match-p "No such file or directory" err-msg)
+           (string-match-p "Timeout waiting for response" err-msg))))
+
+(defun beads-rpc--request-socket (operation args)
+  "Send RPC request with OPERATION and ARGS via socket.
+This is the internal function that does the actual socket communication."
   (let* ((socket-path (beads-rpc--socket-path))
          (request-alist (beads-rpc--make-request-alist operation args))
          (request-json (json-encode request-alist)))
@@ -130,13 +162,17 @@ Returns the data field on success, signals beads-rpc-error on failure."
     (with-temp-buffer
       (let* ((coding-system-for-read 'utf-8)
              (coding-system-for-write 'utf-8)
-             (proc (make-network-process
-                    :name "beads-rpc"
-                    :buffer (current-buffer)
-                    :family 'local
-                    :service socket-path
-                    :coding 'utf-8
-                    :noquery t)))
+             (proc (condition-case nil
+                       (make-network-process
+                        :name "beads-rpc"
+                        :buffer (current-buffer)
+                        :family 'local
+                        :service socket-path
+                        :coding 'utf-8
+                        :noquery t)
+                     (file-error
+                      (signal 'beads-rpc-error
+                              (list "Failed to connect to daemon"))))))
 
         (unless proc
           (signal 'beads-rpc-error (list "Failed to connect to daemon")))
@@ -172,23 +208,140 @@ Returns the data field on success, signals beads-rpc-error on failure."
           (when (process-live-p proc)
             (delete-process proc)))))))
 
-(defun beads-rpc--cli-fallback (command &rest args)
-  "Execute bd COMMAND with ARGS as CLI fallback.
+(defun beads-rpc--cli-fallback (operation args)
+  "Execute bd CLI as fallback for RPC OPERATION with ARGS.
+Converts RPC operation and args to CLI command and flags.
 Returns parsed JSON output."
   (let* ((bd-program (or (executable-find "bd")
-                         (expand-file-name "bd" (file-name-directory
-                                                 (beads-rpc--find-database)))))
-         (cmd-args (append (list command "--json") args))
-         (output (with-temp-buffer
-                   (let ((exit-code (apply #'call-process bd-program nil t nil cmd-args)))
-                     (unless (zerop exit-code)
-                       (signal 'beads-rpc-error
-                               (list (format "CLI failed with exit code %d: %s"
-                                           exit-code
-                                           (buffer-string)))))
-                     (goto-char (point-min))
-                     (json-read)))))
-    output))
+                         (error "bd executable not found")))
+         (cli-args (beads-rpc--operation-to-cli-args operation args))
+         (cmd-args (append cli-args '("--json"))))
+    (with-temp-buffer
+      (let* ((default-directory (or (when-let ((db (beads-rpc--find-database)))
+                                      (file-name-directory
+                                       (directory-file-name
+                                        (file-name-directory db))))
+                                    default-directory))
+             (exit-code (apply #'call-process bd-program nil t nil cmd-args)))
+        (unless (zerop exit-code)
+          (signal 'beads-rpc-error
+                  (list (format "CLI failed with exit code %d: %s"
+                                exit-code
+                                (string-trim (buffer-string))))))
+        (goto-char (point-min))
+        (condition-case nil
+            (json-read)
+          (json-error
+           (signal 'beads-rpc-error
+                   (list (format "CLI returned invalid JSON: %s"
+                                 (buffer-string))))))))))
+
+(defun beads-rpc--operation-to-cli-args (operation args)
+  "Convert RPC OPERATION and ARGS to CLI command and arguments.
+Returns a list of strings suitable for `call-process'."
+  (pcase operation
+    ("health"
+     '("daemon" "status"))
+    ("list"
+     (beads-rpc--build-cli-args "list" args
+                                '(status priority issue_type assignee
+                                  labels limit title_contains parent)))
+    ("show"
+     (let ((id (alist-get 'id args)))
+       (list "show" id)))
+    ("ready"
+     (beads-rpc--build-cli-args "ready" args
+                                '(assignee priority limit sort_policy parent)))
+    ("create"
+     (let ((title (alist-get 'title args))
+           (other-args (assq-delete-all 'title (copy-alist args))))
+       (append (list "create" title)
+               (beads-rpc--alist-to-cli-flags other-args))))
+    ("update"
+     (let ((id (alist-get 'id args))
+           (other-args (assq-delete-all 'id (copy-alist args))))
+       (append (list "update" id)
+               (beads-rpc--alist-to-cli-flags other-args))))
+    ("close"
+     (let ((id (alist-get 'id args))
+           (reason (alist-get 'reason args)))
+       (if reason
+           (list "close" id "--reason" reason)
+         (list "close" id))))
+    ("delete"
+     (let ((ids (alist-get 'ids args))
+           (force (alist-get 'force args)))
+       (append (list "delete")
+               (if (listp ids) ids (list ids))
+               (when force '("--force")))))
+    ("stats"
+     '("stats"))
+    ("count"
+     (beads-rpc--build-cli-args "count" args '(status group_by)))
+    ("dep_add"
+     (let ((from-id (alist-get 'from_id args))
+           (to-id (alist-get 'to_id args))
+           (dep-type (alist-get 'dep_type args)))
+       (if dep-type
+           (list "dep" "add" from-id to-id "--type" dep-type)
+         (list "dep" "add" from-id to-id))))
+    ("dep_remove"
+     (let ((from-id (alist-get 'from_id args))
+           (to-id (alist-get 'to_id args)))
+       (list "dep" "remove" from-id to-id)))
+    ("dep_tree"
+     (let ((id (alist-get 'id args))
+           (max-depth (alist-get 'max_depth args)))
+       (if max-depth
+           (list "dep" "tree" id "--max-depth" (number-to-string max-depth))
+         (list "dep" "tree" id))))
+    ("label_add"
+     (let ((id (alist-get 'id args))
+           (label (alist-get 'label args)))
+       (list "label" "add" id label)))
+    ("label_remove"
+     (let ((id (alist-get 'id args))
+           (label (alist-get 'label args)))
+       (list "label" "remove" id label)))
+    ("get_mutations"
+     (let ((since-id (alist-get 'since_id args)))
+       (if since-id
+           (list "mutations" "--since" since-id)
+         '("mutations"))))
+    (_
+     (signal 'beads-rpc-error
+             (list (format "Unknown operation for CLI fallback: %s" operation))))))
+
+(defun beads-rpc--build-cli-args (command args allowed-keys)
+  "Build CLI args for COMMAND from ARGS, filtering by ALLOWED-KEYS."
+  (append (list command)
+          (beads-rpc--alist-to-cli-flags
+           (seq-filter (lambda (pair)
+                         (memq (car pair) allowed-keys))
+                       args))))
+
+(defun beads-rpc--alist-to-cli-flags (alist)
+  "Convert ALIST to list of CLI flags.
+Keys are converted from snake_case to --kebab-case."
+  (let ((flags '()))
+    (dolist (pair alist)
+      (let* ((key (car pair))
+             (value (cdr pair))
+             (flag-name (concat "--" (replace-regexp-in-string
+                                      "_" "-" (symbol-name key)))))
+        (cond
+         ((eq value t)
+          (push flag-name flags))
+         ((eq value nil)
+          nil)
+         ((listp value)
+          (dolist (v value)
+            (push flag-name flags)
+            (push (format "%s" v) flags)))
+         (t
+          (push flag-name flags)
+          (push (format "%s" value) flags)))))
+    (nreverse flags)))
 
 (defun beads-rpc-health ()
   "Check daemon health.
