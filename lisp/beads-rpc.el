@@ -338,7 +338,7 @@ This is the internal function that does the actual socket communication."
 
               (let ((timeout 30)
                     (start-time (float-time)))
-                (while (and (process-live-p proc)
+                (while (and (eq (process-status proc) 'open)
                             (not (progn
                                    (goto-char (point-min))
                                    (search-forward "\n" nil t)))
@@ -347,7 +347,10 @@ This is the internal function that does the actual socket communication."
 
               (unless (progn (goto-char (point-min))
                              (search-forward "\n" nil t))
-                (signal 'beads-rpc-error (list "Timeout waiting for response")))
+                (signal 'beads-rpc-error
+                        (list (if (not (eq (process-status proc) 'open))
+                                  "Daemon connection lost"
+                                "Timeout waiting for response"))))
 
               (goto-char (point-min))
               (let* ((response (json-read))
