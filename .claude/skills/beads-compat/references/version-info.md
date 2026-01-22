@@ -1,6 +1,6 @@
 # Beads Version Compatibility
 
-Tested CLI version: 0.47.1
+Tested CLI version: 0.49.0
 Minimum DB version: 0.35.0
 
 ## Changelog
@@ -11,11 +11,22 @@ https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
 
 | beads.el | beads CLI | Notes |
 |----------|-----------|-------|
+| 0.49.0   | 0.49.0    | bd children, bd rename, bd types, Dolt backend |
 | 0.47.1   | 0.47.1    | Pull-first sync, `--ready` flag, dry-run create |
 | 0.46.0   | 0.46.0    | Custom types, rig type, hierarchy view, dependencies in detail |
 | 0.44.0   | 0.44.0    | Initial version tracking |
 
 ## New Features by Version
+
+### v0.49.0
+- `bd children <id>` command to list child issues
+- `bd rename <old-id> <new-id>` command to rename issues
+- `bd types` command to list valid issue types
+- `bd view` alias for `bd show`
+- `bd close -m` alias for `--reason`
+- `bd show --children` flag to display child issues inline
+- Dolt backend support with pluggable storage
+- "enhancement" alias for "feature" type
 
 ### v0.47.1
 - `bd list --ready` flag to display issues with no blockers

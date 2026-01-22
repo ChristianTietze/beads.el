@@ -9,3 +9,7 @@ vendor/
 
 # Generated docs (beads.texi is tracked for MELPA)
 docs/beads.info
+
+# Beads daemon runtime files
+.beads/daemon-*.log*
+.beads/*.startlock
