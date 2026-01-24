@@ -19,6 +19,7 @@ Tested with **beads CLI 0.49.0**. Version info maintained in `.claude/skills/bea
 - Changelog: https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
 - Run `/beads-compat` to check installed version
 - beads.el versioning mirrors beads CLI version (e.g., beads.el 0.44.0 = tested with beads 0.44.0)
+- Git tags use bare version numbers without `v` prefix (e.g., `0.49.0` not `v0.49.0`)
 
 ## Architecture
 

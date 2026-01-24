@@ -20,7 +20,7 @@ When upgrading beads:
 3. Test beads.el functionality against new version
 4. Update version in `references/version-info.md`
 5. Update version in `README.md` and `AGENTS.md`
-6. Create git tag matching beads version (e.g., `v0.44.0`)
+6. Create git tag matching beads version (e.g., `0.49.0`) - no `v` prefix
 
 ## Breaking Change Patterns
 
