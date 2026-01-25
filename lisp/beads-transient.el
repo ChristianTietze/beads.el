@@ -56,6 +56,7 @@
 (declare-function beads-list--build-format "beads-list")
 (declare-function beads-list--column-names "beads-list")
 (declare-function beads-list-available-types "beads-list")
+(declare-function beads-get-types "beads-list")
 (declare-function beads-preview-mode "beads-preview")
 (declare-function beads-detail-refresh "beads-detail")
 (declare-function beads-detail-edit-form "beads-detail")
@@ -84,7 +85,7 @@ Prompts for title (required), type, and priority."
   (interactive)
   (let* ((title (read-string "Title: "))
          (type (completing-read "Type: "
-                                '("task" "bug" "feature" "epic" "chore")
+                                (beads-get-types)
                                 nil t "task"))
          (priority-str (completing-read "Priority: "
                                          '("P0" "P1" "P2" "P3" "P4")
@@ -124,7 +125,7 @@ Shows what the issue will look like, then press C-c C-c to create."
   (interactive)
   (let* ((title (read-string "Title: "))
          (type (completing-read "Type: "
-                                '("task" "bug" "feature" "epic" "chore")
+                                (beads-get-types)
                                 nil t "task"))
          (priority-str (completing-read "Priority: "
                                          '("P0" "P1" "P2" "P3" "P4")

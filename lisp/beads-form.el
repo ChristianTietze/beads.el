@@ -44,7 +44,7 @@ When nil, uses traditional widget.el forms."
   :type 'boolean
   :group 'beads-form)
 
-(defvar beads-builtin-types)
+(declare-function beads-get-types "beads-list")
 
 (defvar-local beads-form--issue-id nil
   "Issue ID being edited in this form buffer.")
@@ -153,7 +153,7 @@ When nil, uses traditional widget.el forms."
 
   (widget-insert "  ")
   (let* ((current-type (alist-get 'issue_type issue "task"))
-         (type-choices (sort (seq-uniq (cons current-type beads-builtin-types)) #'string<)))
+         (type-choices (sort (seq-uniq (cons current-type (beads-get-types))) #'string<)))
     (beads-form--add-field 'issue_type "Type" 'menu-choice
                            current-type
                            :choices type-choices))

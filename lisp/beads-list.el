@@ -26,6 +26,8 @@
 
 (require 'beads-rpc)
 (require 'beads-detail)
+
+(declare-function beads-rpc-types "beads-rpc")
 (require 'beads-filter)
 (require 'beads-preview)
 (require 'beads-faces)
@@ -96,7 +98,30 @@ When an integer, the column width will not exceed this value."
 
 (defconst beads-builtin-types
   '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role" "rig")
-  "List of built-in issue types supported by beads.")
+  "List of built-in issue types supported by beads.
+Used as fallback when daemon types cannot be fetched.")
+
+(defvar beads--types-cache nil
+  "Cached list of valid issue types from daemon.")
+
+(defvar beads--types-cache-time 0
+  "Time when types cache was last updated.")
+
+(defconst beads--types-cache-ttl 60
+  "Seconds to cache types before refreshing.")
+
+(defun beads-get-types ()
+  "Get valid issue types, using cache when fresh.
+Falls back to `beads-builtin-types' on error."
+  (if (and beads--types-cache
+           (< (- (float-time) beads--types-cache-time) beads--types-cache-ttl))
+      beads--types-cache
+    (condition-case nil
+        (let ((types (beads-rpc-types)))
+          (setq beads--types-cache types
+                beads--types-cache-time (float-time))
+          types)
+      (error beads-builtin-types))))
 
 (define-obsolete-face-alias 'beads-list-status-open 'beads-status-open "0.47")
 (define-obsolete-face-alias 'beads-list-status-in-progress 'beads-status-in-progress "0.47")
@@ -853,9 +878,10 @@ Prompts for confirmation."
 
 (defun beads-list-available-types ()
   "Return list of available issue types.
-Combines built-in types with any custom types found in current issues."
-  (let ((custom-types (beads-list--collect-types)))
-    (sort (seq-uniq (append beads-builtin-types custom-types)) #'string<)))
+Combines types from daemon with any custom types found in current issues."
+  (let ((daemon-types (beads-get-types))
+        (custom-types (beads-list--collect-types)))
+    (sort (seq-uniq (append daemon-types custom-types)) #'string<)))
 
 (defun beads-list-quick-assign (assignee)
   "Assign ASSIGNEE to marked issues or issue at point.
@@ -967,7 +993,7 @@ With completion for known assignees from current issues."
         (require 'beads-edit)
         (when (beads-edit-field-completing
                id :issue-type type "Type: "
-               '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role"))
+               (beads-get-types))
           (beads-list-refresh)))
     (message "No issue at point")))
 

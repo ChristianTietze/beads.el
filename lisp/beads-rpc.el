@@ -466,6 +466,8 @@ Returns a list of strings suitable for `call-process'."
        (if since-id
            (list "mutations" "--since" since-id)
          '("mutations"))))
+    ("types"
+     '("types"))
     (_
      (signal 'beads-rpc-error
              (list (format "Unknown operation for CLI fallback: %s" operation))))))
@@ -587,6 +589,13 @@ FILTERS is a plist with keys like :status, :group-by.
 Returns count data."
   (let ((args (beads-rpc--plist-to-alist filters)))
     (beads-rpc-request "count" args)))
+
+(defun beads-rpc-types ()
+  "Get list of valid issue type names from daemon.
+Returns a list of type name strings."
+  (let ((response (beads-rpc-request "types" nil)))
+    (mapcar (lambda (type) (alist-get 'name type))
+            (alist-get 'core_types response))))
 
 (defun beads-rpc-dep-add (from-id to-id &optional dep-type)
   "Add dependency FROM-ID to TO-ID with optional DEP-TYPE.
