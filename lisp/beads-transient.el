@@ -727,6 +727,18 @@ Uses canonical order from `beads-list--column-order' for insertion."
 
 (autoload 'beads-types-edit "beads-types" nil t)
 
+(transient-define-prefix beads-views-menu ()
+  "Beads views menu for reports and diagnostics."
+  [["Views"
+    ("o" "Orphaned issues" beads-orphans)
+    ("s" "Stale issues" beads-stale)
+    ("a" "Activity feed" beads-activity)
+    ("d" "Duplicates" beads-duplicates)
+    ("l" "Lint report" beads-lint)
+    ("x" "Resolve conflicts" beads-conflicts)]
+   [""
+    ("q" "Back" transient-quit-one)]])
+
 (transient-define-prefix beads-list-menu ()
   "Beads list mode menu."
   [["Navigation"
@@ -740,24 +752,26 @@ Uses canonical order from `beads-list--column-order' for insertion."
     ("c" "Create issue" beads-create-issue)
     ("C" "Create with preview" beads-create-issue-preview)
     ("E" "Edit issue" beads-list-edit-form)
-    ("x" "Close issue" beads-close-issue)
+    ("x" "Close marked/at point" beads-list-bulk-close)
     ("R" "Reopen issue" beads-reopen-issue)
     ("D" "Delete issue" beads-delete-issue)]
    ["Search & Filter"
     ("/" "Search..." beads-search)
     ("f" "Filter menu..." beads-filter-menu)
-    ("o" "Sort menu..." beads-sort-menu
-     :description beads--sort-menu-description)
-    ("m" "Mark & Bulk..." beads-mark-menu
-     :description beads--mark-menu-description)]]
-  [["Views"
-    ("O" "Orphaned issues" beads-orphans)
-    ("A" "Stale issues" beads-stale)
-    ("a" "Activity feed" beads-activity)
-    ("d" "Duplicates" beads-duplicates)
-    ("L" "Lint report" beads-lint)
-    ("X" "Resolve conflicts" beads-conflicts)]
-   [""
+    ("s" "Toggle sort mode" beads-list-toggle-sort-mode)
+    ("o" "Cycle sort column" beads-list-cycle-sort)
+    ("O" "Reverse sort" beads-list-reverse-sort)]]
+  [["Mark"
+    ("m" "Mark" beads-list-mark)
+    ("u" "Unmark" beads-list-unmark)
+    ("U" "Unmark all" beads-list-unmark-all)
+    ("t" "Toggle marks" beads-list-toggle-marks)
+    ("a" "Assign..." beads-list-quick-assign)
+    ("A" "Assign to me" beads-list-assign-to-me)]
+   ["More"
+    ("B" "Bulk menu..." beads-mark-menu)
+    ("V" "Views..." beads-views-menu)
+    ""
     ("?" "Describe mode" describe-mode)
     ("q" "Quit" transient-quit-one)]])
 
