@@ -725,6 +725,8 @@ Uses canonical order from `beads-list--column-order' for insertion."
     ""
     ("q" "Back" transient-quit-one)]])
 
+(autoload 'beads-types-edit "beads-types" nil t)
+
 (transient-define-prefix beads-list-menu ()
   "Beads list mode menu."
   [["Navigation"
@@ -732,7 +734,8 @@ Uses canonical order from `beads-list--column-order' for insertion."
     ("RET" "View issue" beads-list-goto-issue)
     ("P" "Toggle preview" beads-preview-mode)
     ("H" "Dependency tree" beads-hierarchy-show)
-    ("S" "Project stats" beads-stats)]
+    ("S" "Project stats" beads-stats)
+    ("T" "Configure types" beads-types-edit)]
    ["Actions"
     ("c" "Create issue" beads-create-issue)
     ("C" "Create with preview" beads-create-issue-preview)
