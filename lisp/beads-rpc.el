@@ -468,6 +468,16 @@ Returns a list of strings suitable for `call-process'."
          '("mutations"))))
     ("types"
      '("types"))
+    ("config_get"
+     (let ((key (alist-get 'key args)))
+       (list "config" "get" key)))
+    ("config_set"
+     (let ((key (alist-get 'key args))
+           (value (alist-get 'value args)))
+       (list "config" "set" key value)))
+    ("config_unset"
+     (let ((key (alist-get 'key args)))
+       (list "config" "unset" key)))
     (_
      (signal 'beads-rpc-error
              (list (format "Unknown operation for CLI fallback: %s" operation))))))
@@ -594,8 +604,23 @@ Returns count data."
   "Get list of valid issue type names from daemon.
 Returns a list of type name strings."
   (let ((response (beads-rpc-request "types" nil)))
-    (mapcar (lambda (type) (alist-get 'name type))
-            (alist-get 'core_types response))))
+    (append (mapcar (lambda (type) (alist-get 'name type))
+                    (alist-get 'core_types response))
+            (append (alist-get 'custom_types response) nil))))
+
+(defun beads-rpc-types-full ()
+  "Get full types response with core and custom types separated.
+Returns alist with `core_types' and `custom_types' keys."
+  (beads-rpc-request "types" nil))
+
+(defun beads-rpc-config-get (key)
+  "Get configuration value for KEY."
+  (let ((response (beads-rpc-request "config_get" `((key . ,key)))))
+    (alist-get 'value response)))
+
+(defun beads-rpc-config-set (key value)
+  "Set configuration KEY to VALUE."
+  (beads-rpc-request "config_set" `((key . ,key) (value . ,value))))
 
 (defun beads-rpc-dep-add (from-id to-id &optional dep-type)
   "Add dependency FROM-ID to TO-ID with optional DEP-TYPE.
