@@ -34,6 +34,8 @@
 (require 'beads-faces)
 (require 'beads-rpc)
 
+(declare-function beads-get-types "beads-list")
+
 (declare-function beads-detail-open "beads-detail")
 (declare-function beads-edit-field-markdown "beads-edit")
 (declare-function beads-edit-field-minibuffer "beads-edit")
@@ -103,7 +105,7 @@ Calls ON-REFRESH after successful edit."
         ('issue_type
          (when (beads-edit-field-completing
                 id :issue-type value "Type: "
-                '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role"))
+                (beads-get-types))
            (when on-refresh (funcall on-refresh))))
         ('priority
          (let* ((priority-str (format "P%d" value))
@@ -531,8 +533,7 @@ edit buffers and save directly - they are not part of the form save."
                     :label "Type"
                     :label-width 14
                     :value issue-type
-                    :choices '("bug" "feature" "task" "epic" "chore"
-                               "gate" "convoy" "agent" "role")
+                    :choices (beads-get-types)
                     :on-change (lambda (v) (vui-set-state :issue-type v)))
      (vui-component 'beads-vui-form-field
                     :label "Assignee"
