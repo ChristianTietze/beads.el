@@ -371,7 +371,7 @@ This is the internal function that does the actual socket communication."
 Converts RPC operation and args to CLI command and flags.
 Returns parsed JSON output."
   (let* ((bd-program (or (executable-find "bd")
-                         (error "bd executable not found")))
+                         (signal 'beads-rpc-error '("bd executable not found"))))
          (cli-args (beads-rpc--operation-to-cli-args operation args))
          (cmd-args (append cli-args '("--json"))))
     (with-temp-buffer
