@@ -66,7 +66,7 @@
   "Transient menus for Beads issue tracker."
   :group 'beads)
 
-(defun beads--truncate-middle (str max-len)
+(defun beads-transient--truncate-middle (str max-len)
   "Truncate STR to MAX-LEN using middle ellipsis.
 Shows beginning and end of string with … in the middle."
   (if (<= (length str) max-len)
@@ -182,7 +182,7 @@ Shows what the issue will look like, then press C-c C-c to create."
     (condition-case err
         (let ((issue (apply #'beads-rpc-create
                             (plist-get params :title)
-                            (beads--plist-remove params :title))))
+                            (beads-transient--plist-remove params :title))))
           (quit-window t)
           (message "Created issue %s" (alist-get 'id issue))
           (when (derived-mode-p 'beads-list-mode)
@@ -196,7 +196,7 @@ Shows what the issue will look like, then press C-c C-c to create."
   (quit-window t)
   (message "Cancelled"))
 
-(defun beads--plist-remove (plist key)
+(defun beads-transient--plist-remove (plist key)
   "Return PLIST with KEY removed."
   (let ((result nil))
     (while plist
@@ -251,7 +251,7 @@ Prompts for confirmation with `yes-or-no-p'."
                     (aref entry 5)))
                  (t nil)))
          (display-title (if title
-                            (beads--truncate-middle title 30)
+                            (beads-transient--truncate-middle title 30)
                           ""))
          (prompt (if (string-empty-p display-title)
                      (format "Permanently delete issue %s? " id)
@@ -600,7 +600,7 @@ Uses canonical order from `beads-list--column-order' for insertion."
   ["Navigation"
    ("q" "Back" transient-quit-one)])
 
-(defun beads--mark-menu-description ()
+(defun beads-transient--mark-menu-description ()
   "Return description for mark menu entry showing count."
   (let ((count (length beads-list--marked)))
     (if (> count 0)
@@ -685,7 +685,7 @@ Uses canonical order from `beads-list--column-order' for insertion."
   (beads-list-refresh t)
   (message "Sort mode: sectioned"))
 
-(defun beads--sort-menu-description ()
+(defun beads-transient--sort-menu-description ()
   "Return description for sort menu showing current sort."
   (if (eq beads-list--sort-mode-override 'sectioned)
       "Sort: sectioned"
