@@ -25,10 +25,8 @@
 
 ;;; Code:
 
-(require 'json)
+(require 'beads-core)
 
-(declare-function beads-detail-open "beads-detail")
-(declare-function beads-rpc-show "beads-rpc")
 (declare-function beads-rpc-update "beads-rpc")
 
 (defgroup beads-stale nil
@@ -80,20 +78,10 @@ Stale issues are those not updated within a configurable number of days.
 (defun beads-stale--fetch (days &optional status)
   "Fetch stale issues via CLI with DAYS threshold.
 Optional STATUS filters by issue status."
-  (let* ((bd-program (or (executable-find "bd") "bd"))
-         (args (list "stale" "--days" (number-to-string days) "--json"))
-         (args (if status (append args (list "--status" status)) args))
-         (output (with-temp-buffer
-                   (let ((exit-code (apply #'call-process bd-program nil t nil args)))
-                     (unless (zerop exit-code)
-                       (signal 'error
-                               (list (format "bd stale failed: %s"
-                                             (buffer-string)))))
-                     (goto-char (point-min))
-                     (condition-case nil
-                         (json-read)
-                       (json-error nil))))))
-    (if (vectorp output) (append output nil) output)))
+  (let ((args (list "--days" (number-to-string days))))
+    (when status
+      (setq args (append args (list "--status" status))))
+    (apply #'beads-core-cli-request "stale" args)))
 
 (defun beads-stale--days-ago (updated-at)
   "Calculate days since UPDATED-AT timestamp."
@@ -109,14 +97,11 @@ Optional STATUS filters by issue status."
   "Render stale ISSUES list into current buffer."
   (let ((inhibit-read-only t))
     (erase-buffer)
-    (insert (propertize "Stale Issues\n" 'face 'bold))
-    (insert (propertize
-             (format "Issues not updated in %d+ days\n" (or beads-stale--days beads-stale-days))
-             'face 'shadow))
-    (insert (propertize
-             "RET=view  c=claim  d=days  f=filter  g=refresh  q=quit\n"
-             'face 'shadow))
-    (insert (make-string 60 ?=) "\n\n")
+    (beads-core-render-header
+     "Stale Issues"
+     (format "Issues not updated in %d+ days" (or beads-stale--days beads-stale-days))
+     "RET=view  c=claim  d=days  f=filter  g=refresh  q=quit"
+     60)
     (if (null issues)
         (insert "No stale issues found.\n")
       (dolist (issue issues)
@@ -170,19 +155,12 @@ STATUS optionally filters by issue status."
 
 (defun beads-stale--id-at-point ()
   "Return stale issue ID at point, or nil."
-  (get-text-property (point) 'beads-stale-id))
+  (beads-core-id-at-point 'beads-stale-id))
 
 (defun beads-stale-goto-issue ()
   "Open the stale issue at point in detail view."
   (interactive)
-  (let ((id (beads-stale--id-at-point)))
-    (unless id
-      (user-error "No issue at point"))
-    (condition-case err
-        (let ((issue (beads-rpc-show id)))
-          (beads-detail-open issue))
-      (beads-rpc-error
-       (user-error "Failed to load issue: %s" (error-message-string err))))))
+  (beads-core-goto-issue-at-point 'beads-stale-id))
 
 (defun beads-stale-claim ()
   "Claim the stale issue at point by setting status to in_progress."

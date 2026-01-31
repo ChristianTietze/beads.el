@@ -26,10 +26,7 @@
 
 ;;; Code:
 
-(require 'json)
-
-(declare-function beads-detail-open "beads-detail")
-(declare-function beads-rpc-show "beads-rpc")
+(require 'beads-core)
 
 (defgroup beads-lint nil
   "Issue quality linting for Beads."
@@ -79,22 +76,9 @@ Checks issues for missing recommended template sections.
 (defun beads-lint--fetch (&optional type-filter)
   "Fetch lint results via CLI.
 Optional TYPE-FILTER limits to specific issue type."
-  (let* ((bd-program (or (executable-find "bd") "bd"))
-         (args (list "lint" "--json"))
-         (args (if type-filter
-                   (append args (list "--type" type-filter))
-                 args))
-         (output (with-temp-buffer
-                   (let ((exit-code (apply #'call-process bd-program nil t nil args)))
-                     (unless (zerop exit-code)
-                       (signal 'error
-                               (list (format "bd lint failed: %s"
-                                             (buffer-string)))))
-                     (goto-char (point-min))
-                     (condition-case nil
-                         (json-read)
-                       (json-error nil))))))
-    output))
+  (if type-filter
+      (beads-core-cli-request "lint" "--type" type-filter)
+    (beads-core-cli-request "lint")))
 
 (defun beads-lint--group-by-type (results)
   "Group RESULTS by issue type.
@@ -116,14 +100,11 @@ Returns alist of (type . issues)."
         (results (alist-get 'results data))
         (total (alist-get 'total data 0)))
     (erase-buffer)
-    (insert (propertize "Issue Lint Report\n" 'face 'bold))
-    (insert (propertize
-             "Check issues for missing recommended template sections\n"
-             'face 'shadow))
-    (insert (propertize
-             "RET=view  f=filter type  n/p=next/prev  g=refresh  q=quit\n"
-             'face 'shadow))
-    (insert (make-string 60 ?=) "\n\n")
+    (beads-core-render-header
+     "Issue Lint Report"
+     "Check issues for missing recommended template sections"
+     "RET=view  f=filter type  n/p=next/prev  g=refresh  q=quit"
+     60)
     (if (or (null results) (= total 0))
         (insert (propertize "All issues pass lint checks!\n" 'face 'success))
       (insert (format "%d issue(s) with missing sections"
@@ -182,19 +163,12 @@ Shows issues missing required template sections based on their type."
 
 (defun beads-lint--id-at-point ()
   "Return issue ID at point, or nil."
-  (get-text-property (point) 'beads-lint-id))
+  (beads-core-id-at-point 'beads-lint-id))
 
 (defun beads-lint-goto-issue ()
   "Open the issue at point in detail view."
   (interactive)
-  (let ((id (beads-lint--id-at-point)))
-    (unless id
-      (user-error "No issue at point"))
-    (condition-case err
-        (let ((issue (beads-rpc-show id)))
-          (beads-detail-open issue))
-      (beads-rpc-error
-       (user-error "Failed to load issue: %s" (error-message-string err))))))
+  (beads-core-goto-issue-at-point 'beads-lint-id))
 
 (defun beads-lint-refresh ()
   "Refresh the lint report."

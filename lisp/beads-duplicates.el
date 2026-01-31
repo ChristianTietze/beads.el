@@ -26,9 +26,7 @@
 ;;; Code:
 
 (require 'json)
-
-(declare-function beads-detail-open "beads-detail")
-(declare-function beads-rpc-show "beads-rpc")
+(require 'beads-core)
 
 (defgroup beads-duplicates nil
   "Duplicate detection for Beads."
@@ -90,14 +88,11 @@ Uses --no-daemon flag as duplicates command isn't supported in daemon mode."
         (groups (alist-get 'groups data))
         (group-count (alist-get 'duplicate_groups data 0)))
     (erase-buffer)
-    (insert (propertize "Duplicate Issues\n" 'face 'bold))
-    (insert (propertize
-             "Issues with identical content grouped for merging\n"
-             'face 'shadow))
-    (insert (propertize
-             "RET=view  m=merge issue  M=merge group  g=refresh  q=quit\n"
-             'face 'shadow))
-    (insert (make-string 60 ?=) "\n\n")
+    (beads-core-render-header
+     "Duplicate Issues"
+     "Issues with identical content grouped for merging"
+     "RET=view  m=merge issue  M=merge group  g=refresh  q=quit"
+     60)
     (if (or (null groups) (= group-count 0))
         (insert "No duplicate issues found.\n")
       (let ((group-num 0))
@@ -162,7 +157,7 @@ Duplicates are issues with identical content that can be merged."
 
 (defun beads-duplicates--id-at-point ()
   "Return issue ID at point, or nil."
-  (get-text-property (point) 'beads-duplicate-id))
+  (beads-core-id-at-point 'beads-duplicate-id))
 
 (defun beads-duplicates--group-at-point ()
   "Return group data at point, or nil."
@@ -171,14 +166,7 @@ Duplicates are issues with identical content that can be merged."
 (defun beads-duplicates-goto-issue ()
   "Open the issue at point in detail view."
   (interactive)
-  (let ((id (beads-duplicates--id-at-point)))
-    (unless id
-      (user-error "No issue at point"))
-    (condition-case err
-        (let ((issue (beads-rpc-show id)))
-          (beads-detail-open issue))
-      (beads-rpc-error
-       (user-error "Failed to load issue: %s" (error-message-string err))))))
+  (beads-core-goto-issue-at-point 'beads-duplicate-id))
 
 (defun beads-duplicates--merge (source-id target-id)
   "Merge SOURCE-ID into TARGET-ID using CLI."

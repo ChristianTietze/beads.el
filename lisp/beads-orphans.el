@@ -25,10 +25,8 @@
 
 ;;; Code:
 
-(require 'json)
+(require 'beads-core)
 
-(declare-function beads-detail-open "beads-detail")
-(declare-function beads-rpc-show "beads-rpc")
 (declare-function beads-rpc-close "beads-rpc")
 
 (defvar-local beads-orphans--data nil
@@ -53,30 +51,16 @@ Orphans are issues referenced in commits but not marked as closed.
 
 (defun beads-orphans--fetch ()
   "Fetch orphaned issues via CLI."
-  (let* ((bd-program (or (executable-find "bd") "bd"))
-         (output (with-temp-buffer
-                   (let ((exit-code (call-process bd-program nil t nil
-                                                  "orphans" "--json")))
-                     (unless (zerop exit-code)
-                       (signal 'error
-                               (list (format "bd orphans failed: %s"
-                                             (buffer-string)))))
-                     (goto-char (point-min))
-                     (json-read)))))
-    (if (vectorp output) (append output nil) output)))
+  (beads-core-cli-request "orphans"))
 
 (defun beads-orphans--render (orphans)
   "Render ORPHANS list into current buffer."
   (let ((inhibit-read-only t))
     (erase-buffer)
-    (insert (propertize "Orphaned Issues\n" 'face 'bold))
-    (insert (propertize
-             "Issues referenced in commits but not closed\n"
-             'face 'shadow))
-    (insert (propertize
-             "RET=view  c=close  g=refresh  q=quit\n"
-             'face 'shadow))
-    (insert (make-string 50 ?=) "\n\n")
+    (beads-core-render-header
+     "Orphaned Issues"
+     "Issues referenced in commits but not closed"
+     "RET=view  c=close  g=refresh  q=quit")
     (if (null orphans)
         (insert "No orphaned issues found.\n")
       (dolist (orphan orphans)
@@ -116,19 +100,12 @@ Orphans are issues referenced in commits but not marked as closed."
 
 (defun beads-orphans--id-at-point ()
   "Return orphan issue ID at point, or nil."
-  (get-text-property (point) 'beads-orphan-id))
+  (beads-core-id-at-point 'beads-orphan-id))
 
 (defun beads-orphans-goto-issue ()
   "Open the orphan issue at point in detail view."
   (interactive)
-  (let ((id (beads-orphans--id-at-point)))
-    (unless id
-      (user-error "No orphan at point"))
-    (condition-case err
-        (let ((issue (beads-rpc-show id)))
-          (beads-detail-open issue))
-      (beads-rpc-error
-       (user-error "Failed to load issue: %s" (error-message-string err))))))
+  (beads-core-goto-issue-at-point 'beads-orphan-id))
 
 (defun beads-orphans-close ()
   "Close the orphan issue at point."

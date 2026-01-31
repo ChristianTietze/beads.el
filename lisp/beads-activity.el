@@ -25,10 +25,7 @@
 
 ;;; Code:
 
-(require 'json)
-
-(declare-function beads-detail-open "beads-detail")
-(declare-function beads-rpc-show "beads-rpc")
+(require 'beads-core)
 
 (defgroup beads-activity nil
   "Activity feed for Beads."
@@ -144,22 +141,13 @@ Shows issue creates, updates, deletes, and comments in real-time.
 LIMIT is the max number of events (default `beads-activity-limit').
 PREFIX filters to issues starting with this string.
 TYPE filters to this event type."
-  (let* ((bd-program (or (executable-find "bd") "bd"))
-         (limit (or limit beads-activity-limit))
-         (args (list "activity" "--limit" (number-to-string limit) "--json"))
-         (args (if prefix (append args (list "--mol" prefix)) args))
-         (args (if type (append args (list "--type" type)) args))
-         (output (with-temp-buffer
-                   (let ((exit-code (apply #'call-process bd-program nil t nil args)))
-                     (unless (zerop exit-code)
-                       (signal 'error
-                               (list (format "bd activity failed: %s"
-                                             (buffer-string)))))
-                     (goto-char (point-min))
-                     (condition-case nil
-                         (json-read)
-                       (json-error nil))))))
-    (if (vectorp output) (append output nil) output)))
+  (let* ((limit (or limit beads-activity-limit))
+         (args (list "--limit" (number-to-string limit))))
+    (when prefix
+      (setq args (append args (list "--mol" prefix))))
+    (when type
+      (setq args (append args (list "--type" type))))
+    (apply #'beads-core-cli-request "activity" args)))
 
 (defun beads-activity--glyph-for-event (event)
   "Get display glyph for EVENT based on type and status."
@@ -199,16 +187,13 @@ TYPE filters to this event type."
   "Render activity EVENTS into current buffer."
   (let ((inhibit-read-only t))
     (erase-buffer)
-    (insert (propertize "Activity Feed\n" 'face 'bold))
-    (insert (propertize
-             (format "Showing %d events%s\n"
-                     (length events)
-                     (if beads-activity--follow-mode " [LIVE]" ""))
-             'face 'shadow))
-    (insert (propertize
-             "RET=view  f=follow  F=filter  g=refresh  l=limit  q=quit\n"
-             'face 'shadow))
-    (insert (make-string 60 ?=) "\n\n")
+    (beads-core-render-header
+     "Activity Feed"
+     (format "Showing %d events%s"
+             (length events)
+             (if beads-activity--follow-mode " [LIVE]" ""))
+     "RET=view  f=follow  F=filter  g=refresh  l=limit  q=quit"
+     60)
     (if (null events)
         (insert "No activity events found.\n")
       (dolist (event (reverse events))
@@ -261,19 +246,12 @@ LIMIT is the max number of events to show."
 
 (defun beads-activity--id-at-point ()
   "Return issue ID at point, or nil."
-  (get-text-property (point) 'beads-activity-id))
+  (beads-core-id-at-point 'beads-activity-id))
 
 (defun beads-activity-goto-issue ()
   "Open the issue at point in detail view."
   (interactive)
-  (let ((id (beads-activity--id-at-point)))
-    (unless id
-      (user-error "No issue at point"))
-    (condition-case err
-        (let ((issue (beads-rpc-show id)))
-          (beads-detail-open issue))
-      (beads-rpc-error
-       (user-error "Failed to load issue: %s" (error-message-string err))))))
+  (beads-core-goto-issue-at-point 'beads-activity-id))
 
 (defun beads-activity-refresh ()
   "Refresh the activity feed."

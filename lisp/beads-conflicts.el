@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'json)
+(require 'beads-core)
 
 (defvar-local beads-conflicts--data nil
   "Conflict status data in current buffer.")
@@ -66,14 +67,10 @@ and resolves them using beads' mechanical merge rules.
   "Render conflict status RESULT into current buffer."
   (let ((inhibit-read-only t))
     (erase-buffer)
-    (insert (propertize "JSONL Merge Conflicts\n" 'face 'bold))
-    (insert (propertize
-             "Resolve git merge conflict markers in beads JSONL files\n"
-             'face 'shadow))
-    (insert (propertize
-             "r=resolve all  g=refresh  q=quit\n"
-             'face 'shadow))
-    (insert (make-string 50 ?=) "\n\n")
+    (beads-core-render-header
+     "JSONL Merge Conflicts"
+     "Resolve git merge conflict markers in beads JSONL files"
+     "r=resolve all  g=refresh  q=quit")
     (if (null result)
         (insert "Could not check for conflicts.\n")
       (let ((file-path (alist-get 'file_path result))
