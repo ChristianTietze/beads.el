@@ -49,15 +49,6 @@
 
 \\{beads-types-mode-map}")
 
-(defvar-local beads-types--original-custom nil
-  "Original custom types list for detecting changes.")
-
-(defvar-local beads-types--save-callback nil
-  "Callback to invoke when saving.")
-
-(defvar-local beads-types--cancel-callback nil
-  "Callback to invoke when canceling.")
-
 (vui-defcomponent beads-types-core-item (type-info)
   "Display a single core type TYPE-INFO as read-only."
   :render
@@ -204,8 +195,7 @@ INITIAL-CORE-TYPES and INITIAL-CUSTOM-TYPES are loaded before mounting."
 (defun beads-types-save ()
   "Save changes from the types editor."
   (interactive)
-  (when beads-types--save-callback
-    (funcall beads-types--save-callback)))
+  (message "Use the [Save] button in the editor to save changes"))
 
 (defun beads-types-cancel ()
   "Cancel and close the types editor."
