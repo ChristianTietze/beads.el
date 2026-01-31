@@ -81,6 +81,15 @@ Hints are shown when entering beads modes to help with discoverability."
       (when hint
         (run-at-time 0.1 nil (lambda (h) (message h)) hint)))))
 
+(defun beads-vui-available-p ()
+  "Return non-nil if vui.el is available for use.
+Checks if vui can be loaded, which requires both vui and beads-vui."
+  (condition-case nil
+      (progn
+        (require 'beads-vui)
+        t)
+    (error nil)))
+
 (require 'beads-rpc)
 (require 'beads-list)
 (require 'beads-detail)

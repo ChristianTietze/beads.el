@@ -29,6 +29,7 @@
 (require 'beads-rpc)
 
 (declare-function beads-show-hint "beads")
+(declare-function beads-vui-available-p "beads")
 (declare-function vui-mount "vui")
 (declare-function vui-component "vui")
 (declare-function beads-vui-form-view "beads-vui")
@@ -88,11 +89,14 @@ When nil, uses traditional widget.el forms."
   "Open form editor for ISSUE."
   (let* ((id (alist-get 'id issue))
          (buffer-name (format "*Beads Form: %s*" id))
-         (buffer (get-buffer-create buffer-name)))
+         (buffer (get-buffer-create buffer-name))
+         (use-vui (and beads-form-use-vui (beads-vui-available-p))))
+    (when (and beads-form-use-vui (not use-vui))
+      (message "vui.el not available, falling back to widget form"))
     (with-current-buffer buffer
       (setq beads-form--issue-id id)
       (setq beads-form--original-issue issue)
-      (if beads-form-use-vui
+      (if use-vui
           (beads-form--render-vui buffer issue)
         (let ((inhibit-read-only t))
           (erase-buffer))

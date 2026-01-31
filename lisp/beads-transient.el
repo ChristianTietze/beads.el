@@ -47,6 +47,7 @@
 (declare-function beads-filter-by-label "beads-filter")
 (declare-function beads-filter-by-parent "beads-filter")
 (declare-function beads-filter-ready "beads-filter")
+(declare-function beads-vui-available-p "beads")
 (declare-function beads-filter-blocked "beads-filter")
 (declare-function beads-filter-by-search "beads-filter")
 
@@ -725,7 +726,17 @@ Uses canonical order from `beads-list--column-order' for insertion."
     ""
     ("q" "Back" transient-quit-one)]])
 
-(autoload 'beads-types-edit "beads-types" nil t)
+(declare-function beads-types-edit--internal "beads-types")
+
+(defun beads-types-edit ()
+  "Open the issue types editor.
+Requires vui.el to be installed."
+  (interactive)
+  (if (beads-vui-available-p)
+      (progn
+        (require 'beads-types)
+        (beads-types-edit--internal))
+    (user-error "Types editor requires vui.el which is not available")))
 
 (transient-define-prefix beads-views-menu ()
   "Beads views menu for reports and diagnostics."
