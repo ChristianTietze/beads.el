@@ -14,7 +14,7 @@ The canonical upstream is https://codeberg.org/ctietze/beads.el
 
 ## Beads Version Compatibility
 
-Tested with **beads CLI 0.49.0**. Version info maintained in `.claude/skills/beads-compat/references/version-info.md`.
+Tested with **beads CLI 0.49.1**. Version info maintained in `.claude/skills/beads-compat/references/version-info.md`.
 
 - Changelog: https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
 - Run `/beads-compat` to check installed version

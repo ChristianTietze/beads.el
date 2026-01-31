@@ -441,7 +441,7 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 ## Requirements
 
 - Emacs 28.1+
-- [Beads](https://github.com/steveyegge/beads) CLI 0.49.0+ with running daemon (`bd daemon`)
+- [Beads](https://github.com/steveyegge/beads) CLI 0.49.1+ with running daemon (`bd daemon`)
 - `hierarchy` package (for dependency tree view)
 - `transient` package (for menus)
 - `vui` package (for declarative UI components)

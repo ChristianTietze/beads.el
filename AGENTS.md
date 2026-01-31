@@ -2,7 +2,7 @@
 
 ## Beads Version Compatibility
 
-This package is tested with **beads 0.49.0**. Check compatibility:
+This package is tested with **beads 0.49.1**. Check compatibility:
 - Changelog: https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
 - Run `/beads-compat` to check installed version
 
