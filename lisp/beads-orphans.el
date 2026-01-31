@@ -95,6 +95,7 @@ Orphans are issues referenced in commits but not marked as closed.
           (put-text-property start (point) 'beads-orphan-id id)
           (put-text-property start (point) 'beads-orphan-data orphan))))))
 
+;;;###autoload
 (defun beads-orphans ()
   "Display orphaned issues with interactive actions.
 Orphans are issues referenced in commits but not marked as closed."
