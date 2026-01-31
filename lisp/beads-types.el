@@ -213,9 +213,10 @@ INITIAL-CORE-TYPES and INITIAL-CUSTOM-TYPES are loaded before mounting."
   (beads-types--close)
   (message "Cancelled"))
 
-(defun beads-types-edit--internal ()
-  "Open the issue types editor.
-Internal implementation; use `beads-types-edit' instead."
+;;;###autoload
+(defun beads-types-edit ()
+  "Open the issue types editor."
+  (interactive)
   (condition-case err
       (let* ((response (beads-rpc-types-full))
              (core-types (append (alist-get 'core_types response) nil))

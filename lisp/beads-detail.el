@@ -39,7 +39,6 @@
 (declare-function beads-list-refresh "beads-list")
 (declare-function beads-form-open "beads-form")
 (declare-function beads-show-hint "beads")
-(declare-function beads-vui-available-p "beads")
 (declare-function beads-hierarchy-show "beads-hierarchy")
 (declare-function evil-set-initial-state "evil-core")
 (declare-function evil-make-overriding-map "evil-core")
@@ -153,14 +152,11 @@ Only applies when `beads-detail-use-vui' is non-nil."
 Creates a unique buffer per issue and focuses it."
   (let* ((id (alist-get 'id issue))
          (buffer-name (format "*Beads Detail: %s*" id))
-         (buffer (get-buffer-create buffer-name))
-         (use-vui (and beads-detail-use-vui (beads-vui-available-p))))
-    (when (and beads-detail-use-vui (not use-vui))
-      (message "vui.el not available, falling back to traditional view"))
+         (buffer (get-buffer-create buffer-name)))
     (with-current-buffer buffer
       (setq beads-detail--current-issue-id id)
       (setq beads-detail--current-issue issue)
-      (if use-vui
+      (if beads-detail-use-vui
           (beads-detail--render-vui buffer issue)
         (unless (eq major-mode 'beads-detail-mode)
           (beads-detail-mode))
@@ -180,12 +176,11 @@ Creates a unique buffer per issue and focuses it."
   "Display ISSUE in preview buffer (for preview mode).
 Uses a single reusable buffer in a side window without focusing."
   (let* ((id (alist-get 'id issue))
-         (buffer (get-buffer-create "*Beads Preview*"))
-         (use-vui (and beads-detail-use-vui (beads-vui-available-p))))
+         (buffer (get-buffer-create "*Beads Preview*")))
     (with-current-buffer buffer
       (setq beads-detail--current-issue-id id)
       (setq beads-detail--current-issue issue)
-      (if use-vui
+      (if beads-detail-use-vui
           (beads-detail--render-vui buffer issue)
         (unless (eq major-mode 'beads-detail-mode)
           (beads-detail-mode))
