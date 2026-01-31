@@ -48,6 +48,8 @@
 
 ;;; Code:
 
+(require 'vui)
+
 (defgroup beads nil
   "Beads issue tracker."
   :group 'tools
