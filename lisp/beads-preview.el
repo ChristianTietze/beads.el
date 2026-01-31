@@ -27,7 +27,7 @@
 (require 'beads-detail)
 (require 'beads-rpc)
 
-(declare-function beads--get-issue-at-point "beads-list")
+(declare-function beads-list--get-issue-at-point "beads-list")
 
 (defgroup beads-preview nil
   "Automatic issue preview for Beads."
@@ -62,7 +62,7 @@ Only active when in beads-list-mode with preview mode enabled."
   (when (and beads-preview-mode
              (derived-mode-p 'tabulated-list-mode)
              (eq major-mode 'beads-list-mode))
-    (if-let ((issue (beads--get-issue-at-point)))
+    (if-let ((issue (beads-list--get-issue-at-point)))
         (beads-preview--start-timer issue)
       (beads-preview--cancel-timer))))
 

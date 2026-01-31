@@ -21,10 +21,10 @@
 ;;; Formatter tests (no daemon needed)
 
 (ert-deftest beads-list-test-format-id ()
-  "Test that beads--format-id returns the issue ID."
+  "Test that beads-list--format-id returns the issue ID."
   (let ((issue '((id . "bd-a1b2")
                  (title . "Test issue"))))
-    (should (equal (beads--format-id issue) "bd-a1b2"))))
+    (should (equal (beads-list--format-id issue) "bd-a1b2"))))
 
 (ert-deftest beads-list-test-format-status-open ()
   "Test that beads--format-status formats open status correctly."
@@ -176,28 +176,28 @@
     (should (equal (beads--format-type '((issue_type . "unknown"))) "unknown"))))
 
 (ert-deftest beads-list-test-format-title-short ()
-  "Test that beads--format-title returns short titles unchanged."
+  "Test that beads-list--format-title returns short titles unchanged."
   (let ((issue '((title . "Short title"))))
-    (should (equal (beads--format-title issue) "Short title"))))
+    (should (equal (beads-list--format-title issue) "Short title"))))
 
 (ert-deftest beads-list-test-format-title-long ()
-  "Test that beads--format-title truncates long titles to 50 chars."
+  "Test that beads-list--format-title truncates long titles to 50 chars."
   (let ((issue '((title . "This is a very long title that should be truncated because it exceeds the maximum length"))))
-    (let ((result (beads--format-title issue)))
+    (let ((result (beads-list--format-title issue)))
       (should (equal (length result) 50))
       (should (string-suffix-p "..." result))
       (should (equal result "This is a very long title that should be trunca...")))))
 
 (ert-deftest beads-list-test-format-title-exactly-50 ()
-  "Test that beads--format-title does not truncate 50-char titles."
+  "Test that beads-list--format-title does not truncate 50-char titles."
   (let ((issue '((title . "12345678901234567890123456789012345678901234567890"))))
-    (should (equal (beads--format-title issue)
+    (should (equal (beads-list--format-title issue)
                    "12345678901234567890123456789012345678901234567890"))))
 
 (ert-deftest beads-list-test-format-title-missing ()
-  "Test that beads--format-title handles missing title gracefully."
+  "Test that beads-list--format-title handles missing title gracefully."
   (let ((issue '((id . "bd-test"))))
-    (should (equal (beads--format-title issue) ""))))
+    (should (equal (beads-list--format-title issue) ""))))
 
 ;;; Entry conversion tests (mocked)
 
@@ -318,7 +318,7 @@
                 (lookup-key tabulated-list-mode-map (kbd "S"))))))
 
 (ert-deftest beads-list-test-get-issue-at-point-found ()
-  "Test that beads--get-issue-at-point returns issue when found."
+  "Test that beads-list--get-issue-at-point returns issue when found."
   (with-temp-buffer
     (beads-list-mode)
     (let* ((issues '(((id . "bd-a1b2")
@@ -336,19 +336,19 @@
       (tabulated-list-print)
       (goto-char (point-min))
       (forward-line 1)
-      (let ((issue (beads--get-issue-at-point)))
+      (let ((issue (beads-list--get-issue-at-point)))
         (should issue)
         (should (member (alist-get 'id issue) '("bd-a1b2" "bd-c3d4")))))))
 
 (ert-deftest beads-list-test-get-issue-at-point-not-found ()
-  "Test that beads--get-issue-at-point returns nil when no issue at point."
+  "Test that beads-list--get-issue-at-point returns nil when no issue at point."
   (with-temp-buffer
     (beads-list-mode)
     (let ((beads-list--issues '()))
-      (should (null (beads--get-issue-at-point))))))
+      (should (null (beads-list--get-issue-at-point))))))
 
 (ert-deftest beads-list-test-get-issue-at-point-multiple-issues ()
-  "Test that beads--get-issue-at-point can find different issues."
+  "Test that beads-list--get-issue-at-point can find different issues."
   (with-temp-buffer
     (beads-list-mode)
     (let* ((issues '(((id . "bd-a1b2")
@@ -371,12 +371,12 @@
       (tabulated-list-print)
       (goto-char (point-min))
       (forward-line 1)
-      (let* ((issue1 (beads--get-issue-at-point))
+      (let* ((issue1 (beads-list--get-issue-at-point))
              (id1 (alist-get 'id issue1)))
         (should issue1)
         (should (member id1 '("bd-a1b2" "bd-c3d4" "bd-e5f6")))
         (forward-line 1)
-        (let* ((issue2 (beads--get-issue-at-point))
+        (let* ((issue2 (beads-list--get-issue-at-point))
                (id2 (when issue2 (alist-get 'id issue2))))
           (when issue2
             (should (member id2 '("bd-a1b2" "bd-c3d4" "bd-e5f6")))

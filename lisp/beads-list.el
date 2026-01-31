@@ -176,15 +176,15 @@ across the entire row for maximum visibility."
   :group 'beads-list)
 
 (defvar beads-list--column-defs
-  '((id       . ("ID"       10 t              beads--format-id))
-    (date     . ("Date"     10 beads-list--sort-by-date beads--format-date))
+  '((id       . ("ID"       10 t              beads-list--format-id))
+    (date     . ("Date"     10 beads-list--sort-by-date beads-list--format-date))
     (status   . ("Status"   12 t              beads--format-status))
     (priority . ("Pri"       4 t              beads--format-priority))
     (type     . ("Type"      8 t              beads--format-type))
-    (title    . ("Title"    50 t              beads--format-title))
-    (assignee . ("Assignee" 12 t              beads--format-assignee))
-    (labels   . ("Labels"   15 t              beads--format-labels))
-    (deps     . ("Dep"       3 t              beads--format-deps)))
+    (title    . ("Title"    50 t              beads-list--format-title))
+    (assignee . ("Assignee" 12 t              beads-list--format-assignee))
+    (labels   . ("Labels"   15 t              beads-list--format-labels))
+    (deps     . ("Dep"       3 t              beads-list--format-deps)))
   "Column definitions for beads list view.
 Each entry is (SYMBOL . (HEADER WIDTH SORTABLE FORMATTER)).")
 
@@ -471,11 +471,11 @@ Returns t if found, nil otherwise."
               (list id (beads-list--build-entry issue))))
           issues))
 
-(defun beads--format-id (issue)
+(defun beads-list--format-id (issue)
   "Format ID column for ISSUE."
   (alist-get 'id issue))
 
-(defun beads--format-date (issue)
+(defun beads-list--format-date (issue)
   "Format date column for ISSUE.
 Displays YYYY-MM-DD from created_at timestamp."
   (let ((created (alist-get 'created_at issue)))
@@ -596,25 +596,25 @@ for subsequent sections."
     (when prev
       (goto-char prev))))
 
-(defun beads--format-title (issue)
+(defun beads-list--format-title (issue)
   "Format title column for ISSUE, truncating if needed."
   (let ((title (alist-get 'title issue "")))
     (if (> (length title) 50)
         (concat (substring title 0 47) "...")
       title)))
 
-(defun beads--format-assignee (issue)
+(defun beads-list--format-assignee (issue)
   "Format assignee column for ISSUE."
   (or (alist-get 'assignee issue) ""))
 
-(defun beads--format-labels (issue)
+(defun beads-list--format-labels (issue)
   "Format labels column for ISSUE as comma-separated string."
   (let ((labels (alist-get 'labels issue)))
     (if (and labels (> (length labels) 0))
         (mapconcat #'identity labels ",")
       "")))
 
-(defun beads--format-deps (issue)
+(defun beads-list--format-deps (issue)
   "Format dependency indicator for ISSUE.
 Shows ↑ for has parents, ↓ for has children, ↕ for both."
   (let ((dep-count (alist-get 'dependency_count issue 0))
@@ -628,7 +628,7 @@ Shows ↑ for has parents, ↓ for has children, ↕ for both."
       (propertize "↓" 'face 'beads-list-deps-child))
      (t ""))))
 
-(defun beads--get-issue-at-point ()
+(defun beads-list--get-issue-at-point ()
   "Get issue data at current line.
 Returns the issue alist or nil if not found."
   (when-let ((id (tabulated-list-get-id)))
@@ -932,7 +932,7 @@ With completion for known assignees from current issues."
 (defun beads-list-goto-issue ()
   "Navigate to or display details for issue at point."
   (interactive)
-  (if-let ((issue (beads--get-issue-at-point)))
+  (if-let ((issue (beads-list--get-issue-at-point)))
       (condition-case err
           (let ((id (alist-get 'id issue)))
             (let ((full-issue (beads-rpc-show id)))
@@ -944,7 +944,7 @@ With completion for known assignees from current issues."
 (defun beads-list-edit-form ()
   "Open form editor for issue at point."
   (interactive)
-  (if-let ((issue (beads--get-issue-at-point)))
+  (if-let ((issue (beads-list--get-issue-at-point)))
       (condition-case err
           (let ((id (alist-get 'id issue)))
             (let ((full-issue (beads-rpc-show id)))
@@ -957,7 +957,7 @@ With completion for known assignees from current issues."
 (defun beads-list-edit-title ()
   "Edit title of issue at point."
   (interactive)
-  (if-let ((issue (beads--get-issue-at-point)))
+  (if-let ((issue (beads-list--get-issue-at-point)))
       (let ((id (alist-get 'id issue))
             (title (alist-get 'title issue)))
         (require 'beads-edit)
@@ -968,7 +968,7 @@ With completion for known assignees from current issues."
 (defun beads-list-edit-status ()
   "Edit status of issue at point."
   (interactive)
-  (if-let ((issue (beads--get-issue-at-point)))
+  (if-let ((issue (beads-list--get-issue-at-point)))
       (let ((id (alist-get 'id issue))
             (status (alist-get 'status issue)))
         (require 'beads-edit)
@@ -981,7 +981,7 @@ With completion for known assignees from current issues."
 (defun beads-list-edit-priority ()
   "Edit priority of issue at point."
   (interactive)
-  (if-let ((issue (beads--get-issue-at-point)))
+  (if-let ((issue (beads-list--get-issue-at-point)))
       (let* ((id (alist-get 'id issue))
              (priority (alist-get 'priority issue))
              (priority-str (format "P%d" priority))
@@ -1001,7 +1001,7 @@ With completion for known assignees from current issues."
 (defun beads-list-edit-type ()
   "Edit type of issue at point."
   (interactive)
-  (if-let ((issue (beads--get-issue-at-point)))
+  (if-let ((issue (beads-list--get-issue-at-point)))
       (let ((id (alist-get 'id issue))
             (type (alist-get 'issue_type issue)))
         (require 'beads-edit)
@@ -1014,7 +1014,7 @@ With completion for known assignees from current issues."
 (defun beads-list-edit-description ()
   "Edit description of issue at point."
   (interactive)
-  (if-let ((issue (beads--get-issue-at-point)))
+  (if-let ((issue (beads-list--get-issue-at-point)))
       (condition-case err
           (let* ((id (alist-get 'id issue))
                  (full-issue (beads-rpc-show id))
