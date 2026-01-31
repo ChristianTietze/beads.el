@@ -26,6 +26,7 @@
 
 (require 'widget)
 (require 'wid-edit)
+(require 'cl-lib)
 (require 'beads-rpc)
 
 (declare-function beads-show-hint "beads")
