@@ -56,7 +56,7 @@
 (declare-function beads-list--build-format "beads-list")
 (declare-function beads-list--column-names "beads-list")
 (declare-function beads-list-available-types "beads-list")
-(declare-function beads-get-types "beads-list")
+(declare-function beads-get-types "beads-rpc")
 (declare-function beads-preview-mode "beads-preview")
 (declare-function beads-detail-refresh "beads-detail")
 (declare-function beads-detail-edit-form "beads-detail")

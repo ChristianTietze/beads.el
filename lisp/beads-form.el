@@ -45,7 +45,7 @@ When nil, uses traditional widget.el forms."
   :type 'boolean
   :group 'beads-form)
 
-(declare-function beads-get-types "beads-list")
+(declare-function beads-get-types "beads-rpc")
 
 (defvar-local beads-form--issue-id nil
   "Issue ID being edited in this form buffer.")

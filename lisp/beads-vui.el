@@ -34,7 +34,7 @@
 (require 'beads-faces)
 (require 'beads-rpc)
 
-(declare-function beads-get-types "beads-list")
+(declare-function beads-get-types "beads-rpc")
 
 (declare-function beads-detail-open "beads-detail")
 (declare-function beads-edit-field-markdown "beads-edit")

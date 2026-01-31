@@ -613,6 +613,33 @@ Returns a list of type name strings."
 Returns alist with `core_types' and `custom_types' keys."
   (beads-rpc-request "types" nil))
 
+(defconst beads-builtin-types
+  '("bug" "feature" "task" "epic" "chore" "gate" "convoy" "agent" "role" "rig")
+  "List of built-in issue types supported by beads.
+Used as fallback when daemon types cannot be fetched.")
+
+(defvar beads--types-cache nil
+  "Cached list of valid issue types from daemon.")
+
+(defvar beads--types-cache-time 0
+  "Time when types cache was last updated.")
+
+(defconst beads--types-cache-ttl 60
+  "Seconds to cache types before refreshing.")
+
+(defun beads-get-types ()
+  "Get valid issue types, using cache when fresh.
+Falls back to `beads-builtin-types' on error."
+  (if (and beads--types-cache
+           (< (- (float-time) beads--types-cache-time) beads--types-cache-ttl))
+      beads--types-cache
+    (condition-case nil
+        (let ((types (beads-rpc-types)))
+          (setq beads--types-cache types
+                beads--types-cache-time (float-time))
+          types)
+      (error beads-builtin-types))))
+
 (defun beads-rpc-config-get (key)
   "Get configuration value for KEY."
   (let ((response (beads-rpc-request "config_get" `((key . ,key)))))
