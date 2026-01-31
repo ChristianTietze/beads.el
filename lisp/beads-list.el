@@ -41,6 +41,8 @@
 (declare-function beads-edit-field-completing "beads-edit")
 (declare-function beads-edit-field-markdown "beads-edit")
 (declare-function beads-project-buffer-name "beads-project")
+(declare-function evil-set-initial-state "evil-core")
+(declare-function evil-make-overriding-map "evil-core")
 
 (defgroup beads-list nil
   "Issue list display for Beads."
@@ -396,6 +398,10 @@ Respects `beads-list-show-header-stats'."
   (tabulated-list-init-header)
   (hl-line-mode 1)
   (beads-show-hint))
+
+(with-eval-after-load 'evil
+  (evil-set-initial-state 'beads-list-mode 'normal)
+  (evil-make-overriding-map beads-list-mode-map 'normal))
 
 (defun beads-list-refresh (&optional silent)
   "Fetch issues from daemon and refresh the display.

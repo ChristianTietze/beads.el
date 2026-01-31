@@ -30,6 +30,8 @@
 (require 'beads-faces)
 
 (declare-function beads-detail-open "beads-detail")
+(declare-function evil-set-initial-state "evil-core")
+(declare-function evil-make-overriding-map "evil-core")
 
 (defgroup beads-hierarchy nil
   "Dependency tree display for Beads."
@@ -98,6 +100,10 @@ Returns sorted list of positions for widgets and buttons."
   "Major mode for displaying issue dependency trees.
 
 \\{beads-hierarchy-mode-map}")
+
+(with-eval-after-load 'evil
+  (evil-set-initial-state 'beads-hierarchy-mode 'normal)
+  (evil-make-overriding-map beads-hierarchy-mode-map 'normal))
 
 (defun beads-hierarchy--labelfn (issue indent)
   "Insert formatted ISSUE at INDENT level.

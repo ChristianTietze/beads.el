@@ -40,6 +40,8 @@
 (declare-function beads-form-open "beads-form")
 (declare-function beads-show-hint "beads")
 (declare-function beads-hierarchy-show "beads-hierarchy")
+(declare-function evil-set-initial-state "evil-core")
+(declare-function evil-make-overriding-map "evil-core")
 
 (defgroup beads-detail nil
   "Issue detail display for Beads."
@@ -140,6 +142,10 @@ Only applies when `beads-detail-use-vui' is non-nil."
   (setq buffer-read-only t)
   (setq truncate-lines nil)
   (beads-show-hint))
+
+(with-eval-after-load 'evil
+  (evil-set-initial-state 'beads-detail-mode 'normal)
+  (evil-make-overriding-map beads-detail-mode-map 'normal))
 
 (defun beads-detail-open (issue)
   "Open ISSUE in a dedicated detail buffer in bottom window.
