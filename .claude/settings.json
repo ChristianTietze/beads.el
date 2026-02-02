@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git commit'; then echo '[Hook] Consider running /elisp-unused-vars before committing elisp changes'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
