@@ -61,6 +61,15 @@ Or with `package.el`:
 (package-install 'beads)
 ```
 
+### From Git (Emacs 30+)
+
+With the built-in `:vc` keyword:
+
+```elisp
+(use-package beads
+  :vc (:url "https://codeberg.org/ctietze/beads.el" :lisp-dir "lisp" :rev :newest))
+```
+
 ### Manual Installation
 
 ```elisp
