@@ -54,7 +54,7 @@ acceptance criteria, and comments will be fontified with markdown highlighting."
   :type 'boolean
   :group 'beads-detail)
 
-(defcustom beads-detail-use-vui nil
+(defcustom beads-detail-use-vui t
   "Whether to use vui.el for rendering the detail view.
 When non-nil, uses declarative vui components for layout.
 When nil, uses traditional text insertion with properties."
@@ -143,9 +143,28 @@ Only applies when `beads-detail-use-vui' is non-nil."
   (setq truncate-lines nil)
   (beads-show-hint))
 
+(declare-function vui-mode "vui")
+
+(defvar beads-detail-vui-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map beads-detail-mode-map)
+    map)
+  "Keymap for `beads-detail-vui-mode'.
+Inherits all bindings from `beads-detail-mode-map'.")
+
+(define-derived-mode beads-detail-vui-mode vui-mode "Beads-Detail"
+  "Major mode for vui-based Beads detail view.
+Derives from `vui-mode' and inherits keybindings from `beads-detail-mode'.
+
+\\{beads-detail-vui-mode-map}"
+  (setq truncate-lines nil)
+  (beads-show-hint))
+
 (with-eval-after-load 'evil
   (evil-set-initial-state 'beads-detail-mode 'normal)
-  (evil-make-overriding-map beads-detail-mode-map 'normal))
+  (evil-make-overriding-map beads-detail-mode-map 'normal)
+  (evil-set-initial-state 'beads-detail-vui-mode 'normal)
+  (evil-make-overriding-map beads-detail-vui-mode-map 'normal))
 
 (defun beads-detail-open (issue)
   "Open ISSUE in a dedicated detail buffer in bottom window.
@@ -426,6 +445,8 @@ Uses CLI fallback since RPC does not support comment_add."
         (navigate-fn (lambda (id)
                        (when-let ((target (beads-rpc-show id)))
                          (beads-detail-open target)))))
+    (with-current-buffer buffer
+      (beads-detail-vui-mode))
     (save-window-excursion
       (vui-mount (vui-component 'beads-vui-detail-view
                                 :issue issue

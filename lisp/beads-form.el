@@ -38,7 +38,7 @@
   "Form-based editing for Beads issues."
   :group 'beads)
 
-(defcustom beads-form-use-vui nil
+(defcustom beads-form-use-vui t
   "Whether to use vui.el for the form editor.
 When non-nil, uses declarative vui components.
 When nil, uses traditional widget.el forms."
