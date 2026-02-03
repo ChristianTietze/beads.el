@@ -91,14 +91,17 @@ When nil, uses traditional widget.el forms."
          (buffer-name (format "*Beads Form: %s*" id))
          (buffer (get-buffer-create buffer-name)))
     (with-current-buffer buffer
-      (setq beads-form--issue-id id)
-      (setq beads-form--original-issue issue)
       (if beads-form-use-vui
-          (beads-form--render-vui buffer issue)
+          (progn
+            (setq beads-form--issue-id id)
+            (setq beads-form--original-issue issue)
+            (beads-form--render-vui buffer issue))
         (let ((inhibit-read-only t))
           (erase-buffer))
         (remove-overlays)
         (beads-form-mode)
+        (setq beads-form--issue-id id)
+        (setq beads-form--original-issue issue)
         (setq beads-form--widgets nil)
         (beads-form--render issue)
         (widget-setup)
