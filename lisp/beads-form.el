@@ -115,10 +115,21 @@ When nil, uses traditional widget.el forms."
 (defvar-local beads-form--vui-cancel-action nil
   "Cancel action for vui form, set by component via vui-use-effect.")
 
+(defun beads-form--self-insert-or-undefined ()
+  "Insert character if in a widget field, otherwise signal undefined.
+This undoes special-mode's suppression of self-insert-command for form
+buffers, allowing typing in widget fields while preserving special-mode
+behavior elsewhere."
+  (interactive)
+  (if (widget-field-at (point))
+      (call-interactively #'self-insert-command)
+    (undefined)))
+
 (defvar beads-form-vui-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-c") #'beads-form-vui-save)
     (define-key map (kbd "C-c C-k") #'beads-form-vui-cancel)
+    (define-key map [remap self-insert-command] #'beads-form--self-insert-or-undefined)
     map)
   "Keymap for `beads-form-vui-mode'.")
 

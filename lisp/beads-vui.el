@@ -514,9 +514,13 @@ edit buffers and save directly - they are not part of the form save."
          (do-save (lambda ()
                     (when on-save
                       (funcall on-save (funcall collect-changes))))))
+    ;; NB: The nil at the end is critical! vui-use-effect treats any returned
+    ;; function as a cleanup callback. Without nil, setq returns on-cancel,
+    ;; which vui then calls as "cleanup" on every state change - closing the form!
     (vui-use-effect (title status priority issue-type assignee external-ref)
       (setq beads-form--vui-save-action do-save)
-      (setq beads-form--vui-cancel-action on-cancel))
+      (setq beads-form--vui-cancel-action on-cancel)
+      nil)
     (vui-vstack
      (vui-text (format "Edit Issue: %s" id) :face 'bold)
      (vui-text "C-c C-c to save, C-c C-k to cancel" :face 'shadow)
