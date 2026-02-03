@@ -135,11 +135,29 @@ behavior elsewhere."
 
 (declare-function vui-mode "vui")
 
+(defun beads-form--patch-field-keymaps ()
+  "Add form keybindings to all widget field overlays in current buffer.
+This ensures C-c C-c and C-c C-k work inside editable fields.
+Uses the actual keybindings from the mode map for consistency with user remaps."
+  (let ((save-keys (or (where-is-internal #'beads-form-vui-save beads-form-vui-mode-map)
+                       (list (kbd "C-c C-c"))))
+        (cancel-keys (or (where-is-internal #'beads-form-vui-cancel beads-form-vui-mode-map)
+                         (list (kbd "C-c C-k")))))
+    (dolist (ov (overlays-in (point-min) (point-max)))
+      (when (overlay-get ov 'field)
+        (let ((km (overlay-get ov 'local-map)))
+          (when km
+            (dolist (key save-keys)
+              (define-key km key #'beads-form-vui-save))
+            (dolist (key cancel-keys)
+              (define-key km key #'beads-form-vui-cancel))))))))
+
 (define-derived-mode beads-form-vui-mode vui-mode "Beads-Form"
   "Major mode for vui-based Beads form editor.
 Derives from `vui-mode' and adds form-specific keybindings.
 
 \\{beads-form-vui-mode-map}"
+  (add-hook 'pre-command-hook #'beads-form--patch-field-keymaps nil t)
   (beads-show-hint))
 
 (declare-function evil-set-initial-state "evil-core")
@@ -189,7 +207,12 @@ Derives from `vui-mode' and adds form-specific keybindings.
                                 :on-cancel (lambda ()
                                              (beads-form--close)
                                              (message "Cancelled")))
-                 (buffer-name buffer)))))
+                 (buffer-name buffer))
+      (run-with-timer 0 nil
+                      (lambda ()
+                        (when (buffer-live-p buffer)
+                          (with-current-buffer buffer
+                            (beads-form--patch-field-keymaps))))))))
 
 (defun beads-form--render (issue)
   "Render form widgets for ISSUE."
