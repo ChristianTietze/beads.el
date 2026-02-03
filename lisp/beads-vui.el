@@ -476,6 +476,9 @@ ON-EDIT called when edit button clicked (opens dedicated edit buffer)."
 
 ;;; Complete form view component
 
+(defvar beads-form--vui-save-action)
+(defvar beads-form--vui-cancel-action)
+
 (vui-defcomponent beads-vui-form-view (issue &key on-save on-cancel)
   "Form editor for ISSUE with all editable fields.
 ON-SAVE called with changed fields plist, ON-CANCEL to abort.
@@ -507,7 +510,13 @@ edit buffers and save directly - they are not part of the form save."
               (let ((new-ref (if (string-empty-p external-ref) nil external-ref)))
                 (unless (equal new-ref (alist-get 'external_ref issue))
                   (setq changes (plist-put changes :external-ref new-ref))))
-              changes))))
+              changes)))
+         (do-save (lambda ()
+                    (when on-save
+                      (funcall on-save (funcall collect-changes))))))
+    (vui-use-effect (title status priority issue-type assignee external-ref)
+      (setq beads-form--vui-save-action do-save)
+      (setq beads-form--vui-cancel-action on-cancel))
     (vui-vstack
      (vui-text (format "Edit Issue: %s" id) :face 'bold)
      (vui-text "C-c C-c to save, C-c C-k to cancel" :face 'shadow)
@@ -564,9 +573,7 @@ edit buffers and save directly - they are not part of the form save."
                     :on-edit (beads-vui-make-edit-handler issue 'notes nil))
      (vui-newline)
      (vui-component 'beads-vui-form-buttons
-                    :on-save (lambda ()
-                               (when on-save
-                                 (funcall on-save (funcall collect-changes))))
+                    :on-save do-save
                     :on-cancel on-cancel))))
 
 (provide 'beads-vui)

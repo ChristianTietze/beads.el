@@ -109,10 +109,48 @@ When nil, uses traditional widget.el forms."
         (widget-forward 1)))
     (pop-to-buffer buffer)))
 
+(defvar-local beads-form--vui-save-action nil
+  "Save action for vui form, set by component via vui-use-effect.")
+
+(defvar-local beads-form--vui-cancel-action nil
+  "Cancel action for vui form, set by component via vui-use-effect.")
+
+(defvar beads-form-vui-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-c") #'beads-form-vui-save)
+    (define-key map (kbd "C-c C-k") #'beads-form-vui-cancel)
+    map)
+  "Keymap for `beads-form-vui-mode'.")
+
+(declare-function vui-mode "vui")
+
+(define-derived-mode beads-form-vui-mode vui-mode "Beads-Form"
+  "Major mode for vui-based Beads form editor.
+Derives from `vui-mode' and adds form-specific keybindings.
+
+\\{beads-form-vui-mode-map}"
+  (beads-show-hint))
+
+(defun beads-form-vui-save ()
+  "Save the vui form."
+  (interactive)
+  (if beads-form--vui-save-action
+      (funcall beads-form--vui-save-action)
+    (user-error "No save action available")))
+
+(defun beads-form-vui-cancel ()
+  "Cancel the vui form."
+  (interactive)
+  (if beads-form--vui-cancel-action
+      (funcall beads-form--vui-cancel-action)
+    (beads-form--close)))
+
 (defun beads-form--render-vui (buffer issue)
   "Render form for ISSUE into BUFFER using vui.el components."
   (require 'beads-vui)
   (let ((issue-id (alist-get 'id issue)))
+    (with-current-buffer buffer
+      (beads-form-vui-mode))
     (save-window-excursion
       (vui-mount (vui-component 'beads-vui-form-view
                                 :issue issue
