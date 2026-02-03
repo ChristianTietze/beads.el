@@ -131,6 +131,12 @@ Derives from `vui-mode' and adds form-specific keybindings.
 \\{beads-form-vui-mode-map}"
   (beads-show-hint))
 
+(declare-function evil-set-initial-state "evil-core")
+
+(with-eval-after-load 'evil
+  (evil-set-initial-state 'beads-form-mode 'emacs)
+  (evil-set-initial-state 'beads-form-vui-mode 'emacs))
+
 (defun beads-form-vui-save ()
   "Save the vui form."
   (interactive)
