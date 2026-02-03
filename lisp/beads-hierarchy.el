@@ -101,6 +101,7 @@ Returns sorted list of positions for widgets and buttons."
 
 \\{beads-hierarchy-mode-map}")
 
+;; Configure evil-mode IF user has it loaded (does not enable evil)
 (with-eval-after-load 'evil
   (evil-set-initial-state 'beads-hierarchy-mode 'normal)
   (evil-make-overriding-map beads-hierarchy-mode-map 'normal))

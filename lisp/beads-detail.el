@@ -160,6 +160,7 @@ Derives from `vui-mode' and inherits keybindings from `beads-detail-mode'.
   (setq truncate-lines nil)
   (beads-show-hint))
 
+;; Configure evil-mode IF user has it loaded (does not enable evil)
 (with-eval-after-load 'evil
   (evil-set-initial-state 'beads-detail-mode 'normal)
   (evil-make-overriding-map beads-detail-mode-map 'normal)

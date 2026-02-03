@@ -372,6 +372,7 @@ Respects `beads-list-show-header-stats'."
   (hl-line-mode 1)
   (beads-show-hint))
 
+;; Configure evil-mode IF user has it loaded (does not enable evil)
 (with-eval-after-load 'evil
   (evil-set-initial-state 'beads-list-mode 'normal)
   (evil-make-overriding-map beads-list-mode-map 'normal))

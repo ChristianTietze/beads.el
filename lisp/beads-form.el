@@ -133,6 +133,7 @@ Derives from `vui-mode' and adds form-specific keybindings.
 
 (declare-function evil-set-initial-state "evil-core")
 
+;; Configure evil-mode IF user has it loaded (does not enable evil)
 (with-eval-after-load 'evil
   (evil-set-initial-state 'beads-form-mode 'emacs)
   (evil-set-initial-state 'beads-form-vui-mode 'emacs))
