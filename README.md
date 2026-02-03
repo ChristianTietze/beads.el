@@ -417,26 +417,26 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 ;; Disable markdown rendering in detail view
 (setq beads-detail-render-markdown nil)
 
-;; Use vui.el declarative components for detail view (experimental)
-(setq beads-detail-use-vui t)
+;; Disable vui.el and use traditional text rendering
+(setq beads-detail-use-vui nil)
 ```
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `beads-detail-render-markdown` | `t` | Enable markdown syntax highlighting |
-| `beads-detail-use-vui` | `nil` | Use vui.el declarative components |
+| `beads-detail-use-vui` | `t` | Use vui.el declarative components |
 | `beads-detail-vui-editable` | `t` | Show inline edit buttons in vui mode |
 
 ### Form Editor (`beads-form`)
 
 ```elisp
-;; Use vui.el declarative components for form editor (experimental)
-(setq beads-form-use-vui t)
+;; Disable vui.el and use traditional widget.el forms
+(setq beads-form-use-vui nil)
 ```
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `beads-form-use-vui` | `nil` | Use vui.el declarative components |
+| `beads-form-use-vui` | `t` | Use vui.el declarative components |
 
 ## Requirements
 
