@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'json)
+(require 'beads-backend)
 
 (declare-function beads-detail-open "beads-detail")
 (declare-function beads-rpc-show "beads-rpc")
@@ -62,15 +63,21 @@ PROPERTY-NAME should be a symbol like `beads-orphan-id'."
        (user-error "Failed to load issue: %s" (error-message-string err))))))
 
 (defun beads-core-cli-request (subcommand &rest args)
-  "Execute bd CLI with SUBCOMMAND and ARGS, returning parsed JSON.
+  "Execute beads CLI with SUBCOMMAND and ARGS, returning parsed JSON.
+Delegates to the backend abstraction layer.
 Signals error if command fails or returns invalid JSON."
-  (let* ((bd-program (or (executable-find "bd") "bd"))
-         (full-args (append (list subcommand) args (list "--json"))))
+  (let* ((backend (beads-backend-for-project))
+         (program (beads-backend-cli-program-path backend))
+         (extra (when-let ((fn (beads-backend-cli-extra-flags backend)))
+                  (funcall fn subcommand)))
+         (full-args (append extra (list subcommand) args (list "--json"))))
     (with-temp-buffer
-      (let ((exit-code (apply #'call-process bd-program nil t nil full-args)))
+      (let ((exit-code (apply #'call-process program nil t nil full-args)))
         (unless (zerop exit-code)
           (signal 'error
-                  (list (format "bd %s failed: %s" subcommand (buffer-string)))))
+                  (list (format "%s %s failed: %s"
+                                (beads-backend-name backend)
+                                subcommand (buffer-string)))))
         (goto-char (point-min))
         (condition-case nil
             (let ((output (json-read)))
