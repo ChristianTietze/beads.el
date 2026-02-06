@@ -25,7 +25,7 @@
 ;;; Code:
 
 (require 'beads-detail)
-(require 'beads-rpc)
+(require 'beads-client)
 
 (declare-function beads-list--get-issue-at-point "beads-list")
 
@@ -86,9 +86,9 @@ Only active when in beads-list-mode with preview mode enabled."
       (unless (equal issue-id beads-preview--current-issue-id)
         (setq beads-preview--current-issue-id issue-id)
         (condition-case err
-            (let ((full-issue (beads-rpc-show issue-id)))
+            (let ((full-issue (beads-client-show issue-id)))
               (beads-detail-show full-issue))
-          (beads-rpc-error
+          (beads-client-error
            (message "Preview failed: %s" (error-message-string err))))))))
 
 (defun beads-preview--cleanup ()

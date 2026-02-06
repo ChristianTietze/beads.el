@@ -27,7 +27,7 @@
 ;;; Code:
 
 (require 'vui)
-(require 'beads-rpc)
+(require 'beads-client)
 
 (defvar beads--types-cache)
 (defvar beads--types-cache-time)
@@ -179,13 +179,13 @@ INITIAL-CORE-TYPES and INITIAL-CUSTOM-TYPES are loaded before mounting."
                        (mapconcat #'identity custom-types ",")
                      "")))
         (if (string-empty-p value)
-            (beads-rpc-request "config_unset" '((key . "types.custom")))
-          (beads-rpc-config-set "types.custom" value))
+            (beads-client-request "config_unset" '((key . "types.custom")))
+          (beads-client-config-set "types.custom" value))
         (setq beads--types-cache nil
               beads--types-cache-time 0)
         (message "Custom types saved")
         (beads-types--close))
-    (beads-rpc-error
+    (beads-client-error
      (message "Failed to save: %s" (error-message-string err)))))
 
 (defun beads-types--close ()
@@ -208,7 +208,7 @@ INITIAL-CORE-TYPES and INITIAL-CUSTOM-TYPES are loaded before mounting."
   "Open the issue types editor."
   (interactive)
   (condition-case err
-      (let* ((response (beads-rpc-types-full))
+      (let* ((response (beads-client-types-full))
              (core-types (append (alist-get 'core_types response) nil))
              (custom-types (append (alist-get 'custom_types response) nil))
              (buffer (get-buffer-create "*Beads Types*")))
@@ -221,7 +221,7 @@ INITIAL-CORE-TYPES and INITIAL-CUSTOM-TYPES are loaded before mounting."
                                     :on-cancel #'beads-types-cancel)
                      (buffer-name buffer)))
         (pop-to-buffer buffer))
-    (beads-rpc-error
+    (beads-client-error
      (message "Failed to load types: %s" (error-message-string err)))))
 
 (provide 'beads-types)

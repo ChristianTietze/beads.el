@@ -27,7 +27,7 @@
 (require 'widget)
 (require 'wid-edit)
 (require 'cl-lib)
-(require 'beads-rpc)
+(require 'beads-client)
 
 (declare-function beads-show-hint "beads")
 (declare-function vui-mount "vui")
@@ -45,7 +45,7 @@ When nil, uses traditional widget.el forms."
   :type 'boolean
   :group 'beads-form)
 
-(declare-function beads-get-types "beads-rpc")
+(declare-function beads-get-types "beads-client")
 
 (defvar-local beads-form--issue-id nil
   "Issue ID being edited in this form buffer.")
@@ -197,11 +197,11 @@ Derives from `vui-mode' and adds form-specific keybindings.
                                                  (beads-form--close))
                                              (condition-case err
                                                  (progn
-                                                   (apply #'beads-rpc-update issue-id changes)
+                                                   (apply #'beads-client-update issue-id changes)
                                                    (message "Updated %s" issue-id)
                                                    (beads-form--close)
                                                    (beads-form--refresh-views issue-id))
-                                               (beads-rpc-error
+                                               (beads-client-error
                                                 (message "Failed to update: %s"
                                                          (error-message-string err))))))
                                 :on-cancel (lambda ()
@@ -342,11 +342,11 @@ Derives from `vui-mode' and adds form-specific keybindings.
           (beads-form--close))
       (condition-case err
           (progn
-            (apply #'beads-rpc-update issue-id changes)
+            (apply #'beads-client-update issue-id changes)
             (message "Updated %s" issue-id)
             (beads-form--close)
             (beads-form--refresh-views issue-id))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to update: %s" (error-message-string err)))))))
 
 (defun beads-form-cancel ()

@@ -26,7 +26,7 @@
 
 (require 'hierarchy)
 (require 'wid-edit)
-(require 'beads-rpc)
+(require 'beads-client)
 (require 'beads-faces)
 
 (declare-function beads-detail-open "beads-detail")
@@ -136,9 +136,9 @@ Format: ID [type] title [status]"
     (when issue
       (condition-case err
           (let* ((id (alist-get 'id issue))
-                 (full-issue (beads-rpc-show id)))
+                 (full-issue (beads-client-show id)))
             (beads-detail-open full-issue))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to fetch issue: %s" (error-message-string err)))))))
 
 (defun beads-hierarchy--collect-ancestors (issue by-id)
@@ -152,12 +152,12 @@ Each ancestor is marked with beads--child-id pointing to its dependent."
             (let ((dep-with-child (cons (cons 'beads--child-id (alist-get 'id issue)) dep)))
               (puthash dep-id dep-with-child by-id))
             (condition-case nil
-                (let ((full-dep (beads-rpc-show dep-id)))
+                (let ((full-dep (beads-client-show dep-id)))
                   (puthash dep-id
                            (cons (cons 'beads--child-id (alist-get 'id issue)) full-dep)
                            by-id)
                   (beads-hierarchy--collect-ancestors full-dep by-id))
-              (beads-rpc-error nil))))))))
+              (beads-client-error nil))))))))
 
 (defun beads-hierarchy--collect-descendants (issue by-id)
   "Recursively collect descendants (dependents) of ISSUE into BY-ID.
@@ -170,19 +170,19 @@ Each descendant is marked with beads--parent-id pointing to its blocker."
             (let ((dep-with-parent (cons (cons 'beads--parent-id (alist-get 'id issue)) dep)))
               (puthash dep-id dep-with-parent by-id))
             (condition-case nil
-                (let ((full-dep (beads-rpc-show dep-id)))
+                (let ((full-dep (beads-client-show dep-id)))
                   (puthash dep-id
                            (cons (cons 'beads--parent-id (alist-get 'id issue)) full-dep)
                            by-id)
                   (beads-hierarchy--collect-descendants full-dep by-id))
-              (beads-rpc-error nil))))))))
+              (beads-client-error nil))))))))
 
 (defun beads-hierarchy--build (issue-id)
   "Build hierarchy for ISSUE-ID showing full bidirectional tree.
 Returns a cons of (hierarchy . by-id-hash).
 Shows ancestors (blockers) above and descendants (dependents) below."
   (condition-case err
-      (let* ((root-issue (beads-rpc-show issue-id))
+      (let* ((root-issue (beads-client-show issue-id))
              (h (hierarchy-new))
              (by-id (make-hash-table :test 'equal)))
 
@@ -198,7 +198,7 @@ Shows ancestors (blockers) above and descendants (dependents) below."
                  by-id)
 
         (cons h by-id))
-    (beads-rpc-error
+    (beads-client-error
      (message "Failed to fetch dependency tree: %s" (error-message-string err))
      nil)))
 
@@ -233,9 +233,9 @@ For ancestors, we look for issues that have this as beads--child-id."
     (if issue
         (condition-case err
             (let* ((id (alist-get 'id issue))
-                   (full-issue (beads-rpc-show id)))
+                   (full-issue (beads-client-show id)))
               (beads-detail-open full-issue))
-          (beads-rpc-error
+          (beads-client-error
            (message "Failed to fetch issue: %s" (error-message-string err))))
       (message "No issue at point"))))
 

@@ -187,7 +187,7 @@
 (ert-deftest beads-preview-test-display-issue-mocked ()
   "Test that beads-preview--display-issue creates preview buffer."
   (let ((buffer-created nil))
-    (cl-letf (((symbol-function 'beads-rpc-show)
+    (cl-letf (((symbol-function 'beads-client-show)
                (lambda (_issue-id)
                  '((id . "bd-test")
                    (title . "Test Issue")
@@ -206,9 +206,9 @@
 
 (ert-deftest beads-preview-test-display-issue-error-handling ()
   "Test that display-issue handles RPC errors gracefully."
-  (cl-letf (((symbol-function 'beads-rpc-show)
+  (cl-letf (((symbol-function 'beads-client-show)
              (lambda (_issue-id)
-               (signal 'beads-rpc-error '("Test error"))))
+               (signal 'beads-client-error '("Test error"))))
             ((symbol-function 'message)
              (lambda (_format &rest _args) nil)))
     (beads-preview--display-issue '((id . "bd-test")))))

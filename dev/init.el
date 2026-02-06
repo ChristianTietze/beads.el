@@ -30,7 +30,7 @@
 (defvar beads-reload--features
   '(beads beads-transient beads-autoupdate beads-project
     beads-list beads-preview beads-detail beads-hierarchy
-    beads-form beads-edit beads-filter beads-faces beads-rpc
+    beads-form beads-edit beads-filter beads-faces beads-client
     beads-state beads-orphans beads-stale beads-activity
     beads-duplicates beads-lint beads-vui)
   "Beads features in reverse dependency order for unloading.")

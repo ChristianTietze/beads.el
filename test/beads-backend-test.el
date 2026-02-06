@@ -105,7 +105,7 @@
   "Test auto-detection prefers bd when available."
   (cl-letf (((symbol-function 'executable-find)
              (lambda (cmd) (when (equal cmd "bd") "/usr/bin/bd")))
-            ((symbol-function 'beads-rpc--project-root)
+            ((symbol-function 'beads-client--project-root)
              (lambda () nil)))
     (let ((beads-cli-program nil)
           (beads-backend--project-cache (make-hash-table :test 'equal)))
@@ -115,7 +115,7 @@
   "Test auto-detection falls back to br when bd not available."
   (cl-letf (((symbol-function 'executable-find)
              (lambda (cmd) (when (equal cmd "br") "/usr/bin/br")))
-            ((symbol-function 'beads-rpc--project-root)
+            ((symbol-function 'beads-client--project-root)
              (lambda () nil)))
     (let ((beads-cli-program nil)
           (beads-backend--project-cache (make-hash-table :test 'equal)))
@@ -124,7 +124,7 @@
 (ert-deftest beads-backend-test-detect-none-signals ()
   "Test auto-detection signals when no CLI found."
   (cl-letf (((symbol-function 'executable-find) (lambda (_) nil))
-            ((symbol-function 'beads-rpc--project-root)
+            ((symbol-function 'beads-client--project-root)
              (lambda () nil)))
     (let ((beads-cli-program nil)
           (beads-backend--project-cache (make-hash-table :test 'equal)))
@@ -135,7 +135,7 @@
   "Test that beads-cli-program overrides auto-detection."
   (cl-letf (((symbol-function 'executable-find)
              (lambda (cmd) (when (equal cmd "bd") "/usr/bin/bd")))
-            ((symbol-function 'beads-rpc--project-root)
+            ((symbol-function 'beads-client--project-root)
              (lambda () nil)))
     (let ((beads-cli-program "br")
           (beads-backend--project-cache (make-hash-table :test 'equal)))
@@ -149,7 +149,7 @@
                  (when (equal cmd "bd")
                    (setq detect-count (1+ detect-count))
                    "/usr/bin/bd")))
-              ((symbol-function 'beads-rpc--project-root)
+              ((symbol-function 'beads-client--project-root)
                (lambda () "/fake/project/")))
       (let ((beads-cli-program nil)
             (beads-backend--project-cache (make-hash-table :test 'equal)))

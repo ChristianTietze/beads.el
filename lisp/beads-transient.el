@@ -25,7 +25,7 @@
 ;;; Code:
 
 (require 'transient)
-(require 'beads-rpc)
+(require 'beads-client)
 (require 'beads-filter)
 
 (defvar beads-list--filter)
@@ -56,7 +56,7 @@
 (declare-function beads-list--build-format "beads-list")
 (declare-function beads-list--column-names "beads-list")
 (declare-function beads-list-available-types "beads-list")
-(declare-function beads-get-types "beads-rpc")
+(declare-function beads-get-types "beads-client")
 (declare-function beads-preview-mode "beads-preview")
 (declare-function beads-detail-refresh "beads-detail")
 (declare-function beads-detail-edit-form "beads-detail")
@@ -94,13 +94,13 @@ Prompts for title (required), type, and priority."
     (if (string-empty-p title)
         (message "Title is required")
       (condition-case err
-          (let ((issue (beads-rpc-create title
+          (let ((issue (beads-client-create title
                                          :issue-type type
                                          :priority priority)))
             (message "Created issue %s" (alist-get 'id issue))
             (when (derived-mode-p 'beads-list-mode)
               (beads-list-refresh)))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to create issue: %s" (error-message-string err)))))))
 
 (defvar-local beads-create-preview--params nil
@@ -134,7 +134,7 @@ Shows what the issue will look like, then press C-c C-c to create."
     (if (string-empty-p title)
         (message "Title is required")
       (condition-case err
-          (let ((preview (beads-rpc-create title
+          (let ((preview (beads-client-create title
                                            :issue-type type
                                            :priority priority
                                            :dry-run t)))
@@ -142,7 +142,7 @@ Shows what the issue will look like, then press C-c C-c to create."
                                         (list :title title
                                               :issue-type type
                                               :priority priority)))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to preview issue: %s" (error-message-string err)))))))
 
 (defun beads-create-preview--show (preview params)
@@ -180,14 +180,14 @@ Shows what the issue will look like, then press C-c C-c to create."
     (unless params
       (user-error "No issue to create"))
     (condition-case err
-        (let ((issue (apply #'beads-rpc-create
+        (let ((issue (apply #'beads-client-create
                             (plist-get params :title)
                             (beads-transient--plist-remove params :title))))
           (quit-window t)
           (message "Created issue %s" (alist-get 'id issue))
           (when (derived-mode-p 'beads-list-mode)
             (beads-list-refresh)))
-      (beads-rpc-error
+      (beads-client-error
        (message "Failed to create issue: %s" (error-message-string err))))))
 
 (defun beads-create-preview-cancel ()
@@ -220,14 +220,14 @@ Prompts for an optional close reason."
       (let ((reason (read-string (format "Close %s reason (optional): " id))))
         (condition-case err
             (progn
-              (beads-rpc-close id (unless (string-empty-p reason) reason))
+              (beads-client-close id (unless (string-empty-p reason) reason))
               (message "Closed issue %s" id)
               (cond
                ((derived-mode-p 'beads-list-mode)
                 (beads-list-refresh))
                ((derived-mode-p 'beads-detail-mode)
                 (beads-detail-refresh))))
-          (beads-rpc-error
+          (beads-client-error
            (let ((err-msg (error-message-string err)))
              (if (string-match-p "\\(blocker\\|blocked\\|open depend\\)" err-msg)
                  (message "Cannot close %s: has open blockers. Press H to view dependency tree." id)
@@ -261,14 +261,14 @@ Prompts for confirmation with `yes-or-no-p'."
       (when (yes-or-no-p prompt)
         (condition-case err
             (progn
-              (beads-rpc-delete (list id))
+              (beads-client-delete (list id))
               (message "Deleted issue %s" id)
               (cond
                ((derived-mode-p 'beads-list-mode)
                 (beads-list-refresh))
                ((derived-mode-p 'beads-detail-mode)
                 (quit-window t))))
-          (beads-rpc-error
+          (beads-client-error
            (message "Failed to delete issue: %s" (error-message-string err))))))))
 
 (defun beads-reopen-issue ()
@@ -285,14 +285,14 @@ Sets status to open and clears closed_at timestamp."
         (message "No issue at point")
       (condition-case err
           (progn
-            (beads-rpc-update id :status "open")
+            (beads-client-update id :status "open")
             (message "Reopened issue %s" id)
             (cond
              ((derived-mode-p 'beads-list-mode)
               (beads-list-refresh))
              ((derived-mode-p 'beads-detail-mode)
               (beads-detail-refresh))))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to reopen issue: %s" (error-message-string err)))))))
 
 (defun beads-stats ()
@@ -300,7 +300,7 @@ Sets status to open and clears closed_at timestamp."
 Press `q' to close the stats window."
   (interactive)
   (condition-case err
-      (let ((stats (beads-rpc-stats)))
+      (let ((stats (beads-client-stats)))
         (with-current-buffer (get-buffer-create "*Beads Stats*")
           (let ((inhibit-read-only t))
             (erase-buffer)
@@ -321,7 +321,7 @@ Press `q' to close the stats window."
                          '((display-buffer-in-side-window)
                            (side . bottom)
                            (window-height . fit-window-to-buffer)))))
-    (beads-rpc-error
+    (beads-client-error
      (message "Failed to fetch stats: %s" (error-message-string err)))))
 
 (autoload 'beads-orphans "beads-orphans" nil t)
@@ -384,7 +384,7 @@ Includes built-in types and any custom types found in current issues."
   (interactive)
   (unless (derived-mode-p 'beads-list-mode)
     (user-error "Not in beads list mode"))
-  (let* ((issues (beads-rpc-list))
+  (let* ((issues (beads-client-list))
          (assignees (seq-uniq
                      (seq-filter #'identity
                                  (mapcar (lambda (i) (alist-get 'assignee i)) issues))))
@@ -402,7 +402,7 @@ Includes built-in types and any custom types found in current issues."
   (interactive)
   (unless (derived-mode-p 'beads-list-mode)
     (user-error "Not in beads list mode"))
-  (let* ((issues (beads-rpc-list))
+  (let* ((issues (beads-client-list))
          (labels (seq-uniq
                   (apply #'append
                          (mapcar (lambda (i) (alist-get 'labels i)) issues))))
@@ -418,7 +418,7 @@ Includes built-in types and any custom types found in current issues."
   (interactive)
   (unless (derived-mode-p 'beads-list-mode)
     (user-error "Not in beads list mode"))
-  (let* ((issues (beads-rpc-list '(:issue-type "epic")))
+  (let* ((issues (beads-client-list '(:issue-type "epic")))
          (epics (mapcar (lambda (i)
                           (cons (format "%s: %s"
                                         (alist-get 'id i)

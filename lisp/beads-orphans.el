@@ -27,7 +27,7 @@
 
 (require 'beads-core)
 
-(declare-function beads-rpc-close "beads-rpc")
+(declare-function beads-client-close "beads-client")
 
 (defvar-local beads-orphans--data nil
   "List of orphan data in current buffer.")
@@ -116,10 +116,10 @@ Orphans are issues referenced in commits but not marked as closed."
     (let ((reason (read-string (format "Close %s reason: " id))))
       (condition-case err
           (progn
-            (beads-rpc-close id reason)
+            (beads-client-close id reason)
             (message "Closed %s" id)
             (beads-orphans-refresh))
-        (beads-rpc-error
+        (beads-client-error
          (user-error "Failed to close issue: %s" (error-message-string err)))))))
 
 (defun beads-orphans-refresh ()

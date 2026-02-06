@@ -27,7 +27,7 @@
 
 (require 'beads-core)
 
-(declare-function beads-rpc-update "beads-rpc")
+(declare-function beads-client-update "beads-client")
 
 (defgroup beads-stale nil
   "Stale issue detection for Beads."
@@ -170,10 +170,10 @@ STATUS optionally filters by issue status."
       (user-error "No issue at point"))
     (condition-case err
         (progn
-          (beads-rpc-update id :status "in_progress")
+          (beads-client-update id :status "in_progress")
           (message "Claimed %s" id)
           (beads-stale-refresh))
-      (beads-rpc-error
+      (beads-client-error
        (user-error "Failed to claim issue: %s" (error-message-string err))))))
 
 (defun beads-stale-refresh ()

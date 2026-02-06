@@ -11,7 +11,7 @@ mise run interactive
 This launches Emacs with `--init-directory=dev`, which:
 - Loads only `dev/init.el` (ignores your personal Emacs config)
 - Adds the project root to `load-path`
-- Requires `beads-rpc` and `beads-list` modules
+- Requires `beads-client` and `beads-list` modules
 
 ## Testing
 

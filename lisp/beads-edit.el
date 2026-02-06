@@ -24,7 +24,7 @@
 
 ;;; Code:
 
-(require 'beads-rpc)
+(require 'beads-client)
 
 (defvar beads-verbose)
 (declare-function beads-show-hint "beads")
@@ -90,13 +90,13 @@
                (not (string= content original)))
       (condition-case err
           (progn
-            (beads-rpc-update issue-id field content)
+            (beads-client-update issue-id field content)
             (message "Updated %s for %s" (substring (symbol-name field) 1) issue-id)
             (when (and source-buffer (buffer-live-p source-buffer))
               (with-current-buffer source-buffer
                 (when (fboundp 'beads-detail-refresh)
                   (beads-detail-refresh)))))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to update: %s" (error-message-string err)))))
 
     (when (and (not write-back) (not (string= content original)))
@@ -166,10 +166,10 @@ Returns the new value, or nil if unchanged."
     (unless (string= new-value (or current-value ""))
       (condition-case err
           (progn
-            (beads-rpc-update issue-id field new-value)
+            (beads-client-update issue-id field new-value)
             (message "Updated %s for %s" (substring (symbol-name field) 1) issue-id)
             new-value)
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to update: %s" (error-message-string err))
          nil)))))
 
@@ -181,10 +181,10 @@ the list of options.  Returns the new value, or nil if unchanged."
     (unless (string= new-value (or current-value ""))
       (condition-case err
           (progn
-            (beads-rpc-update issue-id field new-value)
+            (beads-client-update issue-id field new-value)
             (message "Updated %s for %s" (substring (symbol-name field) 1) issue-id)
             new-value)
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to update: %s" (error-message-string err))
          nil)))))
 

@@ -72,9 +72,9 @@
   "Mock issue data for testing.")
 
 (defun beads-hierarchy-test--mock-show (id)
-  "Mock beads-rpc-show for testing."
+  "Mock beads-client-show for testing."
   (or (gethash id beads-hierarchy-test--mock-issues)
-      (signal 'beads-rpc-error (list (format "Issue not found: %s" id)))))
+      (signal 'beads-client-error (list (format "Issue not found: %s" id)))))
 
 (ert-deftest beads-hierarchy-test-find-parent-nil-for-root ()
   "Test that root issues have no parent."
@@ -110,7 +110,7 @@
 
 (ert-deftest beads-hierarchy-test-collect-descendants-adds-children ()
   "Test that collect-descendants adds children to hash table."
-  (cl-letf (((symbol-function 'beads-rpc-show) #'beads-hierarchy-test--mock-show))
+  (cl-letf (((symbol-function 'beads-client-show) #'beads-hierarchy-test--mock-show))
     (let ((by-id (make-hash-table :test 'equal))
           (root (gethash "ROOT-1" beads-hierarchy-test--mock-issues)))
       (beads-hierarchy--collect-descendants root by-id)
@@ -119,7 +119,7 @@
 
 (ert-deftest beads-hierarchy-test-collect-descendants-recursive ()
   "Test that collect-descendants recursively collects grandchildren."
-  (cl-letf (((symbol-function 'beads-rpc-show) #'beads-hierarchy-test--mock-show))
+  (cl-letf (((symbol-function 'beads-client-show) #'beads-hierarchy-test--mock-show))
     (let ((by-id (make-hash-table :test 'equal))
           (root (gethash "ROOT-1" beads-hierarchy-test--mock-issues)))
       (beads-hierarchy--collect-descendants root by-id)
@@ -134,7 +134,7 @@
 
 (ert-deftest beads-hierarchy-test-collect-ancestors-adds-parents ()
   "Test that collect-ancestors adds parent issues to hash table."
-  (cl-letf (((symbol-function 'beads-rpc-show) #'beads-hierarchy-test--mock-show))
+  (cl-letf (((symbol-function 'beads-client-show) #'beads-hierarchy-test--mock-show))
     (let ((by-id (make-hash-table :test 'equal))
           (child (gethash "CHILD-1" beads-hierarchy-test--mock-issues)))
       (beads-hierarchy--collect-ancestors child by-id)
@@ -142,7 +142,7 @@
 
 (ert-deftest beads-hierarchy-test-build-creates-hierarchy ()
   "Test that build creates a valid hierarchy."
-  (cl-letf (((symbol-function 'beads-rpc-show) #'beads-hierarchy-test--mock-show))
+  (cl-letf (((symbol-function 'beads-client-show) #'beads-hierarchy-test--mock-show))
     (let ((result (beads-hierarchy--build "ROOT-1")))
       (should result)
       (should (consp result))
@@ -153,7 +153,7 @@
 
 (ert-deftest beads-hierarchy-test-build-with-no-dependents ()
   "Test building hierarchy for issue with no dependents."
-  (cl-letf (((symbol-function 'beads-rpc-show) #'beads-hierarchy-test--mock-show))
+  (cl-letf (((symbol-function 'beads-client-show) #'beads-hierarchy-test--mock-show))
     (let ((result (beads-hierarchy--build "LONE-1")))
       (should result)
       (let ((h (car result)))
@@ -161,7 +161,7 @@
 
 (ert-deftest beads-hierarchy-test-build-has-correct-structure ()
   "Test that built hierarchy has correct parent-child structure."
-  (cl-letf (((symbol-function 'beads-rpc-show) #'beads-hierarchy-test--mock-show))
+  (cl-letf (((symbol-function 'beads-client-show) #'beads-hierarchy-test--mock-show))
     (let* ((result (beads-hierarchy--build "ROOT-1"))
            (h (car result)))
       (let ((roots (hierarchy-roots h)))
@@ -170,7 +170,7 @@
 
 (ert-deftest beads-hierarchy-test-build-from-leaf-shows-ancestors ()
   "Test that building from leaf includes ancestors."
-  (cl-letf (((symbol-function 'beads-rpc-show) #'beads-hierarchy-test--mock-show))
+  (cl-letf (((symbol-function 'beads-client-show) #'beads-hierarchy-test--mock-show))
     (let* ((result (beads-hierarchy--build "GRANDCHILD-1"))
            (by-id (cdr result)))
       (should (gethash "GRANDCHILD-1" by-id))

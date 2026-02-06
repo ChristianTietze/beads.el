@@ -84,7 +84,7 @@ Hints are shown when entering beads modes to help with discoverability."
       (when hint
         (run-at-time 0.1 nil (lambda (h) (message h)) hint)))))
 
-(require 'beads-rpc)
+(require 'beads-client)
 (require 'beads-list)
 (require 'beads-detail)
 (require 'beads-transient)

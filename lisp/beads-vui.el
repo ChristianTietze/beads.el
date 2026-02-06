@@ -32,9 +32,9 @@
 
 (require 'vui)
 (require 'beads-faces)
-(require 'beads-rpc)
+(require 'beads-client)
 
-(declare-function beads-get-types "beads-rpc")
+(declare-function beads-get-types "beads-client")
 
 (declare-function beads-detail-open "beads-detail")
 (declare-function beads-edit-field-markdown "beads-edit")
@@ -114,7 +114,7 @@ Calls ON-REFRESH after successful edit."
                                             nil t priority-str)))
            (unless (string= new-value priority-str)
              (let ((new-priority (string-to-number (substring new-value 1))))
-               (beads-rpc-update id :priority new-priority)
+               (beads-client-update id :priority new-priority)
                (when on-refresh (funcall on-refresh))))))))))
 
 (defun beads-vui--field-to-keyword (field-key)
@@ -131,7 +131,7 @@ Calls ON-REFRESH after successful edit."
   "Navigate to ISSUE-ID using NAVIGATE-FN or default behavior."
   (if navigate-fn
       (funcall navigate-fn issue-id)
-    (when-let ((issue (beads-rpc-show issue-id)))
+    (when-let ((issue (beads-client-show issue-id)))
       (beads-detail-open issue))))
 
 ;;; Timestamp formatting

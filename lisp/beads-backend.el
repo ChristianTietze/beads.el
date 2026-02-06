@@ -67,8 +67,8 @@ Can be set per-project via .dir-locals.el."
   "Look up a backend by NAME in the registry."
   (alist-get name beads-backend--registry nil nil #'equal))
 
-(declare-function beads-rpc--find-database "beads-rpc")
-(declare-function beads-rpc--project-root "beads-rpc")
+(declare-function beads-client--find-database "beads-client")
+(declare-function beads-client--project-root "beads-client")
 
 (defun beads-backend-for-project ()
   "Return the backend for the current project.
@@ -85,7 +85,7 @@ Uses `beads-cli-program' if set, otherwise auto-detects."
               (signal 'beads-backend-error
                       (list (format "No backend registered for program: %s"
                                     beads-cli-program))))))
-    (let ((root (beads-rpc--project-root)))
+    (let ((root (beads-client--project-root)))
       (or (when root (gethash root beads-backend--project-cache))
           (let ((backend (beads-backend--auto-detect)))
             (when root

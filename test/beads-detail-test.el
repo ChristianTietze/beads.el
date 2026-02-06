@@ -509,7 +509,7 @@
   (should (commandp 'beads-detail-edit-label-remove)))
 
 (ert-deftest beads-detail-test-label-add-calls-rpc ()
-  "Test that beads-detail-edit-label-add calls beads-rpc-label-add."
+  "Test that beads-detail-edit-label-add calls beads-client-label-add."
   (let ((rpc-called nil)
         (rpc-args nil))
     (with-temp-buffer
@@ -523,7 +523,7 @@
       (cl-letf (((symbol-function 'read-string)
                  (lambda (_prompt)
                    "new-label"))
-                ((symbol-function 'beads-rpc-label-add)
+                ((symbol-function 'beads-client-label-add)
                  (lambda (id label)
                    (setq rpc-called t)
                    (setq rpc-args (list id label))))
@@ -545,7 +545,7 @@
                                           (issue_type . "task")))
       (cl-letf (((symbol-function 'read-string)
                  (lambda (_prompt) ""))
-                ((symbol-function 'beads-rpc-label-add)
+                ((symbol-function 'beads-client-label-add)
                  (lambda (_id _label)
                    (setq rpc-called t))))
         (beads-detail-edit-label-add)
@@ -570,7 +570,7 @@
         (should-not completing-read-called)))))
 
 (ert-deftest beads-detail-test-label-remove-calls-rpc ()
-  "Test that beads-detail-edit-label-remove calls beads-rpc-label-remove."
+  "Test that beads-detail-edit-label-remove calls beads-client-label-remove."
   (let ((rpc-called nil)
         (rpc-args nil))
     (with-temp-buffer
@@ -584,7 +584,7 @@
       (cl-letf (((symbol-function 'completing-read)
                  (lambda (_prompt _choices &rest _)
                    "label1"))
-                ((symbol-function 'beads-rpc-label-remove)
+                ((symbol-function 'beads-client-label-remove)
                  (lambda (id label)
                    (setq rpc-called t)
                    (setq rpc-args (list id label))))
@@ -611,9 +611,9 @@
 (ert-deftest beads-detail-test-show-creates-buffer ()
   "Test that beads-detail-show creates detail buffer."
   :tags '(:integration)
-  (skip-unless (beads-rpc--socket-path))
-  (skip-unless (file-exists-p (beads-rpc--socket-path)))
-  (let ((issues (beads-rpc-list '(:limit 1))))
+  (skip-unless (beads-client--socket-path))
+  (skip-unless (file-exists-p (beads-client--socket-path)))
+  (let ((issues (beads-client-list '(:limit 1))))
     (skip-unless (> (length issues) 0))
     (let* ((issue-id (alist-get 'id (aref issues 0)))
            (buffer-name (format "*Beads: %s*" issue-id)))
@@ -631,9 +631,9 @@
 (ert-deftest beads-detail-test-show-displays-content ()
   "Test that beads-detail-show displays issue content."
   :tags '(:integration)
-  (skip-unless (beads-rpc--socket-path))
-  (skip-unless (file-exists-p (beads-rpc--socket-path)))
-  (let ((issues (beads-rpc-list '(:limit 1))))
+  (skip-unless (beads-client--socket-path))
+  (skip-unless (file-exists-p (beads-client--socket-path)))
+  (let ((issues (beads-client-list '(:limit 1))))
     (skip-unless (> (length issues) 0))
     (let* ((issue-id (alist-get 'id (aref issues 0)))
            (buffer-name (format "*Beads: %s*" issue-id)))
@@ -651,9 +651,9 @@
 (ert-deftest beads-detail-test-show-sets-buffer-local-issue-id ()
   "Test that beads-detail-show sets buffer-local issue ID."
   :tags '(:integration)
-  (skip-unless (beads-rpc--socket-path))
-  (skip-unless (file-exists-p (beads-rpc--socket-path)))
-  (let ((issues (beads-rpc-list '(:limit 1))))
+  (skip-unless (beads-client--socket-path))
+  (skip-unless (file-exists-p (beads-client--socket-path)))
+  (let ((issues (beads-client-list '(:limit 1))))
     (skip-unless (> (length issues) 0))
     (let* ((issue-id (alist-get 'id (aref issues 0)))
            (buffer-name (format "*Beads: %s*" issue-id)))
@@ -671,9 +671,9 @@
 (ert-deftest beads-detail-test-refresh-updates-content ()
   "Test that beads-detail-refresh updates buffer content."
   :tags '(:integration)
-  (skip-unless (beads-rpc--socket-path))
-  (skip-unless (file-exists-p (beads-rpc--socket-path)))
-  (let ((issues (beads-rpc-list '(:limit 1))))
+  (skip-unless (beads-client--socket-path))
+  (skip-unless (file-exists-p (beads-client--socket-path)))
+  (let ((issues (beads-client-list '(:limit 1))))
     (skip-unless (> (length issues) 0))
     (let* ((issue-id (alist-get 'id (aref issues 0)))
            (buffer-name (format "*Beads: %s*" issue-id)))
@@ -693,14 +693,14 @@
 (ert-deftest beads-detail-test-show-error-handling ()
   "Test that beads-detail-show handles RPC errors gracefully."
   :tags '(:integration)
-  (skip-unless (beads-rpc--socket-path))
-  (skip-unless (file-exists-p (beads-rpc--socket-path)))
+  (skip-unless (beads-client--socket-path))
+  (skip-unless (file-exists-p (beads-client--socket-path)))
   (let ((buffer-name "*Beads: bd-nonexistent*"))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
     (unwind-protect
         (should-error (beads-detail-show "bd-nonexistent")
-                      :type 'beads-rpc-error)
+                      :type 'beads-client-error)
       (when (get-buffer buffer-name)
         (kill-buffer buffer-name)))))
 
@@ -713,9 +713,9 @@
 (ert-deftest beads-detail-test-buffer-reuse ()
   "Test that calling beads-detail-show twice reuses the same buffer."
   :tags '(:integration)
-  (skip-unless (beads-rpc--socket-path))
-  (skip-unless (file-exists-p (beads-rpc--socket-path)))
-  (let ((issues (beads-rpc-list '(:limit 1))))
+  (skip-unless (beads-client--socket-path))
+  (skip-unless (file-exists-p (beads-client--socket-path)))
+  (let ((issues (beads-client-list '(:limit 1))))
     (skip-unless (> (length issues) 0))
     (let* ((issue-id (alist-get 'id (aref issues 0)))
            (buffer-name (format "*Beads: %s*" issue-id)))

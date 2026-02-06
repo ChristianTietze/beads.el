@@ -33,7 +33,7 @@
 (require 'beads-backend)
 
 (declare-function beads-detail-open "beads-detail")
-(declare-function beads-rpc-show "beads-rpc")
+(declare-function beads-client-show "beads-client")
 
 (defun beads-core-render-header (title description keybindings &optional separator-width)
   "Render a standard report header.
@@ -57,9 +57,9 @@ PROPERTY-NAME should be a symbol like `beads-orphan-id'."
     (unless id
       (user-error "No issue at point"))
     (condition-case err
-        (let ((issue (beads-rpc-show id)))
+        (let ((issue (beads-client-show id)))
           (beads-detail-open issue))
-      (beads-rpc-error
+      (beads-client-error
        (user-error "Failed to load issue: %s" (error-message-string err))))))
 
 (defun beads-core-cli-request (subcommand &rest args)

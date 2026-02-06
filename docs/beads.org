@@ -650,33 +650,33 @@ Example:
 
 ** RPC Functions
 
-#+findex: beads-rpc-list
-#+findex: beads-rpc-show
-#+findex: beads-rpc-create
-#+findex: beads-rpc-update
-#+findex: beads-rpc-close
+#+findex: beads-client-list
+#+findex: beads-client-show
+#+findex: beads-client-create
+#+findex: beads-client-update
+#+findex: beads-client-close
 
-The ~beads-rpc.el~ module provides programmatic access:
+The ~beads-client.el~ module provides programmatic access:
 
 #+begin_src emacs-lisp
 ;; List issues
-(beads-rpc-list)                          ; All issues
-(beads-rpc-list '(:status "open"))        ; Filtered
+(beads-client-list)                          ; All issues
+(beads-client-list '(:status "open"))        ; Filtered
 
 ;; Get single issue
-(beads-rpc-show "proj-123")
+(beads-client-show "proj-123")
 
 ;; Create issue
-(beads-rpc-create "Fix the bug"
+(beads-client-create "Fix the bug"
                   :issue-type "bug"
                   :priority 1)
 
 ;; Update issue
-(beads-rpc-update "proj-123"
+(beads-client-update "proj-123"
                   :status "in_progress")
 
 ;; Close issue
-(beads-rpc-close "proj-123" "Fixed in commit abc")
+(beads-client-close "proj-123" "Fixed in commit abc")
 #+end_src
 
 ** Filter Composition
@@ -702,7 +702,7 @@ Build complex filters programmatically:
 
 #+begin_src emacs-lisp
 ;; Auto-assign new issues to yourself
-(advice-add 'beads-rpc-create :filter-args
+(advice-add 'beads-client-create :filter-args
   (lambda (args)
     (let ((title (car args))
           (plist (cdr args)))

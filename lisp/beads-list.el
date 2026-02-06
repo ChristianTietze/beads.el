@@ -24,10 +24,10 @@
 
 ;;; Code:
 
-(require 'beads-rpc)
+(require 'beads-client)
 (require 'beads-detail)
 
-(declare-function beads-rpc-types "beads-rpc")
+(declare-function beads-client-types "beads-client")
 (require 'beads-filter)
 (require 'beads-preview)
 (require 'beads-faces)
@@ -349,13 +349,13 @@ Used to ensure refresh uses the correct project context.")
 Respects `beads-list-show-header-stats'."
   (if beads-list-show-header-stats
       (condition-case nil
-          (let ((stats (beads-rpc-stats)))
+          (let ((stats (beads-client-stats)))
             (setq mode-line-format
                   `(" "
                     mode-line-buffer-identification
                     "  "
                     ,(beads-list--format-header-line stats))))
-        (beads-rpc-error
+        (beads-client-error
          (setq mode-line-format (default-value 'mode-line-format))))
     (setq mode-line-format (default-value 'mode-line-format))))
 
@@ -386,7 +386,7 @@ Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
         (saved-line (line-number-at-pos))
         (saved-start (window-start)))
     (condition-case err
-        (let* ((all-issues (beads-rpc-list))
+        (let* ((all-issues (beads-client-list))
                (issues (if beads-list--filter
                            (beads-filter-apply beads-list--filter all-issues)
                          all-issues))
@@ -424,7 +424,7 @@ Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
                                 " (sectioned)"
                               "")))
               (message "Refreshed %d issues%s%s" (length beads-list--issues) filter-msg sort-msg))))
-      (beads-rpc-error
+      (beads-client-error
        (message "Failed to fetch issues: %s" (error-message-string err))))))
 
 (defun beads-list-goto-id (id)
@@ -758,9 +758,9 @@ If in sectioned mode, first switches to column mode."
       (dolist (id ids)
         (condition-case nil
             (progn
-              (beads-rpc-update id :status status)
+              (beads-client-update id :status status)
               (setq count (1+ count)))
-          (beads-rpc-error
+          (beads-client-error
            (setq errors (1+ errors)))))
       (beads-list-refresh t)
       (if (> errors 0)
@@ -780,9 +780,9 @@ If in sectioned mode, first switches to column mode."
       (dolist (id ids)
         (condition-case nil
             (progn
-              (beads-rpc-update id :priority priority)
+              (beads-client-update id :priority priority)
               (setq count (1+ count)))
-          (beads-rpc-error
+          (beads-client-error
            (setq errors (1+ errors)))))
       (beads-list-refresh t)
       (if (> errors 0)
@@ -803,9 +803,9 @@ If in sectioned mode, first switches to column mode."
         (dolist (id ids)
           (condition-case err
               (progn
-                (beads-rpc-close id)
+                (beads-client-close id)
                 (setq count (1+ count)))
-            (beads-rpc-error
+            (beads-client-error
              (setq errors (1+ errors))
              (when (string-match-p "\\(blocker\\|blocked\\|open depend\\)"
                                    (error-message-string err))
@@ -834,9 +834,9 @@ Prompts for confirmation."
         (dolist (id ids)
           (condition-case nil
               (progn
-                (beads-rpc-delete id)
+                (beads-client-delete id)
                 (setq count (1+ count)))
-            (beads-rpc-error
+            (beads-client-error
              (setq errors (1+ errors)))))
         (setq beads-list--marked nil)
         (beads-list-refresh t)
@@ -887,9 +887,9 @@ With completion for known assignees from current issues."
       (dolist (id ids)
         (condition-case nil
             (progn
-              (beads-rpc-update id :assignee assignee)
+              (beads-client-update id :assignee assignee)
               (setq count (1+ count)))
-          (beads-rpc-error
+          (beads-client-error
            (setq errors (1+ errors)))))
       (setq beads-list--marked nil)
       (beads-list-refresh t)
@@ -909,9 +909,9 @@ With completion for known assignees from current issues."
   (if-let ((issue (beads-list--get-issue-at-point)))
       (condition-case err
           (let ((id (alist-get 'id issue)))
-            (let ((full-issue (beads-rpc-show id)))
+            (let ((full-issue (beads-client-show id)))
               (beads-detail-open full-issue)))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to fetch issue details: %s" (error-message-string err))))
     (message "No issue at point")))
 
@@ -921,10 +921,10 @@ With completion for known assignees from current issues."
   (if-let ((issue (beads-list--get-issue-at-point)))
       (condition-case err
           (let ((id (alist-get 'id issue)))
-            (let ((full-issue (beads-rpc-show id)))
+            (let ((full-issue (beads-client-show id)))
               (require 'beads-form)
               (beads-form-open full-issue)))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to fetch issue: %s" (error-message-string err))))
     (message "No issue at point")))
 
@@ -965,10 +965,10 @@ With completion for known assignees from current issues."
             (let ((new-priority (string-to-number (substring new-value 1))))
               (condition-case err
                   (progn
-                    (beads-rpc-update id :priority new-priority)
+                    (beads-client-update id :priority new-priority)
                     (message "Updated priority for %s" id)
                     (beads-list-refresh))
-                (beads-rpc-error
+                (beads-client-error
                  (message "Failed to update: %s" (error-message-string err))))))))
     (message "No issue at point")))
 
@@ -991,11 +991,11 @@ With completion for known assignees from current issues."
   (if-let ((issue (beads-list--get-issue-at-point)))
       (condition-case err
           (let* ((id (alist-get 'id issue))
-                 (full-issue (beads-rpc-show id))
+                 (full-issue (beads-client-show id))
                  (description (alist-get 'description full-issue)))
             (require 'beads-edit)
             (beads-edit-field-markdown id :description description))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to fetch issue: %s" (error-message-string err))))
     (message "No issue at point")))
 

@@ -24,7 +24,7 @@
 
 ;;; Code:
 
-(require 'beads-rpc)
+(require 'beads-client)
 (require 'beads-backend)
 (require 'beads-edit)
 (require 'seq)
@@ -230,7 +230,7 @@ Uses a single reusable buffer in a side window without focusing."
         (saved-start (window-start))
         (buffer (current-buffer)))
     (condition-case err
-        (let ((issue (beads-rpc-show beads-detail--current-issue-id)))
+        (let ((issue (beads-client-show beads-detail--current-issue-id)))
           (setq beads-detail--current-issue issue)
           (if (derived-mode-p 'beads-detail-vui-mode)
               (beads-detail--render-vui buffer issue)
@@ -242,7 +242,7 @@ Uses a single reusable buffer in a side window without focusing."
             (set-window-start win (min saved-start (point-max))))
           (beads-detail--refresh-list-buffers)
           (message "Refreshed issue %s" beads-detail--current-issue-id))
-      (beads-rpc-error
+      (beads-client-error
        (message "Failed to refresh issue: %s" (error-message-string err))))))
 
 (defun beads-detail--require-issue ()
@@ -259,9 +259,9 @@ Uses a single reusable buffer in a side window without focusing."
     (unless parent-id
       (user-error "This issue has no parent"))
     (condition-case err
-        (let ((parent-issue (beads-rpc-show parent-id)))
+        (let ((parent-issue (beads-client-show parent-id)))
           (beads-detail-open parent-issue))
-      (beads-rpc-error
+      (beads-client-error
        (user-error "Failed to load parent issue: %s" (error-message-string err))))))
 
 (defun beads-detail-view-children ()
@@ -361,10 +361,10 @@ Uses CLI fallback since RPC does not support comment_add."
         (let ((new-priority (string-to-number (substring new-value 1))))
           (condition-case err
               (progn
-                (beads-rpc-update id :priority new-priority)
+                (beads-client-update id :priority new-priority)
                 (message "Updated priority for %s" id)
                 (beads-detail-refresh))
-            (beads-rpc-error
+            (beads-client-error
              (message "Failed to update: %s" (error-message-string err)))))))))
 
 (defun beads-detail-edit-type ()
@@ -409,10 +409,10 @@ Uses CLI fallback since RPC does not support comment_add."
     (when (and label (not (string-empty-p label)))
       (condition-case err
           (progn
-            (beads-rpc-label-add id label)
+            (beads-client-label-add id label)
             (message "Added label '%s' to %s" label id)
             (beads-detail-refresh))
-        (beads-rpc-error
+        (beads-client-error
          (message "Failed to add label: %s" (error-message-string err)))))))
 
 (defun beads-detail-edit-label-remove ()
@@ -428,10 +428,10 @@ Uses CLI fallback since RPC does not support comment_add."
         (when (and label (not (string-empty-p label)))
           (condition-case err
               (progn
-                (beads-rpc-label-remove id label)
+                (beads-client-label-remove id label)
                 (message "Removed label '%s' from %s" label id)
                 (beads-detail-refresh))
-            (beads-rpc-error
+            (beads-client-error
              (message "Failed to remove label: %s" (error-message-string err)))))))))
 
 (defun beads-detail-edit-form ()
@@ -447,7 +447,7 @@ Uses CLI fallback since RPC does not support comment_add."
   (let ((refresh-fn (lambda ()
                       (beads-detail-refresh)))
         (navigate-fn (lambda (id)
-                       (when-let ((target (beads-rpc-show id)))
+                       (when-let ((target (beads-client-show id)))
                          (beads-detail-open target)))))
     (with-current-buffer buffer
       (beads-detail-vui-mode))
@@ -556,8 +556,8 @@ Uses CLI fallback since RPC does not support comment_add."
     (insert-text-button id
                         'action (lambda (_button)
                                   (condition-case err
-                                      (beads-detail-open (beads-rpc-show id))
-                                    (beads-rpc-error
+                                      (beads-detail-open (beads-client-show id))
+                                    (beads-client-error
                                      (message "Failed to open %s: %s" id (error-message-string err)))))
                         'follow-link t
                         'help-echo (format "Click to view %s" id))
