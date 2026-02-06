@@ -31,6 +31,7 @@
 
 (declare-function vui-mount "vui")
 (declare-function vui-component "vui")
+(defvar vui-mode-map)
 (declare-function beads-vui-detail-view "beads-vui")
 
 (declare-function beads-menu "beads-transient")
@@ -60,6 +61,14 @@ acceptance criteria, and comments will be fontified with markdown highlighting."
 When non-nil, uses declarative vui components for layout.
 When nil, uses traditional text insertion with properties."
   :type 'boolean
+  :group 'beads-detail)
+
+(defcustom beads-detail-section-style 'heading
+  "How to render content sections in the detail view.
+`heading'   - section heading with indented content, no separator line.
+`separator' - horizontal rule above each section heading (classic style)."
+  :type '(choice (const :tag "Heading only (compact)" heading)
+                 (const :tag "Separator line above heading" separator))
   :group 'beads-detail)
 
 (defcustom beads-detail-vui-editable t
@@ -147,11 +156,9 @@ Only applies when `beads-detail-use-vui' is non-nil."
 (declare-function vui-mode "vui")
 
 (defvar beads-detail-vui-mode-map
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map beads-detail-mode-map)
-    map)
+  (make-sparse-keymap)
   "Keymap for `beads-detail-vui-mode'.
-Inherits all bindings from `beads-detail-mode-map'.")
+Inherits bindings from both `beads-detail-mode-map' and `vui-mode-map'.")
 
 (define-derived-mode beads-detail-vui-mode vui-mode "Beads-Detail"
   "Major mode for vui-based Beads detail view.
@@ -159,6 +166,8 @@ Derives from `vui-mode' and inherits keybindings from `beads-detail-mode'.
 
 \\{beads-detail-vui-mode-map}"
   (setq truncate-lines nil)
+  (set-keymap-parent beads-detail-vui-mode-map
+                     (make-composed-keymap beads-detail-mode-map vui-mode-map))
   (beads-show-hint))
 
 ;; Configure evil-mode IF user has it loaded (does not enable evil)
@@ -603,12 +612,20 @@ if markdown rendering is disabled or markdown-mode is unavailable."
 
 (defun beads-detail--insert-section (title content)
   "Insert a section with TITLE and CONTENT."
-  (beads-detail--insert-separator ?─)
-  (insert "\n")
-  (insert (propertize (concat title ":\n") 'face 'beads-detail-header-face))
-  (insert "\n")
-  (insert (beads-detail--fontify-markdown content))
-  (insert "\n\n"))
+  (pcase beads-detail-section-style
+    ('separator
+     (beads-detail--insert-separator ?─)
+     (insert "\n")
+     (insert (propertize (concat title ":\n") 'face 'beads-detail-header-face))
+     (insert "\n")
+     (insert (beads-detail--fontify-markdown content))
+     (insert "\n\n"))
+    (_
+     (insert (propertize (concat title ":") 'face 'beads-detail-header-face))
+     (insert "\n\n")
+     (insert "  " (replace-regexp-in-string
+                    "\n" "\n  " (beads-detail--fontify-markdown content)))
+     (insert "\n\n"))))
 
 (defun beads-detail--insert-comments (comments)
   "Insert COMMENTS section.

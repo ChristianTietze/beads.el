@@ -40,6 +40,7 @@
 (declare-function beads-edit-field-markdown "beads-edit")
 (declare-function beads-edit-field-minibuffer "beads-edit")
 (declare-function beads-edit-field-completing "beads-edit")
+(defvar beads-detail-section-style)
 
 (defgroup beads-vui nil
   "VUI-based UI components for Beads."
@@ -276,21 +277,38 @@ When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
 
 (vui-defcomponent beads-vui-content-section (title content &key on-edit)
   "Display a content section with TITLE and markdown CONTENT.
-ON-EDIT called when edit button clicked (if provided)."
+ON-EDIT called when edit button clicked (if provided).
+Respects `beads-detail-section-style' for layout."
   :render
-  (vui-vstack
-   (vui-hstack
-    (vui-text (make-string 60 ?─))
-    (when on-edit
-      (vui-fragment
-       (vui-text " ")
-       (vui-button "edit" :on-click on-edit :face 'link))))
-   (vui-text (concat title ":") :face '(:weight bold :underline t))
-   (vui-newline)
-   (if (and content (not (string-empty-p content)))
-       (vui-text (beads-vui-fontify-markdown content))
-     (vui-text "(empty)" :face 'shadow))
-   (vui-newline)))
+  (pcase beads-detail-section-style
+    ('separator
+     (vui-vstack
+      (vui-hstack
+       (vui-text (make-string 60 ?─))
+       (when on-edit
+         (vui-fragment
+          (vui-text " ")
+          (vui-button "edit" :on-click on-edit :face 'link))))
+      (vui-text (concat title ":") :face '(:weight bold :underline t))
+      (vui-newline)
+      (if (and content (not (string-empty-p content)))
+          (vui-text (beads-vui-fontify-markdown content))
+        (vui-text "(empty)" :face 'shadow))
+      (vui-newline)))
+    (_
+     (vui-vstack
+      (vui-hstack
+       (vui-text (concat title ":") :face '(:weight bold :underline t))
+       (when on-edit
+         (vui-fragment
+          (vui-text " ")
+          (vui-button "edit" :on-click on-edit :face 'link))))
+      (vui-vstack
+       :indent 2
+       (if (and content (not (string-empty-p content)))
+           (vui-text (beads-vui-fontify-markdown content))
+         (vui-text "(empty)" :face 'shadow)))
+      (vui-newline)))))
 
 (vui-defcomponent beads-vui-content-sections (issue &key editable on-refresh)
   "Display all content sections (description, design, acceptance) for ISSUE.
