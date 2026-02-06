@@ -435,6 +435,7 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 | `beads-detail-render-markdown` | `t` | Enable markdown syntax highlighting |
 | `beads-detail-use-vui` | `t` | Use vui.el declarative components |
 | `beads-detail-vui-editable` | `t` | Show inline edit buttons in vui mode |
+| `beads-detail-section-style` | `'heading` | `'heading` (compact) or `'separator` (with rules) |
 
 ### Form Editor (`beads-form`)
 
@@ -450,11 +451,33 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 ## Requirements
 
 - Emacs 28.1+
-- [Beads](https://github.com/steveyegge/beads) CLI 0.49.1+ with running daemon (`bd daemon`)
+- [Beads](https://github.com/steveyegge/beads) CLI: `bd` 0.49.1+ (recommended) or `br` (beads_rust)
 - `hierarchy` package (for dependency tree view)
 - `transient` package (for menus)
 - `vui` package (for declarative UI components)
 - `markdown-mode` (optional, for editing long text fields)
+
+### CLI Backends
+
+beads.el supports two CLI backends:
+
+- **`bd`** (default) — Full-featured. Supports daemon mode for fast
+  communication via socket, with CLI fallback. Start the daemon with `bd daemon`.
+- **`br`** (beads_rust) — CLI-only, no daemon support. Reduced operation set
+  (no activity feed, comments, or reopen). Useful if you only have `br` installed.
+
+Auto-detection tries `bd` first, then `br`. Override per-project via
+`.dir-locals.el`:
+
+```elisp
+((nil . ((beads-cli-program . "br"))))
+```
+
+Or globally:
+
+```elisp
+(setq beads-cli-program "br")
+```
 
 ## Development
 
