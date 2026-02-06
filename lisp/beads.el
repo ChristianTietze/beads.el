@@ -34,7 +34,8 @@
 ;;
 ;; The client automatically discovers the Beads database by walking up from
 ;; `default-directory` looking for `.beads/beads.db`, then connects to the
-;; daemon socket at `.beads/bd.sock`.
+;; daemon socket (e.g. `.beads/bd.sock`).  Multiple CLI backends are supported
+;; (bd, br) and auto-detected per project; see `beads-cli-program'.
 ;;
 ;; You can use beads.el on multiple projects at the same time.
 ;;
