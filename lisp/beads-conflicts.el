@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'json)
+(require 'beads-backend)
 (require 'beads-core)
 
 (defvar-local beads-conflicts--data nil
@@ -53,15 +54,10 @@ and resolves them using beads' mechanical merge rules.
 
 (defun beads-conflicts--fetch ()
   "Fetch conflict status via CLI with dry-run."
-  (let* ((bd-program (or (executable-find "bd") "bd"))
-         (output (with-temp-buffer
-                   (call-process bd-program nil t nil
-                                 "resolve-conflicts" "--dry-run" "--json")
-                   (goto-char (point-min))
-                   (condition-case nil
-                       (json-read)
-                     (json-error nil)))))
-    output))
+  (condition-case nil
+      (beads-backend-cli-execute
+       "resolve-conflicts" '((dry_run . t)))
+    (beads-backend-error nil)))
 
 (defun beads-conflicts--render (result)
   "Render conflict status RESULT into current buffer."
@@ -120,14 +116,9 @@ to resolve them using beads' mechanical merge rules."
   (unless (derived-mode-p 'beads-conflicts-mode)
     (user-error "Not in beads-conflicts-mode"))
   (when (yes-or-no-p "Resolve all conflicts using mechanical merge? ")
-    (let* ((bd-program (or (executable-find "bd") "bd"))
-           (output (with-temp-buffer
-                     (call-process bd-program nil t nil
-                                   "resolve-conflicts" "--json")
-                     (goto-char (point-min))
-                     (condition-case nil
-                         (json-read)
-                       (json-error nil)))))
+    (let ((output (condition-case nil
+                      (beads-backend-cli-execute "resolve-conflicts" nil)
+                    (beads-backend-error nil))))
       (if (and output (equal (alist-get 'status output) "success"))
           (progn
             (message "Resolved %d conflict(s)"

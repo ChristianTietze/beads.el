@@ -25,6 +25,7 @@
 ;;; Code:
 
 (require 'beads-rpc)
+(require 'beads-backend)
 (require 'beads-edit)
 (require 'seq)
 
@@ -287,9 +288,8 @@ Uses CLI fallback since RPC does not support comment_add."
          (text (read-string (format "Comment on %s: " id))))
     (when (string-empty-p text)
       (user-error "Comment text is required"))
-    (let* ((bd-program (or (executable-find "bd") "bd"))
-           (exit-code (call-process bd-program nil nil nil
-                                    "comments" "add" id text)))
+    (let ((exit-code (beads-backend-cli-call-raw
+                      (list "comments" "add" id text))))
       (if (zerop exit-code)
           (progn
             (message "Added comment to %s" id)

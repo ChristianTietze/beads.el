@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'json)
+(require 'beads-backend)
 (require 'beads-core)
 
 (defgroup beads-duplicates nil
@@ -67,20 +68,8 @@ Duplicates are issues with identical content grouped by content hash.
 
 (defun beads-duplicates--fetch ()
   "Fetch duplicate issues via CLI.
-Uses --no-daemon flag as duplicates command isn't supported in daemon mode."
-  (let* ((bd-program (or (executable-find "bd") "bd"))
-         (output (with-temp-buffer
-                   (let ((exit-code (call-process bd-program nil t nil
-                                                  "--no-daemon" "duplicates" "--json")))
-                     (unless (zerop exit-code)
-                       (signal 'error
-                               (list (format "bd duplicates failed: %s"
-                                             (buffer-string)))))
-                     (goto-char (point-min))
-                     (condition-case nil
-                         (json-read)
-                       (json-error nil))))))
-    output))
+The --no-daemon flag is handled by the backend's cli-extra-flags."
+  (beads-backend-cli-execute "duplicates" nil))
 
 (defun beads-duplicates--render (data)
   "Render duplicate groups DATA into current buffer."
@@ -170,9 +159,8 @@ Duplicates are issues with identical content that can be merged."
 
 (defun beads-duplicates--merge (source-id target-id)
   "Merge SOURCE-ID into TARGET-ID using CLI."
-  (let* ((bd-program (or (executable-find "bd") "bd"))
-         (exit-code (call-process bd-program nil nil nil
-                                  "duplicate" source-id "--of" target-id)))
+  (let ((exit-code (beads-backend-cli-call-raw
+                    (list "duplicate" source-id "--of" target-id))))
     (unless (zerop exit-code)
       (signal 'error (list (format "Failed to merge %s into %s" source-id target-id))))))
 
