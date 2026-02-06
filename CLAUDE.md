@@ -8,7 +8,7 @@ See AGENTS.md for workflow details.
 
 ## Project Overview
 
-This is **beads.el** - an Emacs Lisp client for the Beads issue tracking system. Beads is a Git-backed, AI-native issue tracker that stores data in `.beads/` and communicates with a daemon via Unix socket RPC.
+This is **beads.el** - an Emacs Lisp client for the Beads issue tracking system. Beads is a Git-backed, AI-native issue tracker that stores data in `.beads/` and communicates via daemon socket or CLI.
 
 The canonical upstream is https://codeberg.org/ctietze/beads.el
 
@@ -23,19 +23,32 @@ Tested with **beads CLI 0.49.1**. Version info maintained in `.claude/skills/bea
 
 ## Architecture
 
-The client communicates with the Beads daemon via JSON-over-Unix-socket:
+```
+beads-list.el ──┐
+beads-detail.el ┤
+beads-form.el  ─┼─→ beads-client.el ──→ beads-backend.el
+beads-edit.el  ─┤      (dispatch)          (CLI detection)
+  ...          ─┘         │                      │
+                     ┌────┴────┐           ┌─────┴─────┐
+                  daemon socket  CLI    beads-backend-bd.el  beads-backend-br.el
+                                        (bd: daemon+CLI)    (br: CLI only)
+```
 
-```
-Emacs (beads.el) → Unix Socket (.beads/bd.sock) → Beads Daemon → SQLite DB
-```
+Key modules:
+- **`beads-client.el`**: Entry point for all operations. Picks connection strategy (daemon socket vs CLI fallback) and dispatches requests. All consumer modules call `beads-client-request`.
+- **`beads-backend.el`**: Backend abstraction. Registry, per-project auto-detection, CLI execution. `executable-find` and `call-process` for beads CLI live here only.
+- **`beads-backend-bd.el`**: bd backend — daemon support, full operation set, `--no-daemon` for duplicates.
+- **`beads-backend-br.el`**: br backend — CLI only, reduced operation set, removable.
+- **`beads-core.el`**: Shared utilities (header rendering, CLI wrappers for report views).
 
 Key concepts:
 - **Auto-discovery**: Walk up from `default-directory` looking for `.beads/beads.db`
-- **Socket path**: Always `bd.sock` in same directory as `beads.db`
+- **Backend detection**: Per-project, cached. `beads-cli-program` defcustom overrides (safe for `.dir-locals.el`).
+- **Connection strategy**: `beads-client-connection-strategy` — `auto` (default), `daemon`, `managed`, `cli`
 - **Wire format**: JSON + newline delimiter, request/response pattern
 - **No client-side locking**: Daemon handles all concurrency
 
-## RPC Protocol Reference
+## Protocol Reference
 
 See `docs/beads-client-howto.md` for the complete protocol specification including:
 - Request/response structures
