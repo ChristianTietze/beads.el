@@ -27,14 +27,14 @@
 
 ;; beads.el provides an Emacs interface to the Beads issue tracking system.
 ;; Beads is a Git-backed, AI-native issue tracker that stores data in `.beads/`
-;; and communicates with a daemon via Unix socket RPC.
+;; and communicates through CLI JSON commands by default.
 ;;
 ;; Usage:
 ;;   M-x beads  - Open the Beads issue list
 ;;
-;; The client automatically discovers the Beads database by walking up from
-;; `default-directory` looking for `.beads/beads.db`, then connects to the
-;; daemon socket (e.g. `.beads/bd.sock`).  Multiple CLI backends are supported
+;; The CLI discovers the workspace from `default-directory` and environment
+;; variables, including Dolt-backed workspaces without a SQLite database.
+;; Multiple CLI backends are supported
 ;; (bd, br) and auto-detected per project; see `beads-cli-program'.
 ;;
 ;; You can use beads.el on multiple projects at the same time.

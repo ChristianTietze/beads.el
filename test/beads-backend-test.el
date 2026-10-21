@@ -241,5 +241,114 @@
                   "list" '((status . "open") (bogus . "x")) '(status))
                  '("list" "--status" "open"))))
 
+;;; CLI contract regressions
+
+(ert-deftest beads-backend-test-client-cli-contract ()
+  "Client keyword arguments reach the CLI with its actual flag names."
+  (require 'beads-client)
+  (let ((beads-client-connection-strategy 'cli)
+        (beads-cli-program "bd")
+        commands)
+    (cl-letf (((symbol-function 'call-process)
+               (lambda (_program _infile _destination _display &rest args)
+                 (push args commands)
+                 (insert (if (equal (car args) "create")
+                             "{\"id\":\"bd-1\"}"
+                           "[{\"id\":\"bd-1\"}]"))
+                 0)))
+      (beads-client-list '(:status "closed" :issue-type "bug" :labels ("one" "two")))
+      (should (equal (pop commands)
+                     '("list" "--all" "--limit" "0" "--status" "closed"
+                       "--type" "bug" "--label" "one" "--label" "two" "--json")))
+      (should (equal (alist-get 'id (beads-client-create
+                                    "Title" :issue-type "task"
+                                    :acceptance-criteria "Done")) "bd-1"))
+      (should (equal (pop commands)
+                     '("create" "Title" "--type" "task" "--acceptance" "Done" "--json")))
+      (dolist (op '("show" "update" "close"))
+        (should (equal (alist-get 'id (beads-client-request op '((id . "bd-1"))))
+                       "bd-1")))
+      (beads-client-update "bd-1" :add-labels '("one") :remove-labels '("two"))
+      (should (equal (pop commands)
+                     '("update" "bd-1" "--add-label" "one" "--remove-label" "two" "--json")))
+      (beads-client-ready '(:sort-policy "oldest" :limit 3))
+      (should (equal (pop commands)
+                     '("ready" "--sort" "oldest" "--limit" "3" "--json"))))))
+
+(ert-deftest beads-backend-test-stderr-is-not-json ()
+  "A successful CLI warning must not corrupt its JSON response."
+  (cl-letf (((symbol-function 'call-process)
+             (lambda (_program _infile destination _display &rest _args)
+               (should (equal (car destination) t))
+               (write-region "warning: configuration missing" nil (cadr destination) nil 'silent)
+               (insert "[{\"id\":\"bd-1\"}]")
+               0)))
+    (should (equal (beads-backend--call-json "bd" '("list" "--json"))
+                   [((id . "bd-1"))]))))
+
+(ert-deftest beads-backend-test-cli-failure-includes-stderr ()
+  "Keep CLI diagnostics when a command fails."
+  (cl-letf (((symbol-function 'call-process)
+             (lambda (_program _infile destination _display &rest _args)
+               (write-region "unknown flag" nil (cadr destination) nil 'silent)
+               1)))
+    (let ((err (should-error (beads-backend--call-json "bd" '("list"))
+                             :type 'beads-backend-error)))
+      (should (string-match-p "unknown flag" (error-message-string err))))))
+
+(ert-deftest beads-backend-test-cli-does-not-change-workspace ()
+  "A stale SQLite cache must not redirect CLI requests to another project."
+  (require 'beads-client)
+  (let ((beads-client-connection-strategy 'cli)
+        (default-directory temporary-file-directory)
+        (beads-cli-program "bd"))
+    (cl-letf (((symbol-function 'beads-client--find-database)
+               (lambda () "/another/project/.beads/beads.db"))
+              ((symbol-function 'call-process)
+               (lambda (&rest _args)
+                 (should (equal default-directory temporary-file-directory))
+                 (insert "[]")
+                 0)))
+      (should-not (beads-client-list)))))
+
+(ert-deftest beads-backend-test-cli-integration ()
+  "Exercise real CLI workflows in an isolated, disposable workspace."
+  :tags '(:integration :cli)
+  (require 'beads-client)
+  (skip-unless (executable-find "bd"))
+  (let* ((root (make-temp-file "beads-cli-test-" t))
+         (default-directory (file-name-as-directory root))
+         (process-environment (copy-sequence process-environment))
+         (beads-client-connection-strategy 'cli)
+         (beads-cli-program "bd"))
+    (setenv "BEADS_DIR" nil)
+    (setenv "BEADS_DB" nil)
+    (unwind-protect
+        (progn
+          (should (eq 0 (call-process "git" nil nil nil "init" "--quiet")))
+          (should (eq 0 (call-process "bd" nil nil nil "init"
+                                     "--prefix" "test" "--non-interactive")))
+          (let* ((issue (beads-client-create "CLI contract test"
+                                            :description "Isolated ERT issue"
+                                            :issue-type "bug"
+                                            :acceptance-criteria "Works"
+                                            :labels '("regression")))
+                 (id (alist-get 'id issue)))
+            (should (stringp id))
+            (should (equal (alist-get 'id (beads-client-show id)) id))
+            (should (equal (alist-get 'acceptance_criteria (beads-client-show id)) "Works"))
+            (should (= 1 (length (beads-client-list '(:issue-type "bug" :labels ("regression"))))))
+            (should (= 1 (length (beads-client-ready '(:sort-policy "oldest")))))
+            (should (equal (alist-get 'title (beads-client-update id :title "Edited" :priority 1))
+                           "Edited"))
+            (beads-client-update id :add-labels '("added") :remove-labels '("regression"))
+            (should (= 1 (length (beads-client-list '(:labels ("added"))))))
+            (should-not (beads-client-list '(:labels ("regression"))))
+            (should (equal (alist-get 'status (beads-client-close id "Verified")) "closed"))
+            ;; Closed issues remain available for the Emacs client-side filters.
+            (should (= 1 (length (beads-client-list))))
+            (should (= 1 (length (beads-client-list '(:status "closed")))))))
+      (delete-directory root t))))
+
 (provide 'beads-backend-test)
 ;;; beads-backend-test.el ends here

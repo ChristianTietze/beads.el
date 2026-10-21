@@ -35,8 +35,10 @@
 
 (define-error 'beads-client-error "Beads client error")
 
-(defcustom beads-client-connection-strategy 'auto
-  "Strategy for connecting to the Beads daemon.
+(defcustom beads-client-connection-strategy 'cli
+  "Strategy for connecting to Beads.
+CLI is the default and works with current Dolt-backed bd versions.
+Daemon strategies require a legacy bd version that provides socket RPC.
 - `auto': Try daemon, auto-start if not running, fall back to CLI if that fails.
 - `daemon': Only use daemon (no auto-start), fail if not available.
 - `managed': Start and manage daemon from Emacs, fall back to CLI if that fails.
@@ -381,14 +383,12 @@ This is the internal function that does the actual socket communication."
   "Execute CLI as fallback for RPC OPERATION with ARGS.
 Delegates to the backend abstraction layer for operation translation.
 Returns parsed JSON output."
-  (let ((project-root (when-let ((db (beads-client--find-database)))
-                        (file-name-directory
-                         (directory-file-name
-                          (file-name-directory db))))))
-    (condition-case err
-        (beads-backend-cli-execute operation args project-root)
-      (beads-backend-error
-       (signal 'beads-client-error (cdr err))))))
+  (condition-case err
+      ;; Let the CLI discover its workspace from default-directory and the
+      ;; environment.  Dolt workspaces need not contain a SQLite .db file.
+      (beads-backend-cli-execute operation args)
+    (beads-backend-error
+     (signal 'beads-client-error (cdr err)))))
 
 
 (defun beads-client-health ()

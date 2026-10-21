@@ -29,19 +29,33 @@
 
 (defun beads-backend-bd--operation-to-cli-args (operation args)
   "Convert RPC OPERATION and ARGS to CLI arguments for bd."
+  (setq args (mapcar
+               (lambda (pair)
+                 (cons (pcase (car pair)
+                         ('issue_type 'type)
+                         ('acceptance_criteria 'acceptance)
+                         ('dependencies 'deps)
+                         ('sort_policy 'sort)
+                         ('add_labels 'add_label)
+                         ('remove_labels 'remove_label)
+                         ('labels (if (equal operation "list") 'label 'labels))
+                         (key key))
+                       (cdr pair)))
+               args))
   (pcase operation
     ("health"
      '("daemon" "status"))
     ("list"
-     (beads-backend--build-cli-args "list" args
-                                    '(status priority issue_type assignee
-                                      labels limit title_contains parent)))
+     (append '("list" "--all" "--limit" "0")
+             (cdr (beads-backend--build-cli-args
+                   "list" args '(status priority type assignee
+                                 label limit title_contains parent)))))
     ("show"
      (let ((id (alist-get 'id args)))
        (list "show" id)))
     ("ready"
      (beads-backend--build-cli-args "ready" args
-                                    '(assignee priority limit sort_policy parent)))
+                                    '(assignee priority limit sort parent)))
     ("create"
      (let ((title (alist-get 'title args))
            (other-args (assq-delete-all 'title (copy-alist args))))

@@ -451,7 +451,7 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 ## Requirements
 
 - Emacs 28.1+
-- [Beads](https://github.com/steveyegge/beads) CLI: `bd` 0.49.1+ (recommended) or `br` (beads_rust)
+- [Beads](https://github.com/steveyegge/beads) CLI: `bd` (core workflows tested with 1.3.1) or `br` (beads_rust)
 - `hierarchy` package (for dependency tree view)
 - `transient` package (for menus)
 - `vui` package (for declarative UI components)
@@ -461,10 +461,22 @@ notes, acceptance criteria, and comments with markdown syntax highlighting.
 
 beads.el supports two CLI backends:
 
-- **`bd`** (default) — Full-featured. Supports daemon mode for fast
-  communication via socket, with CLI fallback. Start the daemon with `bd daemon`.
+- **`bd`** (default) — Uses CLI JSON commands, including for Dolt workspaces
+  without a SQLite database or a legacy RPC daemon.
 - **`br`** (beads_rust) — CLI-only, no daemon support. Reduced operation set
   (no activity feed, comments, or reopen). Useful if you only have `br` installed.
+
+The default `beads-client-connection-strategy` is `cli`. The CLI discovers
+its workspace from the current directory, `BEADS_DIR`, or `BEADS_DB`.
+For older bd versions that provide socket RPC, you can explicitly select
+`auto`, `managed`, or `daemon` instead.
+
+With bd 1.3.1, listing (including closed issues), filtering, issue details,
+creation, editing, closing, labels, and dependencies use the CLI. The legacy
+activity feed (`bd activity`), JSONL conflict resolution (`bd resolve-conflicts`),
+the duplicates view (which passes `--no-daemon`), and daemon health/mutation
+commands require older bd versions. These features have not been ported
+to the Dolt API.
 
 Auto-detection tries `bd` first, then `br`. Override per-project via
 `.dir-locals.el`:
@@ -485,9 +497,6 @@ This project uses [Beads](https://github.com/steveyegge/beads) itself for issue 
 You can check out the repository and view the project's issues:
 
 ```bash
-# Start the daemon
-bd daemon
-
 # Launch Emacs with beads.el loaded
 mise run interactive
 ```

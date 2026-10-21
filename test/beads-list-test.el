@@ -631,10 +631,12 @@
 (ert-deftest beads-list-test-available-types-includes-builtin ()
   "Test that available-types includes built-in types."
   (let ((beads-list--issues nil))
-    (let ((types (beads-list-available-types)))
-      (should (member "bug" types))
-      (should (member "feature" types))
-      (should (member "rig" types)))))
+    (cl-letf (((symbol-function 'beads-get-types)
+               (lambda () beads-builtin-types)))
+      (let ((types (beads-list-available-types)))
+        (should (member "bug" types))
+        (should (member "feature" types))
+        (should (member "rig" types))))))
 
 (ert-deftest beads-list-test-available-types-includes-custom ()
   "Test that available-types includes custom types from issues."

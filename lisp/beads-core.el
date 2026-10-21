@@ -71,18 +71,8 @@ Signals error if command fails or returns invalid JSON."
          (extra (when-let ((fn (beads-backend-cli-extra-flags backend)))
                   (funcall fn subcommand)))
          (full-args (append extra (list subcommand) args (list "--json"))))
-    (with-temp-buffer
-      (let ((exit-code (apply #'call-process program nil t nil full-args)))
-        (unless (zerop exit-code)
-          (signal 'error
-                  (list (format "%s %s failed: %s"
-                                (beads-backend-name backend)
-                                subcommand (buffer-string)))))
-        (goto-char (point-min))
-        (condition-case nil
-            (let ((output (json-read)))
-              (if (vectorp output) (append output nil) output))
-          (json-error nil))))))
+    (let ((output (beads-backend--call-json program full-args)))
+      (if (vectorp output) (append output nil) output))))
 
 (provide 'beads-core)
 ;;; beads-core.el ends here
