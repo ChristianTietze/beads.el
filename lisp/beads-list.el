@@ -34,6 +34,7 @@
 (require 'tabulated-list)
 (require 'seq)
 
+(declare-function beads-autoupdate-mode "beads-autoupdate")
 (declare-function beads-menu "beads-transient")
 (declare-function beads-show-hint "beads")
 (declare-function beads-form-open "beads-form")
@@ -378,8 +379,10 @@ Respects `beads-list-show-header-stats'."
   (evil-make-overriding-map beads-list-mode-map 'normal))
 
 (defun beads-list-refresh (&optional silent)
-  "Fetch issues from daemon and refresh the display.
-When SILENT is non-nil, don't show message.
+  "Fetch issues and refresh the display.
+When SILENT is non-nil, don't show the success message.
+On a client error, report the failure and disable automatic refresh in this
+buffer.  Re-enable `beads-autoupdate-mode' to resume automatic retries.
 Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
   (interactive)
   (let ((saved-id (tabulated-list-get-id))
@@ -425,6 +428,8 @@ Applies `beads-list--filter' if set, and `beads-list--show-only-marked' filter."
                               "")))
               (message "Refreshed %d issues%s%s" (length beads-list--issues) filter-msg sort-msg))))
       (beads-client-error
+       (when (bound-and-true-p beads-autoupdate-mode)
+         (beads-autoupdate-mode -1))
        (message "Failed to fetch issues: %s" (error-message-string err))))))
 
 (defun beads-list-goto-id (id)

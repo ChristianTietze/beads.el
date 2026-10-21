@@ -93,7 +93,9 @@ Can be set in .dir-locals.el to reduce noise:
 (define-minor-mode beads-autoupdate-mode
   "Minor mode for auto-refreshing beads list buffers.
 When enabled, the buffer refreshes automatically at intervals
-defined by `beads-autoupdate-interval'."
+defined by `beads-autoupdate-interval'.
+A client error disables this mode in the affected buffer.  Enable it again
+after resolving the error to resume automatic refresh."
   :lighter " AutoUpd"
   :group 'beads-autoupdate
   (if beads-autoupdate-mode

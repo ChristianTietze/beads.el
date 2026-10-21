@@ -68,5 +68,50 @@
   "Test that beads-list-refresh accepts silent argument."
   (should (member 'silent (help-function-arglist 'beads-list-refresh))))
 
+(ert-deftest beads-autoupdate-test-fetch-failure-stops-local-timer ()
+  "A failed fetch reports the error once and stops only its buffer's timer."
+  (let ((other (generate-new-buffer " *beads-other*"))
+        (beads-autoupdate-enable nil)
+        (beads-verbose nil)
+        messages)
+    (unwind-protect
+        (progn
+          (with-current-buffer other
+            (beads-list-mode)
+            (beads-autoupdate-mode 1))
+          (with-temp-buffer
+            (beads-list-mode)
+            (beads-autoupdate-mode 1)
+            (cl-letf (((symbol-function 'beads-client-list)
+                       (lambda (&rest _args)
+                         (signal 'beads-client-error '("no beads database found"))))
+                      ((symbol-function 'message)
+                       (lambda (format-string &rest args)
+                         (push (apply #'format format-string args) messages))))
+              (beads-autoupdate--refresh)
+              (should-not beads-autoupdate-mode)
+              (should-not beads-autoupdate--timer)
+              (should (= 1 (length messages)))
+              (should (string-match-p "no beads database found" (car messages)))
+              ;; Manual refresh still reports failures after the timer stops.
+              (beads-list-refresh)
+              (should (= 2 (length messages)))))
+          (with-current-buffer other
+            (should beads-autoupdate-mode)
+            (should beads-autoupdate--timer)))
+      (kill-buffer other))))
+
+(ert-deftest beads-autoupdate-test-success-keeps-timer ()
+  "A successful automatic refresh keeps running, including an empty list."
+  (let ((beads-autoupdate-enable nil)
+        (beads-verbose nil))
+    (with-temp-buffer
+      (beads-list-mode)
+      (beads-autoupdate-mode 1)
+      (cl-letf (((symbol-function 'beads-client-list) (lambda (&rest _args) nil)))
+        (beads-autoupdate--refresh)
+        (should beads-autoupdate-mode)
+        (should beads-autoupdate--timer)))))
+
 (provide 'beads-autoupdate-test)
 ;;; beads-autoupdate-test.el ends here
