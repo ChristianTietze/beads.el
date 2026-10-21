@@ -33,6 +33,9 @@
   "Dedicated editing buffers for Beads issues."
   :group 'beads)
 
+(declare-function beads-detail-refresh "beads-detail")
+(declare-function beads-list-refresh "beads-list")
+
 (defvar-local beads-edit--issue-id nil
   "Issue ID being edited in this buffer.")
 
@@ -94,8 +97,11 @@
             (message "Updated %s for %s" (substring (symbol-name field) 1) issue-id)
             (when (and source-buffer (buffer-live-p source-buffer))
               (with-current-buffer source-buffer
-                (when (fboundp 'beads-detail-refresh)
-                  (beads-detail-refresh)))))
+                (cond
+                 ((derived-mode-p 'beads-detail-mode 'beads-detail-vui-mode)
+                  (beads-detail-refresh))
+                 ((derived-mode-p 'beads-list-mode)
+                  (beads-list-refresh))))))
         (beads-client-error
          (message "Failed to update: %s" (error-message-string err)))))
 

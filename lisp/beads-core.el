@@ -29,8 +29,7 @@
 
 ;;; Code:
 
-(require 'json)
-(require 'beads-backend)
+(require 'beads-client)
 
 (declare-function beads-detail-open "beads-detail")
 (declare-function beads-client-show "beads-client")

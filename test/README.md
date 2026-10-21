@@ -6,7 +6,15 @@ This directory contains ERT (Emacs Lisp Regression Testing) tests for beads.el.
 
 ```bash
 mise run test
+
+# Isolated CLI integration tests (requires bd; Dolt conflict test also needs dolt)
+python3 scripts/test.py --integration
 ```
+
+The default suite excludes integration tests. `--integration` runs only tests
+that initialize disposable workspaces; it does not run the legacy socket tests
+against your project's database. Dependencies such as `vui` must be available
+through `EMACSLOADPATH` or the local `vendor/` directory.
 
 ## Writing Tests
 

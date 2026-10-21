@@ -62,7 +62,7 @@ def byte_compile(el_file, root_dir):
 
     result = subprocess.run(
         ["emacs", "-Q", "--batch"] + load_paths +
-        ["-f", "batch-byte-compile", str(el_file)],
+        ["--eval", "(setq load-prefer-newer t)", "-f", "batch-byte-compile", str(el_file)],
         capture_output=True,
         text=True
     )

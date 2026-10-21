@@ -126,6 +126,7 @@ Checks BEADS_DIR env, BEADS_DB env, then walks up from default-directory."
         (let ((db-files (directory-files beads-dir t "\\.db\\'")))
           (cl-find-if (lambda (f)
                         (and (not (string-match-p "\\.backup" f))
+                             (not (string-prefix-p "backup." (file-name-nondirectory f)))
                              (not (string-match-p "vc\\.db\\'" f))))
                       db-files))))))
 
@@ -163,15 +164,15 @@ This is the parent directory of .beads/."
                (abbreviate-file-name root)
                (string-trim event)))))
 
-(defun beads-client--start-managed-daemon ()
+(cl-defun beads-client--start-managed-daemon ()
   "Start a managed daemon for the current project.
 Returns the process, or nil if starting fails."
   (let* ((root (beads-client--project-root))
          (daemon-cmd (beads-backend-daemon-start-command)))
+    (unless daemon-cmd
+      (signal 'beads-client-error '("Current backend has no RPC daemon; use CLI mode")))
     (unless root
       (signal 'beads-client-error '("No Beads project found")))
-    (unless daemon-cmd
-      (signal 'beads-client-error '("Current backend does not support daemon")))
     (when (gethash root beads-client--daemon-start-in-progress)
       (signal 'beads-client-error '("Daemon start already in progress")))
     (when-let ((existing (gethash root beads-client--project-daemons)))
@@ -209,17 +210,13 @@ Returns non-nil if socket is ready, nil if timeout."
 (defun beads-client--ensure-daemon ()
   "Ensure the daemon is running, starting it if necessary.
 Returns non-nil if daemon is available, nil otherwise."
-  (unless (beads-backend-supports-daemon-p)
-    (cl-return-from beads-client--ensure-daemon nil))
-  (let ((socket-path (beads-client--socket-path)))
-    (cond
-     ((file-exists-p socket-path)
-      t)
-     ((memq beads-client-connection-strategy '(auto managed))
-      (beads-client--start-managed-daemon)
-      (beads-client--wait-for-socket beads-client-daemon-startup-timeout))
-     (t
-      nil))))
+  (when (beads-backend-supports-daemon-p)
+    (let ((socket-path (beads-client--socket-path)))
+      (cond
+       ((file-exists-p socket-path) t)
+       ((memq beads-client-connection-strategy '(auto managed))
+        (beads-client--start-managed-daemon)
+        (beads-client--wait-for-socket beads-client-daemon-startup-timeout))))))
 
 (defun beads-client-start-daemon ()
   "Start the beads daemon for the current project.
@@ -242,17 +239,19 @@ Interactive command to manually start the daemon."
     (message "No managed beads daemon running for this project")))
 
 (defun beads-client-daemon-status ()
-  "Show the status of the beads daemon for the current project."
+  "Show the status of the legacy beads RPC daemon."
   (interactive)
+  (unless (beads-backend-supports-daemon-p)
+    (user-error "Current backend has no RPC daemon; use CLI mode"))
   (let ((socket-path (condition-case nil
                          (beads-client--socket-path)
                        (beads-client-error nil)))
         (managed-proc (beads-client--get-managed-daemon)))
     (cond
-     ((and managed-proc (file-exists-p socket-path))
+     ((and managed-proc socket-path (file-exists-p socket-path))
       (message "Beads daemon: running (managed by Emacs, PID %d)"
                (process-id managed-proc)))
-     ((file-exists-p socket-path)
+     ((and socket-path (file-exists-p socket-path))
       (message "Beads daemon: running (external)"))
      (managed-proc
       (message "Beads daemon: starting (PID %d, socket not ready)"
@@ -297,9 +296,9 @@ Connection behavior depends on `beads-client-connection-strategy':
      (beads-client--request-socket operation args))
     ((or 'auto 'managed)
      (condition-case err
-         (progn
-           (beads-client--ensure-daemon)
-           (beads-client--request-socket operation args))
+         (if (beads-client--ensure-daemon)
+             (beads-client--request-socket operation args)
+           (beads-client--cli-fallback operation args))
        (beads-client-error
         (let ((err-msg (cadr err)))
           (if (beads-client--connection-error-p err-msg)
@@ -392,13 +391,13 @@ Returns parsed JSON output."
 
 
 (defun beads-client-health ()
-  "Check daemon health.
-Returns t if healthy, signals error otherwise."
+  "Check database connectivity.
+Returns non-nil if healthy, signals error otherwise."
   (condition-case err
       (let ((response (beads-client-request "health" nil)))
-        (equal (alist-get 'status response) "healthy"))
+        (member (alist-get 'status response) '("healthy" "ok")))
     (beads-client-error
-     (signal 'beads-client-error (list "Daemon unhealthy" err)))))
+     (signal 'beads-client-error (list "Beads database unhealthy" err)))))
 
 (defun beads-client-list (&optional filters)
   "List issues with optional FILTERS.

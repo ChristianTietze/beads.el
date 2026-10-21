@@ -21,11 +21,15 @@
 ;;; Commentary:
 
 ;; Backend implementation for the bd (beads) CLI.
-;; Supports daemon mode and all operations.
+;; Uses CLI JSON commands; legacy RPC is detected from the installed CLI.
 
 ;;; Code:
 
 (require 'beads-backend)
+
+(defun beads-backend-bd--supports-daemon-p ()
+  "Return whether the installed bd still provides legacy RPC."
+  (beads-backend-cli-supports-command-p "daemon" beads-backend-bd))
 
 (defun beads-backend-bd--operation-to-cli-args (operation args)
   "Convert RPC OPERATION and ARGS to CLI arguments for bd."
@@ -44,7 +48,9 @@
                args))
   (pcase operation
     ("health"
-     '("daemon" "status"))
+     (if (beads-backend-bd--supports-daemon-p)
+         '("daemon" "status")
+       '("ping")))
     ("list"
      (append '("list" "--all" "--limit" "0")
              (cdr (beads-backend--build-cli-args
@@ -81,7 +87,11 @@
     ("stats"
      '("stats"))
     ("count"
-     (beads-backend--build-cli-args "count" args '(status group_by)))
+     (let ((group (alist-get 'group_by args)))
+       (when (and group (not (member group '("status" "priority" "type" "assignee" "label"))))
+         (signal 'beads-backend-error (list "Unsupported count grouping" group)))
+       (append (beads-backend--build-cli-args "count" args '(status))
+               (when group (list (concat "--by-" group))))))
     ("dep_add"
      (let ((from-id (alist-get 'from_id args))
            (to-id (alist-get 'to_id args))
@@ -108,6 +118,9 @@
            (label (alist-get 'label args)))
        (list "label" "remove" id label)))
     ("get_mutations"
+     (unless (beads-backend-bd--supports-daemon-p)
+       (signal 'beads-backend-error
+               '("This bd has no mutation stream; use automatic list refresh")))
      (let ((since-id (alist-get 'since_id args)))
        (if since-id
            (list "mutations" "--since" since-id)
@@ -125,8 +138,15 @@
      (let ((key (alist-get 'key args)))
        (list "config" "unset" key)))
     ("resolve-conflicts"
-     (let ((dry-run (alist-get 'dry_run args)))
-       (if dry-run
+     (if (beads-backend-cli-supports-command-p "conflicts")
+         (if (alist-get 'dry_run args)
+             '("conflicts" "show")
+           (let ((strategy (alist-get 'strategy args)))
+             (unless (member strategy '("ours" "theirs"))
+               (signal 'beads-backend-error
+                       '("Choose ours or theirs to resolve Dolt conflicts")))
+             (list "conflicts" "resolve" "--all" "--strategy" strategy)))
+       (if (alist-get 'dry_run args)
            '("resolve-conflicts" "--dry-run")
          '("resolve-conflicts"))))
     ("duplicates"
@@ -146,14 +166,14 @@
 (defun beads-backend-bd--cli-extra-flags (operation)
   "Return extra CLI flags for OPERATION on bd."
   (pcase operation
-    ("duplicates" '("--no-daemon"))
+    ("duplicates" (when (beads-backend-bd--supports-daemon-p) '("--no-daemon")))
     (_ nil)))
 
 (defconst beads-backend-bd
   (make-beads-backend
    :name "bd"
    :cli-program "bd"
-   :supports-daemon t
+   :supports-daemon #'beads-backend-bd--supports-daemon-p
    :socket-name "bd.sock"
    :daemon-start-args '("daemon" "start" "--foreground")
    :supported-ops '("health" "list" "show" "ready" "create" "update" "close"

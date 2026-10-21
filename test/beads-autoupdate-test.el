@@ -3,6 +3,7 @@
 ;;; Code:
 
 (require 'ert)
+(require 'beads)
 (require 'beads-autoupdate)
 (require 'beads-list)
 
@@ -66,7 +67,7 @@
 
 (ert-deftest beads-list-test-refresh-has-silent-arg ()
   "Test that beads-list-refresh accepts silent argument."
-  (should (member 'silent (help-function-arglist 'beads-list-refresh))))
+  (should (equal (func-arity #'beads-list-refresh) '(0 . 1))))
 
 (ert-deftest beads-autoupdate-test-fetch-failure-stops-local-timer ()
   "A failed fetch reports the error once and stops only its buffer's timer."

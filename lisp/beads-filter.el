@@ -25,6 +25,7 @@
 ;;; Code:
 
 (require 'seq)
+(require 'beads-client)
 
 (defgroup beads-filter nil
   "Filter system for Beads issues."
@@ -43,9 +44,13 @@ Optional CONFIG is a plist of additional filter settings."
   "Return the predicate function of FILTER."
   (plist-get filter :predicate))
 
+(defvar beads-filter--ready-ids 'unknown
+  "Ready issue IDs, bound for each filter application.")
+
 (defun beads-filter-apply (filter issues)
   "Apply FILTER to ISSUES, returning matching issues."
-  (seq-filter (plist-get filter :predicate) issues))
+  (let ((beads-filter--ready-ids 'unknown))
+    (seq-filter (plist-get filter :predicate) issues)))
 
 (defun beads-filter-by-status (status)
   "Create filter for STATUS (open, in_progress, closed, blocked)."
@@ -92,16 +97,20 @@ Optional CONFIG is a plist of additional filter settings."
   (beads-filter-make
    (format "label:%s" label)
    (lambda (issue)
-     (member label (alist-get 'labels issue)))
+     (seq-contains-p (alist-get 'labels issue) label #'equal))
    (list :type 'label :value label)))
 
 (defun beads-filter-ready ()
-  "Create filter for ready issues (open/in_progress with no blockers)."
+  "Create a filter using the CLI's authoritative ready-work result.
+Fetch readiness once per application, including when filters are composed."
   (beads-filter-make
    "ready"
    (lambda (issue)
-     (and (member (alist-get 'status issue) '("open" "in_progress"))
-          (zerop (or (alist-get 'dependency_count issue) 0))))
+     (when (eq beads-filter--ready-ids 'unknown)
+       (setq beads-filter--ready-ids
+             (mapcar (lambda (ready) (alist-get 'id ready))
+                     (beads-client-ready '(:limit 0)))))
+     (member (alist-get 'id issue) beads-filter--ready-ids))
    (list :type 'ready :value t)))
 
 (defun beads-filter-blocked ()

@@ -141,6 +141,8 @@ Shows issue creates, updates, deletes, and comments in real-time.
 LIMIT is the max number of events (default `beads-activity-limit').
 PREFIX filters to issues starting with this string.
 TYPE filters to this event type."
+  (unless (beads-backend-cli-supports-command-p "activity")
+    (user-error "This bd has no global activity feed; use bd history ISSUE --events"))
   (let* ((limit (or limit beads-activity-limit))
          (args (list "--limit" (number-to-string limit))))
     (when prefix
@@ -226,6 +228,8 @@ TYPE filters to this event type."
   "Display activity feed with interactive actions.
 LIMIT is the max number of events to show."
   (interactive "P")
+  (unless (beads-backend-cli-supports-command-p "activity")
+    (user-error "This bd has no global activity feed; use bd history ISSUE --events"))
   (let ((limit (or limit beads-activity-limit)))
     (condition-case err
         (let ((events (beads-activity--fetch limit
@@ -271,7 +275,10 @@ LIMIT is the max number of events to show."
         (unless beads-activity--follow-mode
           (message "Refreshed activity feed")))
     (error
-     (message "Failed to refresh: %s" (error-message-string err)))))
+     (beads-activity--stop-polling)
+     (setq beads-activity--follow-mode nil)
+     (message "Failed to refresh activity (follow stopped): %s"
+              (error-message-string err)))))
 
 (defun beads-activity--start-polling ()
   "Start polling timer for follow mode."

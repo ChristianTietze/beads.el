@@ -1,4 +1,4 @@
-;;; beads-conflicts.el --- JSONL merge conflict resolution for Beads -*- lexical-binding: t -*-
+;;; beads-conflicts.el --- Merge conflict resolution for Beads -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Christian Tietze
 
@@ -20,10 +20,7 @@
 
 ;;; Commentary:
 
-;; Interactive buffer for viewing and resolving JSONL merge conflicts.
-;; When git merges fail to auto-resolve, JSONL files can end up with
-;; conflict markers.  This mode shows the conflict status and allows
-;; resolving them using beads' mechanical merge rules.
+;; View and resolve Dolt merge conflicts, with legacy JSONL support.
 
 ;;; Code:
 
@@ -43,61 +40,82 @@
   "Keymap for beads-conflicts-mode.")
 
 (define-derived-mode beads-conflicts-mode special-mode "Beads-Conflicts"
-  "Major mode for viewing and resolving JSONL merge conflicts.
-
-When git merges fail to auto-resolve, JSONL files can have conflict
-markers (<<<<<<, =======, >>>>>>).  This mode detects such conflicts
-and resolves them using beads' mechanical merge rules.
+  "Major mode for viewing and resolving Beads merge conflicts.
 
 \\{beads-conflicts-mode-map}"
   (setq buffer-read-only t))
 
 (defun beads-conflicts--fetch ()
-  "Fetch conflict status via CLI with dry-run."
-  (condition-case nil
+  "Fetch conflict status without modifying the workspace."
+  (condition-case err
       (beads-backend-cli-execute
        "resolve-conflicts" '((dry_run . t)))
-    (beads-backend-error nil)))
+    (beads-backend-error
+     (user-error "Cannot check conflicts: %s" (error-message-string err)))))
 
-(defun beads-conflicts--render (result)
-  "Render conflict status RESULT into current buffer."
+(defun beads-conflicts--render-dolt (result)
+  "Render Dolt conflict RESULT with each side's field values."
   (let ((inhibit-read-only t))
     (erase-buffer)
     (beads-core-render-header
-     "JSONL Merge Conflicts"
-     "Resolve git merge conflict markers in beads JSONL files"
+     "Dolt Merge Conflicts"
+     "Compare base, local (ours), and incoming (theirs) values"
      "r=resolve all  g=refresh  q=quit")
-    (if (null result)
-        (insert "Could not check for conflicts.\n")
-      (let ((file-path (alist-get 'file_path result))
-            (conflicts-found (alist-get 'conflicts_found result 0))
-            (status (alist-get 'status result))
-            (error-msg (alist-get 'error result)))
-        (insert (propertize "File: " 'face 'bold)
-                (or file-path "unknown") "\n\n")
-        (cond
-         ((and error-msg (string-match-p "not found" error-msg))
-          (insert (propertize "No JSONL file found.\n" 'face 'shadow))
-          (insert "This is normal if no conflicts exist or sync hasn't run.\n"))
-         ((and (equal status "error") error-msg)
-          (insert (propertize "Error: " 'face 'error)
-                  error-msg "\n"))
-         ((zerop conflicts-found)
-          (insert (propertize "No conflicts detected.\n" 'face 'success)))
-         (t
-          (insert (propertize (format "%d conflict(s) found!\n\n"
-                                      conflicts-found)
-                              'face 'warning))
-          (insert "Press ")
-          (insert (propertize "r" 'face 'help-key-binding))
-          (insert " to resolve using mechanical merge rules.\n")
-          (insert "(Updated timestamps win, field-level merging)\n")))))))
+    (if (zerop (alist-get 'conflicts result 0))
+        (insert "No row conflicts detected.\n")
+      (seq-doseq (row (alist-get 'rows result))
+        (insert (propertize (format "%s %s\n" (alist-get 'table row)
+                                    (alist-get 'key row)) 'face 'bold))
+        (insert (format "  Ours: %s; theirs: %s\n"
+                        (if (eq t (alist-get 'our_exists row)) "present" "deleted")
+                        (if (eq t (alist-get 'their_exists row)) "present" "deleted")))
+        (seq-doseq (field (alist-get 'fields row))
+          (insert (format "  %s\n" (alist-get 'name field)))
+          (dolist (side '(base ours theirs))
+            (insert (format "    %s: %s\n" side (or (alist-get side field) "(null)")))))
+        (insert "\n")))))
+
+(defun beads-conflicts--render (result)
+  "Render conflict status RESULT into current buffer."
+  (if (assq 'rows result)
+      (beads-conflicts--render-dolt result)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (beads-core-render-header
+       "JSONL Merge Conflicts"
+       "Resolve git merge conflict markers in beads JSONL files"
+       "r=resolve all  g=refresh  q=quit")
+      (if (null result)
+          (insert "Could not check for conflicts.\n")
+        (let ((file-path (alist-get 'file_path result))
+              (conflicts-found (alist-get 'conflicts_found result 0))
+              (status (alist-get 'status result))
+              (error-msg (alist-get 'error result)))
+          (insert (propertize "File: " 'face 'bold)
+                  (or file-path "unknown") "\n\n")
+          (cond
+           ((and error-msg (string-match-p "not found" error-msg))
+            (insert (propertize "No JSONL file found.\n" 'face 'shadow))
+            (insert "This is normal if no conflicts exist or sync hasn't run.\n"))
+           ((and (equal status "error") error-msg)
+            (insert (propertize "Error: " 'face 'error)
+                    error-msg "\n"))
+           ((zerop conflicts-found)
+            (insert (propertize "No conflicts detected.\n" 'face 'success)))
+           (t
+            (insert (propertize (format "%d conflict(s) found!\n\n"
+                                        conflicts-found)
+                                'face 'warning))
+            (insert "Press ")
+            (insert (propertize "r" 'face 'help-key-binding))
+            (insert " to resolve using mechanical merge rules.\n")
+            (insert "(Updated timestamps win, field-level merging)\n"))))))))
 
 ;;;###autoload
 (defun beads-conflicts ()
-  "Display JSONL merge conflict status with resolution options.
-Detects git merge conflict markers in beads JSONL files and offers
-to resolve them using beads' mechanical merge rules."
+  "Display Beads merge conflicts with resolution options.
+For Dolt workspaces, inspect field values and choose ours or theirs.
+Older bd versions retain their mechanical JSONL merge behavior."
   (interactive)
   (let ((result (beads-conflicts--fetch)))
     (with-current-buffer (get-buffer-create "*Beads Conflicts*")
@@ -111,21 +129,32 @@ to resolve them using beads' mechanical merge rules."
                        (window-height . fit-window-to-buffer))))))
 
 (defun beads-conflicts-resolve-all ()
-  "Resolve all JSONL merge conflicts using mechanical merge."
+  "Resolve all displayed conflicts after choosing and confirming a strategy."
   (interactive)
   (unless (derived-mode-p 'beads-conflicts-mode)
     (user-error "Not in beads-conflicts-mode"))
-  (when (yes-or-no-p "Resolve all conflicts using mechanical merge? ")
-    (let ((output (condition-case nil
-                      (beads-backend-cli-execute "resolve-conflicts" nil)
-                    (beads-backend-error nil))))
-      (if (and output (equal (alist-get 'status output) "success"))
-          (progn
-            (message "Resolved %d conflict(s)"
-                     (alist-get 'conflicts_resolved output 0))
-            (beads-conflicts-refresh))
-        (message "Failed to resolve conflicts: %s"
-                 (or (alist-get 'error output) "unknown error"))))))
+  (let* ((dolt (assq 'rows beads-conflicts--data))
+         (strategy (when dolt
+                     (when (zerop (alist-get 'conflicts beads-conflicts--data 0))
+                       (user-error "There are no row conflicts to resolve"))
+                     (completing-read "Keep which side? " '("ours" "theirs") nil t)))
+         (prompt (if dolt
+                     (format "Resolve ALL conflicts keeping %s? " strategy)
+                   "Resolve all conflicts using mechanical merge? ")))
+    (when (yes-or-no-p prompt)
+      (condition-case err
+          (let ((output (beads-backend-cli-execute
+                         "resolve-conflicts"
+                         (when strategy `((strategy . ,strategy))))))
+            (beads-conflicts-refresh)
+            (if dolt
+                (message "Resolved %d conflict(s); %d remain"
+                         (alist-get 'resolved output 0) (alist-get 'remaining output 0))
+              (unless (equal (alist-get 'status output) "success")
+                (user-error "Conflict resolution failed: %s" (alist-get 'error output)))
+              (message "Resolved %d conflict(s)" (alist-get 'conflicts_resolved output 0))))
+        (beads-backend-error
+         (user-error "Conflict resolution failed: %s" (error-message-string err)))))))
 
 (defun beads-conflicts-refresh ()
   "Refresh the conflict status."

@@ -92,21 +92,18 @@ When nil, uses traditional widget.el forms."
          (buffer (get-buffer-create buffer-name)))
     (with-current-buffer buffer
       (if beads-form-use-vui
-          (progn
-            (setq beads-form--issue-id id)
-            (setq beads-form--original-issue issue)
-            (beads-form--render-vui buffer issue))
+          (beads-form--render-vui buffer issue)
         (let ((inhibit-read-only t))
           (erase-buffer))
         (remove-overlays)
         (beads-form-mode)
-        (setq beads-form--issue-id id)
-        (setq beads-form--original-issue issue)
         (setq beads-form--widgets nil)
         (beads-form--render issue)
         (widget-setup)
         (goto-char (point-min))
-        (widget-forward 1)))
+        (widget-forward 1))
+      (setq beads-form--issue-id id
+            beads-form--original-issue issue))
     (pop-to-buffer buffer)))
 
 (defvar-local beads-form--vui-save-action nil
@@ -321,10 +318,8 @@ Derives from `vui-mode' and adds form-specific keybindings.
       (check-field 'priority :priority
                    (lambda (v) (string-to-number (substring v 1))))
       (check-field 'issue_type :issue-type)
-      (check-field 'assignee :assignee
-                   (lambda (v) (if (string-empty-p v) nil v)))
-      (check-field 'external_ref :external-ref
-                   (lambda (v) (if (string-empty-p v) nil v)))
+      (check-field 'assignee :assignee)
+      (check-field 'external_ref :external-ref)
       (check-field 'description :description)
       (check-field 'design :design)
       (check-field 'acceptance_criteria :acceptance-criteria)
@@ -368,7 +363,7 @@ Derives from `vui-mode' and adds form-specific keybindings.
          ((eq major-mode 'beads-list-mode)
           (when (fboundp 'beads-list-refresh)
             (beads-list-refresh)))
-         ((and (eq major-mode 'beads-detail-mode)
+         ((and (derived-mode-p 'beads-detail-mode 'beads-detail-vui-mode)
                (boundp 'beads-detail--current-issue-id)
                (equal beads-detail--current-issue-id issue-id))
           (when (fboundp 'beads-detail-refresh)

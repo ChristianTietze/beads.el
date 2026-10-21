@@ -93,7 +93,7 @@ With the built-in `:vc` keyword:
 - `M-x beads-stale` - Show stale issues (not updated recently)
 - `M-x beads-orphans` - Show orphaned issues (referenced in commits but not closed)
 - `M-x beads-duplicates` - Find and merge duplicate issues
-- `M-x beads-conflicts` - View and resolve JSONL merge conflicts
+- `M-x beads-conflicts` - Inspect and resolve Dolt or legacy JSONL merge conflicts
 - `M-x beads-lint` - Show issues missing required template sections
 - `M-x beads-create-issue-preview` - Create issue with preview
 
@@ -196,7 +196,10 @@ then confirm to actually create it.
 
 <!-- TODO: Add screenshot for activity feed (see bdel-4hp) -->
 
-The activity feed shows real-time issue mutations (creates, updates, deletes, comments).
+The activity feed shows real-time issue mutations on legacy bd versions that
+provide `bd activity`. Current bd versions have removed this command; the menu
+entry is hidden and direct invocation explains the limitation. For one issue,
+use `bd history ISSUE --events` from a terminal.
 
 | Key | Command | Description |
 |-----|---------|-------------|
@@ -253,9 +256,11 @@ and sources (duplicates to be closed).
 
 ### Merge Conflicts (`beads-conflicts-mode`)
 
-View and resolve JSONL merge conflict markers. When git merges fail to
-auto-resolve, JSONL files can have conflict markers. This mode detects
-such conflicts and resolves them using beads' mechanical merge rules.
+Inspect Dolt merge conflicts field by field, including base, local (`ours`),
+and incoming (`theirs`) values. Press `r`, choose which side to keep, then
+confirm resolving all conflicts. This resolves every conflicted table and
+commits the merge when the CLI can conclude it. Older bd versions retain
+their mechanical JSONL merge behavior.
 
 | Key | Command | Description |
 |-----|---------|-------------|
@@ -471,12 +476,14 @@ its workspace from the current directory, `BEADS_DIR`, or `BEADS_DB`.
 For older bd versions that provide socket RPC, you can explicitly select
 `auto`, `managed`, or `daemon` instead.
 
-With bd 1.3.1, listing (including closed issues), filtering, issue details,
-creation, editing, closing, labels, and dependencies use the CLI. The legacy
-activity feed (`bd activity`), JSONL conflict resolution (`bd resolve-conflicts`),
-the duplicates view (which passes `--no-daemon`), and daemon health/mutation
-commands require older bd versions. These features have not been ported
-to the Dolt API.
+With bd 1.3.1, core issue workflows, authoritative ready filtering, statistics,
+grouped counts, duplicates, and Dolt conflict resolution use the CLI. Confirmed
+single and bulk deletes perform the deletion rather than merely previewing it.
+
+Legacy RPC is detected from the installed CLI; `auto` and `managed` fall back
+to CLI immediately when no daemon is available. Database health uses `bd ping`
+on current bd. The removed global activity feed and mutation stream remain
+unavailable; ordinary issue lists refresh through CLI polling.
 
 Auto-detection tries `bd` first, then `br`. Override per-project via
 `.dir-locals.el`:

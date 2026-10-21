@@ -69,9 +69,15 @@ Only active when in beads-list-mode with preview mode enabled."
 (defun beads-preview--start-timer (issue)
   "Start idle timer to preview ISSUE after delay (debouncing)."
   (beads-preview--cancel-timer)
-  (setq beads-preview--timer
-        (run-with-idle-timer beads-preview-delay nil
-                             #'beads-preview--display-issue issue)))
+  (let ((buffer (current-buffer)))
+    (setq beads-preview--timer
+          (run-with-idle-timer
+           beads-preview-delay nil
+           (lambda ()
+             (when (buffer-live-p buffer)
+               (with-current-buffer buffer
+                 (setq beads-preview--timer nil)
+                 (beads-preview--display-issue issue))))))))
 
 (defun beads-preview--cancel-timer ()
   "Cancel the preview timer if it is running."

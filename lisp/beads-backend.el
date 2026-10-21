@@ -36,7 +36,7 @@
 (cl-defstruct beads-backend
   (name nil :type string)
   (cli-program nil :type string)
-  (supports-daemon nil :type boolean)
+  (supports-daemon nil :type (or boolean function))
   (socket-name nil :type (or string null))
   (daemon-start-args nil :type list)
   (supported-ops nil :type list)
@@ -117,7 +117,9 @@ Uses `beads-cli-program' if set, otherwise auto-detects."
 
 (defun beads-backend-supports-daemon-p (&optional backend)
   "Return non-nil if BACKEND (or current project backend) supports daemon."
-  (beads-backend-supports-daemon (or backend (beads-backend-for-project))))
+  (let ((support (beads-backend-supports-daemon
+                  (or backend (beads-backend-for-project)))))
+    (if (functionp support) (funcall support) support)))
 
 (defun beads-backend-socket-name-for-project ()
   "Return the socket filename for the current project's backend."
@@ -126,7 +128,7 @@ Uses `beads-cli-program' if set, otherwise auto-detects."
 (defun beads-backend-daemon-start-command ()
   "Return the full daemon start command for the current project's backend."
   (let ((backend (beads-backend-for-project)))
-    (when (beads-backend-supports-daemon backend)
+    (when (beads-backend-supports-daemon-p backend)
       (let ((program (beads-backend-cli-program-path backend)))
         (cons program (beads-backend-daemon-start-args backend))))))
 
@@ -138,6 +140,20 @@ BACKEND defaults to the current project's backend."
     (or (executable-find program)
         (signal 'beads-backend-error
                 (list (format "%s executable not found" program))))))
+
+(defvar beads-backend--command-cache (make-hash-table :test 'equal)
+  "CLI command availability, cached until the executable changes.")
+
+(defun beads-backend-cli-supports-command-p (command &optional backend)
+  "Return whether COMMAND is available in BACKEND's installed CLI."
+  (let* ((program (beads-backend-cli-program-path backend))
+         (key (list program command
+                    (file-attribute-modification-time (file-attributes program))))
+         (cached (gethash key beads-backend--command-cache 'unknown)))
+    (if (eq cached 'unknown)
+        (puthash key (eq 0 (call-process program nil nil nil command "--help"))
+                 beads-backend--command-cache)
+      cached)))
 
 (defun beads-backend--build-cli-args (command args allowed-keys)
   "Build CLI args for COMMAND from ARGS, filtering by ALLOWED-KEYS."
@@ -193,6 +209,8 @@ Signals `beads-backend-error' on failure."
        ;; CLI commands accept multiple IDs, but the client promises one issue.
        ((and (vectorp output) (member operation '("show" "update" "close")))
         (when (> (length output) 0) (aref output 0)))
+       ((and (equal operation "stats") (alist-get 'summary output))
+        (alist-get 'summary output))
        ((vectorp output) (append output nil))
        (t output)))))
 
@@ -230,7 +248,8 @@ PROJECT-ROOT overrides the working directory."
 (defun beads-backend-clear-cache ()
   "Clear the per-project backend cache."
   (interactive)
-  (clrhash beads-backend--project-cache))
+  (clrhash beads-backend--project-cache)
+  (clrhash beads-backend--command-cache))
 
 (provide 'beads-backend)
 

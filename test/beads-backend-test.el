@@ -10,6 +10,7 @@
 (require 'beads-backend)
 (require 'beads-backend-bd)
 (require 'beads-backend-br)
+(require 'beads-client)
 
 ;;; Registry tests
 
@@ -195,13 +196,15 @@
 
 (ert-deftest beads-backend-test-bd-health-args ()
   "Test bd backend health operation CLI args."
-  (should (equal (beads-backend-bd--operation-to-cli-args "health" nil)
-                 '("daemon" "status"))))
+  (cl-letf (((symbol-function 'beads-backend-bd--supports-daemon-p) (lambda () t)))
+    (should (equal (beads-backend-bd--operation-to-cli-args "health" nil)
+                   '("daemon" "status")))))
 
 (ert-deftest beads-backend-test-bd-duplicates-extra-flags ()
   "Test bd backend adds --no-daemon for duplicates."
-  (should (equal (beads-backend-bd--cli-extra-flags "duplicates")
-                 '("--no-daemon"))))
+  (cl-letf (((symbol-function 'beads-backend-bd--supports-daemon-p) (lambda () t)))
+    (should (equal (beads-backend-bd--cli-extra-flags "duplicates")
+                   '("--no-daemon")))))
 
 (ert-deftest beads-backend-test-bd-no-extra-flags-for-list ()
   "Test bd backend has no extra flags for list."

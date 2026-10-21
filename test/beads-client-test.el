@@ -130,68 +130,63 @@
       (delete-directory temp-dir t))))
 
 (ert-deftest beads-client-test-socket-path-no-database ()
-  "Test that beads-client--socket-path returns nil when no database found."
+  "Socket RPC requires a legacy SQLite workspace."
   (let ((temp-dir (make-temp-file "beads-test-" t)))
     (unwind-protect
         (let ((default-directory temp-dir))
-          (should (null (beads-client--socket-path))))
+          (should-error (beads-client--socket-path) :type 'beads-client-error))
       (delete-directory temp-dir t))))
 
 ;;; Request serialization tests (mock the socket)
 
 (ert-deftest beads-client-test-request-structure ()
-  "Test that beads-client-request creates correct JSON structure."
-  (let ((request-data nil))
-    (cl-letf (((symbol-function 'beads-client--send-to-socket)
-               (lambda (_socket-path request)
-                 (setq request-data (json-read-from-string request))
-                 '((success . t) (data . nil)))))
-      (beads-client-request "test-operation" '((key . "value")))
+  "RPC request serialization includes operation, context, and database."
+  (cl-letf (((symbol-function 'beads-client--find-database)
+             (lambda () "/fixture/.beads/beads.db")))
+    (let ((request-data
+           (json-read-from-string
+            (json-encode (beads-client--make-request-alist
+                          "test-operation" '((key . "value")))))))
       (should (equal (alist-get 'operation request-data) "test-operation"))
       (should (equal (alist-get 'key (alist-get 'args request-data)) "value"))
       (should (stringp (alist-get 'cwd request-data)))
       (should (stringp (alist-get 'client_version request-data)))
-      (should (stringp (alist-get 'expected_db request-data))))))
+      (should (equal (alist-get 'expected_db request-data) "/fixture/.beads/beads.db")))))
 
 (ert-deftest beads-client-test-request-null-args ()
-  "Test that beads-client-request handles nil args correctly."
-  (let ((request-data nil))
-    (cl-letf (((symbol-function 'beads-client--send-to-socket)
-               (lambda (_socket-path request)
-                 (setq request-data (json-read-from-string request))
-                 '((success . t) (data . nil)))))
-      (beads-client-request "test-operation" nil)
-      (should (eq (alist-get 'args request-data) :null)))))
+  "A request without arguments serializes them as JSON null."
+  (let ((request-data (json-read-from-string
+                       (json-encode (beads-client--make-request-alist "test-operation" nil)))))
+    (should (null (alist-get 'args request-data)))))
 
 (ert-deftest beads-client-test-request-filter-encoding ()
-  "Test that list filters are properly encoded in requests."
-  (let ((request-data nil))
-    (cl-letf (((symbol-function 'beads-client--send-to-socket)
-               (lambda (_socket-path request)
-                 (setq request-data (json-read-from-string request))
-                 '((success . t) (data . nil)))))
-      (beads-client-request "list" '((status . "open")
-                                  (priority . 1)
-                                  (labels . ["backend" "urgent"])))
-      (let ((args (alist-get 'args request-data)))
-        (should (equal (alist-get 'status args) "open"))
-        (should (equal (alist-get 'priority args) 1))
-        (should (equal (alist-get 'labels args) ["backend" "urgent"]))))))
+  "Status, priority, and labels survive the RPC JSON round trip."
+  (let* ((request-data
+          (json-read-from-string
+           (json-encode (beads-client--make-request-alist
+                         "list" '((status . "open") (priority . 1)
+                                  (labels . ["backend" "urgent"]))))))
+         (args (alist-get 'args request-data)))
+    (should (equal (alist-get 'status args) "open"))
+    (should (equal (alist-get 'priority args) 1))
+    (should (equal (alist-get 'labels args) ["backend" "urgent"]))))
 
 (ert-deftest beads-client-test-request-error-handling ()
-  "Test that beads-client-request handles error responses."
-  (cl-letf (((symbol-function 'beads-client--send-to-socket)
-             (lambda (_socket-path _request)
-               '((success . :json-false) (error . "Test error message")))))
-    (should-error (beads-client-request "test-operation" nil)
-                  :type 'beads-client-error)))
+  "The daemon-only strategy preserves the server error."
+  (let ((beads-client-connection-strategy 'daemon))
+    (cl-letf (((symbol-function 'beads-backend-supports-daemon-p) (lambda () t))
+              ((symbol-function 'beads-client--request-socket)
+               (lambda (&rest _) (signal 'beads-client-error '("Test error message")))))
+      (let ((err (should-error (beads-client-request "test-operation" nil)
+                               :type 'beads-client-error)))
+        (should (equal (cadr err) "Test error message"))))))
 
 ;;; Integration tests (require daemon)
 
 (ert-deftest beads-client-test-health ()
   "Test that beads-client-health returns healthy status from daemon."
   :tags '(:integration)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let ((result (beads-client-health)))
     (should result)))
@@ -199,7 +194,7 @@
 (ert-deftest beads-client-test-list ()
   "Test that beads-client-list returns issues array."
   :tags '(:integration)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let ((issues (beads-client-list)))
     (should (vectorp issues))))
@@ -207,7 +202,7 @@
 (ert-deftest beads-client-test-list-with-filters ()
   "Test that beads-client-list accepts filter arguments."
   :tags '(:integration)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let ((issues (beads-client-list '(:status "open" :priority 1))))
     (should (vectorp issues))))
@@ -215,7 +210,7 @@
 (ert-deftest beads-client-test-ready ()
   "Test that beads-client-ready returns unblocked issues."
   :tags '(:integration)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let ((issues (beads-client-ready)))
     (should (vectorp issues))))
@@ -223,7 +218,7 @@
 (ert-deftest beads-client-test-stats ()
   "Test that beads-client-stats returns statistics."
   :tags '(:integration)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let ((stats (beads-client-stats)))
     (should (numberp (alist-get 'total_issues stats)))
@@ -233,7 +228,7 @@
 (ert-deftest beads-client-test-show ()
   "Test that beads-client-show returns issue details."
   :tags '(:integration)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let ((issues (beads-client-list '(:limit 1))))
     (skip-unless (> (length issues) 0))
@@ -246,7 +241,7 @@
 (ert-deftest beads-client-test-create-and-close ()
   "Test creating and closing an issue via RPC."
   :tags '(:integration :destructive)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let* ((title "Test issue from ERT")
          (issue (beads-client-create
@@ -268,7 +263,7 @@
 (ert-deftest beads-client-test-update ()
   "Test updating an issue via RPC."
   :tags '(:integration :destructive)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let* ((issue (beads-client-create
                  "Test update issue"
@@ -288,7 +283,7 @@
 (ert-deftest beads-client-test-count ()
   "Test that beads-client-count returns grouped counts."
   :tags '(:integration)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let ((counts (beads-client-count '(:group-by "status"))))
     (should (listp counts))))
@@ -296,7 +291,7 @@
 (ert-deftest beads-client-test-dep-add-remove ()
   "Test adding and removing dependencies via RPC."
   :tags '(:integration :destructive)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let* ((issue1 (beads-client-create "Dependency test 1"))
          (issue2 (beads-client-create "Dependency test 2"))
@@ -315,7 +310,7 @@
 (ert-deftest beads-client-test-label-operations ()
   "Test adding and removing labels via RPC."
   :tags '(:integration :destructive)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (let* ((issue (beads-client-create "Label test"))
          (issue-id (alist-get 'id issue)))
@@ -342,7 +337,7 @@
 (ert-deftest beads-client-test-invalid-operation ()
   "Test that invalid operations are handled."
   :tags '(:integration)
-  (skip-unless (beads-client--socket-path))
+  (skip-unless (ignore-errors (beads-client--socket-path)))
   (skip-unless (file-exists-p (beads-client--socket-path)))
   (should-error (beads-client-request "invalid-operation" nil)
                 :type 'beads-client-error))

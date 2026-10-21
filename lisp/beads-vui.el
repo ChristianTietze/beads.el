@@ -230,6 +230,7 @@ When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
         (assignee (alist-get 'assignee issue))
         (created-by (alist-get 'created_by issue))
         (created (alist-get 'created_at issue))
+        (updated (alist-get 'updated_at issue))
         (labels (alist-get 'labels issue))
         (parent-id (alist-get 'parent_id issue)))
     (vui-vstack
@@ -265,7 +266,11 @@ When EDITABLE is non-nil, show edit buttons. ON-REFRESH called after edits."
       (when created
         (vui-component 'beads-vui-labeled-value
                        :label "Created"
-                       :value (beads-vui-format-timestamp created))))
+                       :value (beads-vui-format-timestamp created)))
+      (when updated
+        (vui-component 'beads-vui-labeled-value
+                       :label "Updated"
+                       :value (beads-vui-format-timestamp updated))))
      (when parent-id
        (vui-hstack
         (vui-text "Parent: " :face 'bold)
@@ -522,12 +527,10 @@ edit buffers and save directly - they are not part of the form save."
                   (setq changes (plist-put changes :priority new-pri))))
               (unless (equal issue-type (alist-get 'issue_type issue "task"))
                 (setq changes (plist-put changes :issue-type issue-type)))
-              (let ((new-assignee (if (string-empty-p assignee) nil assignee)))
-                (unless (equal new-assignee (alist-get 'assignee issue))
-                  (setq changes (plist-put changes :assignee new-assignee))))
-              (let ((new-ref (if (string-empty-p external-ref) nil external-ref)))
-                (unless (equal new-ref (alist-get 'external_ref issue))
-                  (setq changes (plist-put changes :external-ref new-ref))))
+              (unless (equal assignee (or (alist-get 'assignee issue) ""))
+                (setq changes (plist-put changes :assignee assignee)))
+              (unless (equal external-ref (or (alist-get 'external_ref issue) ""))
+                (setq changes (plist-put changes :external-ref external-ref)))
               changes)))
          (do-save (lambda ()
                     (when on-save

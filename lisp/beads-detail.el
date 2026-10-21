@@ -184,8 +184,6 @@ Creates a unique buffer per issue and focuses it."
          (buffer-name (format "*Beads Detail: %s*" id))
          (buffer (get-buffer-create buffer-name)))
     (with-current-buffer buffer
-      (setq beads-detail--current-issue-id id)
-      (setq beads-detail--current-issue issue)
       (if beads-detail-use-vui
           (beads-detail--render-vui buffer issue)
         (unless (eq major-mode 'beads-detail-mode)
@@ -193,7 +191,9 @@ Creates a unique buffer per issue and focuses it."
         (let ((inhibit-read-only t))
           (erase-buffer)
           (beads-detail--render issue)
-          (goto-char (point-min)))))
+          (goto-char (point-min))))
+      (setq beads-detail--current-issue-id id
+            beads-detail--current-issue issue))
     (let ((window (display-buffer buffer
                                   '((display-buffer-reuse-mode-window
                                      display-buffer-below-selected)
@@ -208,8 +208,6 @@ Uses a single reusable buffer in a side window without focusing."
   (let* ((id (alist-get 'id issue))
          (buffer (get-buffer-create "*Beads Preview*")))
     (with-current-buffer buffer
-      (setq beads-detail--current-issue-id id)
-      (setq beads-detail--current-issue issue)
       (if beads-detail-use-vui
           (beads-detail--render-vui buffer issue)
         (unless (eq major-mode 'beads-detail-mode)
@@ -217,7 +215,9 @@ Uses a single reusable buffer in a side window without focusing."
         (let ((inhibit-read-only t))
           (erase-buffer)
           (beads-detail--render issue)
-          (goto-char (point-min)))))
+          (goto-char (point-min))))
+      (setq beads-detail--current-issue-id id
+            beads-detail--current-issue issue))
     (display-buffer buffer '((display-buffer-in-side-window)
                              (side . right)
                              (window-width . 0.4)))))
@@ -459,7 +459,8 @@ Uses CLI fallback since RPC does not support comment_add."
                        (when-let ((target (beads-client-show id)))
                          (beads-detail-open target)))))
     (with-current-buffer buffer
-      (beads-detail-vui-mode))
+      (unless (derived-mode-p 'beads-detail-vui-mode)
+        (beads-detail-vui-mode)))
     (save-window-excursion
       (vui-mount (vui-component 'beads-vui-detail-view
                                 :issue issue
@@ -510,6 +511,7 @@ Uses CLI fallback since RPC does not support comment_add."
         (assignee (alist-get 'assignee issue))
         (created-by (alist-get 'created_by issue))
         (created (alist-get 'created_at issue))
+        (updated (alist-get 'updated_at issue))
         (labels (alist-get 'labels issue))
         (parent-id (alist-get 'parent_id issue)))
 
@@ -528,6 +530,9 @@ Uses CLI fallback since RPC does not support comment_add."
       (insert "  "))
     (when created
       (beads-detail--insert-field "Created" (beads-detail--format-timestamp created)))
+    (when updated
+      (insert "  ")
+      (beads-detail--insert-field "Updated" (beads-detail--format-timestamp updated)))
     (insert "\n")
 
     (when parent-id

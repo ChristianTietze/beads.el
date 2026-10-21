@@ -26,12 +26,12 @@
   (should (commandp 'beads-menu)))
 
 (ert-deftest beads-transient-test-menu-is-transient-prefix ()
-  "Test that beads-menu is a transient prefix command."
-  (should (get 'beads-menu 'transient--prefix)))
+  "Test that beads-list-menu is a transient prefix command."
+  (should (get 'beads-list-menu 'transient--prefix)))
 
 (ert-deftest beads-transient-test-menu-has-prefix-object ()
-  "Test that beads-menu has a transient prefix object."
-  (let ((prefix-obj (get 'beads-menu 'transient--prefix)))
+  "Test that beads-list-menu has a transient prefix object."
+  (let ((prefix-obj (get 'beads-list-menu 'transient--prefix)))
     (should prefix-obj)))
 
 ;;; Keybinding tests (no daemon)
@@ -195,7 +195,7 @@
     (should (eq (lookup-key beads-list-mode-map (kbd "?")) #'beads-menu))
     (should (eq (lookup-key beads-list-mode-map (kbd "g")) #'beads-list-refresh))
     (should (eq (lookup-key beads-list-mode-map (kbd "RET")) #'beads-list-goto-issue))
-    (should (eq (lookup-key beads-list-mode-map (kbd "q")) #'quit-window))))
+    (should (eq (lookup-key beads-list-mode-map (kbd "q")) #'beads-list-quit))))
 
 (ert-deftest beads-transient-test-detail-keybindings-dont-conflict ()
   "Test that ? keybinding doesn't conflict with other bindings in detail mode."

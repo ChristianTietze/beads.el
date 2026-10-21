@@ -33,7 +33,8 @@
 
 (ert-deftest beads-form-test-open-creates-buffer ()
   "Test that beads-form-open creates a buffer."
-  (let ((buffer nil)
+  (let ((beads-form-use-vui nil)
+        (buffer nil)
         (issue '((id . "test-123")
                  (title . "Test Issue")
                  (status . "open")
@@ -46,14 +47,15 @@
             (beads-form-open issue))
           (should buffer)
           (should (buffer-live-p buffer))
-          (should (string-match-p "beads-form.*test-123"
+          (should (string-match-p "Beads Form: test-123"
                                   (buffer-name buffer))))
       (when (and buffer (buffer-live-p buffer))
         (kill-buffer buffer)))))
 
 (ert-deftest beads-form-test-open-sets-buffer-locals ()
   "Test that beads-form-open sets buffer-local variables."
-  (let ((buffer nil)
+  (let ((beads-form-use-vui nil)
+        (buffer nil)
         (issue '((id . "test-456")
                  (title . "Test Issue")
                  (status . "open")
@@ -73,7 +75,8 @@
 
 (ert-deftest beads-form-test-open-renders-fields ()
   "Test that beads-form-open renders all expected fields."
-  (let ((buffer nil)
+  (let ((beads-form-use-vui nil)
+        (buffer nil)
         (issue '((id . "test-789")
                  (title . "Test Title")
                  (status . "in_progress")
@@ -97,7 +100,8 @@
 
 (ert-deftest beads-form-test-collect-changes-empty ()
   "Test that collect-changes returns nil when nothing changed."
-  (let ((buffer nil)
+  (let ((beads-form-use-vui nil)
+        (buffer nil)
         (issue '((id . "test-unchanged")
                  (title . "Test")
                  (status . "open")

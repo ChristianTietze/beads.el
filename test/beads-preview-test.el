@@ -63,8 +63,7 @@
   (with-temp-buffer
     (beads-list-mode)
     (beads-preview-mode 1)
-    (let ((mode-line (format-mode-line minor-mode-alist)))
-      (should (string-match-p "Preview" mode-line)))))
+    (should (equal (cadr (assq 'beads-preview-mode minor-mode-alist)) " Preview"))))
 
 (ert-deftest beads-preview-test-mode-disable-cancels-timer ()
   "Test that disabling mode cancels any pending timer."
@@ -242,7 +241,9 @@
     (beads-list-mode)
     (beads-preview-mode 1)
     (let ((timer-started nil))
-      (cl-letf (((symbol-function 'beads-preview--cancel-timer)
+      (cl-letf (((symbol-function 'beads-list--get-issue-at-point)
+                 (lambda () '((id . "test-1"))))
+                ((symbol-function 'beads-preview--cancel-timer)
                  (lambda () nil))
                 ((symbol-function 'beads-preview--start-timer)
                  (lambda (_issue)
@@ -254,7 +255,7 @@
 
 (ert-deftest beads-preview-test-cleanup-kills-preview-buffer ()
   "Test that cleanup kills the preview buffer."
-  (let ((preview-buf (get-buffer-create "*beads-preview*")))
+  (let ((preview-buf (get-buffer-create "*Beads Preview*")))
     (unwind-protect
         (progn
           (beads-preview--cleanup)

@@ -73,6 +73,7 @@ Hints are shown when entering beads modes to help with discoverability."
      . "TAB next | C-c C-c save | C-c C-k cancel"))
   "Alist of mode symbols to hint strings.")
 
+;;;###autoload
 (defun beads-show-hint ()
   "Show hint for current major mode if `beads-verbose' is enabled."
   (when beads-verbose
